@@ -2,9 +2,7 @@
   
 # 📦 IOE 库存管理系统
 
-[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/)
-[![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/)   [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)   [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 _一站式零售库存解决方案，为您的商店量身定制_
 
@@ -99,7 +97,7 @@ graph TD
 pip install -r requirements.txt
 ```
 
-### 初始化数据库
+### 建库、配置到settings.py中，初始化数据库
 
 ```bash
 python manage.py migrate
@@ -134,13 +132,18 @@ python manage.py runserver
   <img src="./asset/member_mgmt.png" width="100%" />
 </div>
 
-## 📄 许可证
+## 📄 License
 
-本项目采用 MIT 许可证
+本项目采用 MIT License
+
+## Buy Me a Coffee
+如果你觉得这个项目对你有帮助，你可以通过以下方式支持：
+  <img src="./asset/buyme.jpg" width="30%" /> <img src="./asset/wechat.jpg" width="30%" />
+
 
 ## 📞 联系我们
 
-如有问题或建议，欢迎通过以下方式联系：
+如有问题，建议，或定制化需求，欢迎通过以下方式联系：
 
 - 项目问题: [提交Issue](https://github.com/zhtyyx/ioe/issues)
 - 邮箱: zhtyyx@gmail.com
@@ -148,7 +151,5 @@ python manage.py runserver
 ---
 
 <div align="center">
-  
-  **IOE库存管理系统** ❤️ **让库存管理更简单**
-  
+  软件著作权已登记，如有疑问请联系我。  
 </div>
