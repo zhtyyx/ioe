@@ -1,8 +1,8 @@
 <div align="center">
-  
+
 # 📦 IOE 库存管理系统
 
-[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/)   [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/)   [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/) &nbsp; [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/) &nbsp; [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 _一站式零售库存解决方案，为您的商店量身定制_
 
@@ -12,10 +12,7 @@ _一站式零售库存解决方案，为您的商店量身定制_
 
 IOE是一个基于Django开发的**综合性库存管理系统**，专为零售商店、小型仓库和商品销售场所设计。系统提供了完整的商品管理、库存跟踪、销售记录、会员管理和数据分析功能，帮助企业高效管理库存和销售流程。
 
-<div align="center">
-  
-
-</div>
+<!-- 内容分隔线 -->
 
 ## ✨ 主要功能模块
 
@@ -122,13 +119,13 @@ python manage.py runserver
 ## 📸 系统截图
 
 <div align="center">
-  <img src="./asset/report_center.png" width="100%" />
-  <img src="./asset/create_sale.png" width="100%" />
-  <img src="./asset/sale_record.png" width="100%" />
-  <img src="./asset/category_list.png" width="100%" />
-  <img src="./asset/stock_list.png" width="100%" />
-  <img src="./asset/stock_check.png" width="100%" />
-  <img src="./asset/product_list.png" width="100%" />
+  <img src="./asset/report_center.png" width="100%" /><br/><br/>
+  <img src="./asset/create_sale.png" width="100%" /><br/><br/>
+  <img src="./asset/sale_record.png" width="100%" /><br/><br/>
+  <img src="./asset/category_list.png" width="100%" /><br/><br/>
+  <img src="./asset/stock_list.png" width="100%" /><br/><br/>
+  <img src="./asset/stock_check.png" width="100%" /><br/><br/>
+  <img src="./asset/product_list.png" width="100%" /><br/><br/>
   <img src="./asset/member_mgmt.png" width="100%" />
 </div>
 
@@ -136,9 +133,12 @@ python manage.py runserver
 
 本项目采用 MIT License
 
-## Buy Me a Coffee
+## ☕ Buy Me a Coffee
 如果你觉得这个项目对你有帮助，你可以通过以下方式支持：
-  <img src="./asset/buyme.jpg" width="30%" /> <img src="./asset/wechat.jpg" width="30%" />
+
+<div align="center">
+  <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
+</div>
 
 
 ## 📞 联系我们
