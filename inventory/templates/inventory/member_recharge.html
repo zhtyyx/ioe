@@ -1,0 +1,151 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}会员充值 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title mb-0">会员充值</h2>
+                        <p class="text-muted">为会员账户充值金额</p>
+                    </div>
+                    <a href="{% url 'member_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> 返回会员列表
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0"><i class="bi bi-person-fill me-2"></i>会员信息</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="avatar bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 64px; height: 64px; font-size: 1.5rem; font-weight: 500;">
+                        {{ member.name|slice:"0:1"|default:"-" }}
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ member.name }}</h5>
+                        <p class="text-muted mb-0">{{ member.phone }}</p>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">会员等级</span>
+                        <span class="badge bg-info text-dark">{{ member.level.name }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">当前积分</span>
+                        <span class="fw-bold">{{ member.points }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">账户余额</span>
+                        <span class="fw-bold text-success">¥{{ member.balance }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">累计消费</span>
+                        <span class="fw-bold text-success">¥{{ member.total_spend }}</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{% url 'member_details' member.id %}" class="btn btn-outline-info w-100">
+                        <i class="bi bi-list-ul me-1"></i> 查看会员详情
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0"><i class="bi bi-cash-coin me-2"></i>充值表单</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="rechargeForm">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label">充值金额 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" id="amount" name="amount" class="form-control" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-text">为会员账户增加的实际金额</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="actual_amount" class="form-label">实收金额 <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" id="actual_amount" name="actual_amount" class="form-control" min="0" step="0.01" required>
+                            </div>
+                            <div class="form-text">实际收取的金额（可能有优惠）</div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">支付方式 <span class="text-danger">*</span></label>
+                        <select id="payment_method" name="payment_method" class="form-select" required>
+                            <option value="cash">现金</option>
+                            <option value="wechat">微信</option>
+                            <option value="alipay">支付宝</option>
+                            <option value="card">银行卡</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="remark" class="form-label">备注</label>
+                        <textarea id="remark" name="remark" class="form-control" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle me-1"></i> 确认充值
+                        </button>
+                        <a href="{% url 'member_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> 取消
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 自动同步金额
+        const amountInput = document.getElementById('amount');
+        const actualAmountInput = document.getElementById('actual_amount');
+        
+        amountInput.addEventListener('input', function() {
+            if (this.value) {
+                actualAmountInput.value = this.value;
+            }
+        });
+        
+        // 表单提交前验证
+        document.getElementById('rechargeForm').addEventListener('submit', function(e) {
+            const amount = parseFloat(amountInput.value);
+            
+            if (amount <= 0) {
+                e.preventDefault();
+                alert('充值金额必须大于0');
+            }
+        });
+    });
+</script>
+{% endblock %} 

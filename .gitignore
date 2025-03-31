@@ -1,0 +1,88 @@
+# Django项目通用忽略文件
+
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 日志文件
+*.log
+logs/
+
+# 本地数据库文件
+db.sqlite3
+db.sqlite3-journal
+
+# 媒体文件和上传内容
+media/
+
+# 静态文件收集目录
+staticfiles/
+
+# 环境变量和敏感信息
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# IDE相关文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv/
+
+# 本地设置
+local_settings.py
+
+# 备份文件
+*.bak
+*.tmp
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率报告
+.coverage
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+
+# 翻译文件编译结果
+*.mo
+*.pot
+
+# 其他
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log

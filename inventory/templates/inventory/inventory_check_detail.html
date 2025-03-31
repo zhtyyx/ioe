@@ -1,0 +1,223 @@
+{% extends "inventory/base.html" %}
+
+{% block title %}库存盘点详情{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">{{ inventory_check.name }}</h1>
+            <p class="text-muted">{{ inventory_check.description }}</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-inline-block">
+                {% if inventory_check.status == 'draft' %}
+                <span class="badge bg-secondary">{{ inventory_check.get_status_display }}</span>
+                {% elif inventory_check.status == 'in_progress' %}
+                <span class="badge bg-primary">{{ inventory_check.get_status_display }}</span>
+                {% elif inventory_check.status == 'completed' %}
+                <span class="badge bg-info">{{ inventory_check.get_status_display }}</span>
+                {% elif inventory_check.status == 'approved' %}
+                <span class="badge bg-success">{{ inventory_check.get_status_display }}</span>
+                {% elif inventory_check.status == 'cancelled' %}
+                <span class="badge bg-danger">{{ inventory_check.get_status_display }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 盘点信息 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">盘点信息</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th style="width: 150px;">ID:</th>
+                            <td>{{ inventory_check.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>创建人:</th>
+                            <td>{{ inventory_check.created_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>创建时间:</th>
+                            <td>{{ inventory_check.created_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% if inventory_check.completed_at %}
+                        <tr>
+                            <th>完成时间:</th>
+                            <td>{{ inventory_check.completed_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                        {% if inventory_check.approved_by %}
+                        <tr>
+                            <th>审核人:</th>
+                            <td>{{ inventory_check.approved_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <th>审核时间:</th>
+                            <td>{{ inventory_check.approved_at|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">汇总信息</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body py-2 text-center">
+                                    <div class="h4">{{ summary.total_items }}</div>
+                                    <div class="small text-muted">总商品数</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body py-2 text-center">
+                                    <div class="h4">{{ summary.checked_items }}</div>
+                                    <div class="small text-muted">已盘点数</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-light">
+                                <div class="card-body py-2 text-center">
+                                    <div class="h4">{{ summary.items_with_discrepancy }}</div>
+                                    <div class="small text-muted">有差异数</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-light">
+                                <div class="card-body py-2 text-center">
+                                    <div class="h4">{{ summary.pending_items }}</div>
+                                    <div class="small text-muted">待盘点数</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory_check_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> 返回列表
+                        </a>
+                        
+                        <div>
+                            {% if inventory_check.status == 'draft' %}
+                            <a href="{% url 'inventory_check_start' check_id=inventory_check.id %}" class="btn btn-primary">
+                                <i class="bi bi-play-fill"></i> 开始盘点
+                            </a>
+                            {% endif %}
+                            
+                            {% if inventory_check.status == 'in_progress' %}
+                            <a href="{% url 'inventory_check_complete' check_id=inventory_check.id %}" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> 完成盘点
+                            </a>
+                            {% endif %}
+                            
+                            {% if inventory_check.status == 'completed' %}
+                            <a href="{% url 'inventory_check_approve' check_id=inventory_check.id %}" class="btn btn-info">
+                                <i class="bi bi-shield-check"></i> 审核
+                            </a>
+                            {% endif %}
+                            
+                            {% if inventory_check.status == 'approved' %}
+                            <a href="{% url 'inventory_check_complete' check_id=inventory_check.id %}" class="btn btn-info">
+                                <i class="bi bi-check-circle"></i> 标记为已完成
+                            </a>
+                            {% endif %}
+                            
+                            {% if inventory_check.status != 'approved' and inventory_check.status != 'cancelled' %}
+                            <a href="{% url 'inventory_check_cancel' check_id=inventory_check.id %}" class="btn btn-danger" 
+                               onclick="return confirm('确定要取消此盘点吗？')">
+                                <i class="bi bi-x-circle"></i> 取消
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 盘点商品列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">盘点商品列表</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>商品名称</th>
+                                    <th>条码</th>
+                                    <th class="text-center">系统数量</th>
+                                    <th class="text-center">实际数量</th>
+                                    <th class="text-center">差异</th>
+                                    <th>盘点人</th>
+                                    <th>盘点时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in check_items %}
+                                <tr {% if item.difference != 0 and item.difference != None %}class="table-warning"{% endif %}>
+                                    <td>{{ item.product.name }}</td>
+                                    <td><code>{{ item.product.barcode }}</code></td>
+                                    <td class="text-center">{{ item.system_quantity }}</td>
+                                    <td class="text-center">
+                                        {% if item.actual_quantity != None %}
+                                        {{ item.actual_quantity }}
+                                        {% else %}
+                                        <span class="badge bg-secondary">未盘点</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.difference != None %}
+                                        <span class="{% if item.difference > 0 %}text-success{% elif item.difference < 0 %}text-danger{% endif %}">
+                                            {{ item.difference }}
+                                        </span>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ item.checked_by.username|default:"-" }}</td>
+                                    <td>{{ item.checked_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                                    <td>
+                                        {% if inventory_check.status == 'in_progress' %}
+                                        <a href="{% url 'inventory_check_item_update' check_id=inventory_check.id item_id=item.id %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> 盘点
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">没有商品需要盘点</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
