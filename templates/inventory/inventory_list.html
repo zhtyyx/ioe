@@ -1,0 +1,239 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}库存管理 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h2 class="card-title mb-0">库存管理</h2>
+                        <p class="text-muted mb-md-0">管理所有商品库存信息</p>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'inventory_create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> 入库
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <!-- 搜索和筛选表单 -->
+                <form method="get" action="{% url 'inventory_list' %}" id="filterForm" class="mb-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                <input type="text" name="search" class="form-control" value="{{ search_query }}" placeholder="搜索商品名称或条码...">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex flex-wrap gap-2">
+                                <select name="category" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                                    <option value="">所有分类</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                
+                                <select name="color" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                                    <option value="">所有颜色</option>
+                                    {% for color_code, color_name in colors %}
+                                    <option value="{{ color_code }}" {% if selected_color == color_code %}selected{% endif %}>
+                                        {{ color_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                
+                                <select name="size" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                                    <option value="">所有尺码</option>
+                                    {% for size_code, size_name in sizes %}
+                                    <option value="{{ size_code }}" {% if selected_size == size_code %}selected{% endif %}>
+                                        {{ size_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                
+                                <button type="submit" class="btn btn-primary">筛选</button>
+                                {% if selected_category or selected_color or selected_size or search_query %}
+                                <a href="{% url 'inventory_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>清除筛选
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- 库存状态过滤 -->
+                <div class="d-flex mb-4">
+                    <div class="btn-group" id="stockFilter">
+                        <button type="button" class="btn btn-outline-secondary active" data-filter="all">全部</button>
+                        <button type="button" class="btn btn-outline-danger" data-filter="low">库存预警</button>
+                        <button type="button" class="btn btn-outline-success" data-filter="normal">库存正常</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>商品信息</th>
+                                <th>分类</th>
+                                <th>颜色/尺码</th>
+                                <th>当前库存</th>
+                                <th>预警库存</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory_items %}
+                            <tr data-stock-status="{% if item.quantity <= item.warning_level %}low{% else %}normal{% endif %}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            {% if item.product.image %}
+                                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="rounded" width="48" height="48" style="object-fit: cover;">
+                                            {% else %}
+                                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 48px">
+                                                <i class="bi bi-box text-secondary"></i>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ item.product.name }}</h6>
+                                            <small class="text-muted">{{ item.product.barcode }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">{{ item.product.category.name }}</span>
+                                </td>
+                                <td>
+                                    {% if item.product.color %}
+                                    <span class="badge bg-secondary">{{ item.product.get_color_display }}</span>
+                                    {% endif %}
+                                    
+                                    {% if item.product.size %}
+                                    <span class="badge bg-dark">{{ item.product.get_size_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="fw-bold fs-5">{{ item.quantity }}</span>
+                                </td>
+                                <td>
+                                    <span class="text-muted">{{ item.warning_level }}</span>
+                                </td>
+                                <td>
+                                    {% if item.quantity <= item.warning_level %}
+                                    <span class="badge bg-danger">库存不足</span>
+                                    {% else %}
+                                    <span class="badge bg-success">正常</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{% url 'inventory_create' %}" class="btn btn-sm btn-outline-primary" title="入库">
+                                            <i class="bi bi-box-arrow-in-down"></i>
+                                        </a>
+                                        <a href="{% url 'inventory_out' %}" class="btn btn-sm btn-outline-warning" title="出库">
+                                            <i class="bi bi-box-arrow-up"></i>
+                                        </a>
+                                        <a href="{% url 'inventory_adjust' item.id %}" class="btn btn-sm btn-outline-info" title="调整">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <i class="bi bi-clipboard-x text-muted" style="font-size: 2.5rem;"></i>
+                                        <p class="mt-3 mb-1">暂无库存数据</p>
+                                        <small class="text-muted">
+                                            {% if search_query or selected_category or selected_color or selected_size %}
+                                            没有找到符合筛选条件的库存，请尝试调整筛选条件
+                                            {% else %}
+                                            点击"入库"按钮添加库存
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- 分页控件 -->
+                {% if inventory_items %}
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <div class="text-muted small">
+                        显示 1 至 {{ inventory_items|length }} 条，共 {{ inventory_items|length }} 条记录
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 库存状态筛选
+        const stockFilterButtons = document.querySelectorAll('#stockFilter button');
+        stockFilterButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                // 移除所有按钮的active类
+                stockFilterButtons.forEach(btn => btn.classList.remove('active'));
+                // 添加当前按钮的active类
+                this.classList.add('active');
+                
+                const filterType = this.dataset.filter;
+                const rows = document.querySelectorAll('tbody tr');
+                
+                rows.forEach(function(row) {
+                    // 忽略空行
+                    if (!row.querySelector('td:first-child')) return;
+                    
+                    const stockStatus = row.dataset.stockStatus;
+                    
+                    if (filterType === 'all' || stockStatus === filterType) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

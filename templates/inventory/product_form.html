@@ -1,0 +1,252 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}{% if is_edit %}编辑商品 - {% else %}添加商品 - {% endif %}{{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title mb-0">{% if is_edit %}编辑商品{% else %}添加商品{% endif %}</h2>
+                        <p class="text-muted">{% if is_edit %}修改商品详细信息{% else %}填写商品详细信息{% endif %}</p>
+                    </div>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> 返回列表
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">基本信息</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="productForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.barcode.id_for_label }}" class="form-label">商品条码</label>
+                            {{ form.barcode.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-upc"></i></span>
+                                {{ form.barcode }}
+                            </div>
+                            {% if form.barcode.help_text %}
+                            <div class="form-text">{{ form.barcode.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">商品名称</label>
+                            {{ form.name.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                                {{ form.name }}
+                            </div>
+                            {% if form.name.help_text %}
+                            <div class="form-text">{{ form.name.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.category.id_for_label }}" class="form-label">商品分类</label>
+                            {{ form.category.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-folder"></i></span>
+                                {{ form.category }}
+                            </div>
+                            {% if form.category.help_text %}
+                            <div class="form-text">{{ form.category.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.specification.id_for_label }}" class="form-label">规格</label>
+                            {{ form.specification.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-rulers"></i></span>
+                                {{ form.specification }}
+                            </div>
+                            {% if form.specification.help_text %}
+                            <div class="form-text">{{ form.specification.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.color.id_for_label }}" class="form-label">颜色</label>
+                            {{ form.color.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-palette"></i></span>
+                                {{ form.color }}
+                            </div>
+                            {% if form.color.help_text %}
+                            <div class="form-text">{{ form.color.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.size.id_for_label }}" class="form-label">尺码</label>
+                            {{ form.size.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-aspect-ratio"></i></span>
+                                {{ form.size }}
+                            </div>
+                            {% if form.size.help_text %}
+                            <div class="form-text">{{ form.size.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.price.id_for_label }}" class="form-label">售价</label>
+                            {{ form.price.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                {{ form.price }}
+                            </div>
+                            {% if form.price.help_text %}
+                            <div class="form-text">{{ form.price.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cost.id_for_label }}" class="form-label">成本价</label>
+                            {{ form.cost.errors }}
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                {{ form.cost }}
+                            </div>
+                            {% if form.cost.help_text %}
+                            <div class="form-text">{{ form.cost.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.manufacturer.id_for_label }}" class="form-label">制造商</label>
+                        {{ form.manufacturer.errors }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-building"></i></span>
+                            {{ form.manufacturer }}
+                        </div>
+                        {% if form.manufacturer.help_text %}
+                        <div class="form-text">{{ form.manufacturer.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">商品描述</label>
+                        {{ form.description.errors }}
+                        {{ form.description }}
+                        {% if form.description.help_text %}
+                        <div class="form-text">{{ form.description.help_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.image.id_for_label }}" class="form-label">商品图片</label>
+                        {{ form.image.errors }}
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-image"></i></span>
+                            {{ form.image }}
+                        </div>
+                        {% if form.image.help_text %}
+                        <div class="form-text">{{ form.image.help_text }}</div>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">图片预览</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="image-preview bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 200px; overflow: hidden;">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="img-fluid" style="max-height: 200px;">
+                        {% else %}
+                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">操作</h5>
+            </div>
+            <div class="card-body">
+                {% if not is_edit %}
+                <div class="mb-3">
+                    <label class="form-label">初始库存数量</label>
+                    <input type="number" name="initial_stock" id="id_initial_stock" class="form-control" value="1" min="0">
+                    <div class="form-text">设置商品的初始库存数量</div>
+                </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" form="productForm" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i> {% if is_edit %}保存修改{% else %}保存商品{% endif %}
+                    </button>
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i> 取消
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 图片预览功能
+        const imageInput = document.querySelector('input[type="file"]');
+        const imagePreview = document.querySelector('.image-preview');
+        
+        if (imageInput) {
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        imagePreview.innerHTML = `<img src="${e.target.result}" class="img-fluid" style="max-height: 200px;">`;
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+        
+        // 自动计算成本价为售价的80%
+        const priceInput = document.querySelector('input[name="price"]');
+        const costInput = document.querySelector('input[name="cost"]');
+        
+        if (priceInput && costInput) {
+            priceInput.addEventListener('input', function() {
+                if (this.value && !costInput.value) {
+                    costInput.value = (parseFloat(this.value) * 0.8).toFixed(2);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

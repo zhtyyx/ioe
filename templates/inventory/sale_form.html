@@ -1,0 +1,368 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}新增销售 - {{ block.super }}{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const barcodeInput = document.getElementById('barcode');
+    const saleForm = document.getElementById('sale-form');
+    const searchProduct = document.getElementById('search-product');
+    const memberSearch = document.getElementById('member-search');
+    const completeSaleBtn = document.getElementById('complete-sale');
+    const addMemberForm = document.getElementById('add-member-form');
+    let lastBarcode = '';
+    let lastScannedTime = 0;
+    let saleId = document.querySelector('[name="sale_id"]')?.value;
+
+    // 扫码输入处理
+    barcodeInput.addEventListener('input', handleBarcodeInput);
+    barcodeInput.addEventListener('keypress', handleEnterKey);
+
+    // 商品搜索按钮点击事件
+    searchProduct.addEventListener('click', function() {
+        const barcode = barcodeInput.value.trim();
+        if (barcode) {
+            searchProductByBarcode(barcode);
+        }
+    });
+
+    // 会员搜索功能
+    memberSearch.addEventListener('input', function() {
+        const phone = this.value.trim();
+        if (phone.length >= 3) {
+            searchMemberByPhone(phone);
+        }
+    });
+    
+    // 添加会员表单提交
+    if (addMemberForm) {
+        addMemberForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(addMemberForm);
+            
+            fetch('/members/add-ajax/', {
+                method: 'POST', 
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('member-name').textContent = data.member_name;
+                    document.querySelector('[name="member"]').value = data.member_id;
+                    showAlert('success', '会员添加成功并已选择');
+                    // 关闭模态框
+                    const memberModal = bootstrap.Modal.getInstance(document.getElementById('memberModal'));
+                    memberModal.hide();
+                    // 重置表单
+                    addMemberForm.reset();
+                } else {
+                    showAlert('error', data.message || '添加会员失败');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', '添加会员失败，请重试');
+            });
+        });
+    }
+
+    function handleBarcodeInput(e) {
+        const currentTime = new Date().getTime();
+        const barcode = e.target.value.trim();
+
+        if (barcode !== '' && (currentTime - lastScannedTime < 100 || e.inputType === 'insertText')) {
+            lastBarcode = barcode;
+            lastScannedTime = currentTime;
+            searchProductByBarcode(barcode);
+        }
+    }
+
+    function handleEnterKey(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const barcode = e.target.value.trim();
+            if (barcode !== '') {
+                searchProductByBarcode(barcode);
+            }
+        }
+    }
+
+    function searchProductByBarcode(barcode) {
+        fetch(`/api/product/barcode/${barcode}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelector('[name="product"]').value = data.product_id;
+                    document.querySelector('[name="quantity"]').value = '1';
+                    document.getElementById('current-stock').textContent = data.stock || 0;
+                    document.querySelector('[name="actual_price"]').value = data.price || 0;
+                    
+                    // 检查库存
+                    if (data.stock <= 0) {
+                        showAlert('error', '该商品库存不足');
+                        return;
+                    }
+                    
+                    // 自动提交表单
+                    if (validateStock()) {
+                        saleForm.submit();
+                    }
+                } else {
+                    showAlert('error', '未找到对应的商品，请检查条码是否正确');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', '查询商品信息失败，请重试');
+            });
+
+        barcodeInput.value = '';
+    }
+
+    function searchMemberByPhone(phone) {
+        fetch(`/api/member/search/${phone}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('member-name').textContent = data.member_name;
+                    document.querySelector('[name="member"]').value = data.member_id;
+                    showAlert('success', '已选择会员');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', '查询会员信息失败');
+            });
+    }
+
+    function showAlert(type, message) {
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000
+        });
+        Toast.fire({
+            icon: type,
+            title: message
+        });
+    }
+
+    function validateStock() {
+        const stock = parseInt(document.getElementById('current-stock').innerText);
+        const quantity = parseInt(document.querySelector('#id_quantity').value);
+        if (quantity > stock) {
+            document.getElementById('inventory-alert').classList.remove('d-none');
+            document.getElementById('inventory-alert').innerText = '库存不足，当前可用库存：' + stock;
+            return false;
+        }
+        return true;
+    }
+
+    // 实时更新操作日志
+    function loadOperationLogs() {
+        if (!saleId) return;
+        fetch(`/sales/${saleId}/logs/`)
+            .then(response => response.json())
+            .then(data => {
+                const logList = document.querySelector('.list-group-flush');
+                if (logList) {
+                    logList.innerHTML = data.logs.map(log => 
+                        `<li class="list-group-item">
+                            ${log.timestamp} - ${log.operation_type}: ${log.details}
+                        </li>`
+                    ).join('');
+                }
+            });
+    }
+
+    // 每5秒刷新一次操作日志
+    setInterval(loadOperationLogs, 5000);
+
+    // 完成结算
+    completeSaleBtn.addEventListener('click', function() {
+        if (!saleId) return;
+        fetch(`/sales/${saleId}/complete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', '结算完成');
+                setTimeout(() => window.location.href = '/sales/', 1500);
+            } else {
+                showAlert('error', data.message || '结算失败，请重试');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', '结算失败，请重试');
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="card-title mb-0">收银台</h4>
+                <div class="member-info text-white">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="member-search" placeholder="输入会员手机号搜索">
+                        <span class="input-group-text" id="member-name">未选择会员</span>
+                        <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#memberModal">
+                            <i class="bi bi-person-plus"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                        <input type="text" class="form-control form-control-lg" id="barcode" name="barcode" 
+                               placeholder="请扫描商品条码或手动输入" autofocus>
+                        <button class="btn btn-outline-secondary" type="button" id="search-product">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>商品名称</th>
+                                <th>数量</th>
+                                <th>单价</th>
+                                <th>小计</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sale-items">
+                            {% for item in sale_items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.actual_price }}</td>
+                                <td>{{ item.subtotal }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger delete-item" data-item-id="{{ item.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <form method="post" id="sale-form" onsubmit="return validateStock()">
+                    {% csrf_token %}
+                    <input type="hidden" name="member" value="">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {{ form.product.label_tag }}
+                            {{ form.product }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.quantity.label_tag }}
+                            {{ form.quantity }}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.actual_price.label_tag }}
+                            {{ form.actual_price }}
+                        </div>
+                    </div>
+                    <div class="current-stock mb-3">
+                        <label>当前库存：</label>
+                        <span id="current-stock">0</span>
+                    </div>
+                    <div id="inventory-alert" class="alert alert-danger d-none"></div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">添加商品</button>
+                </form>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">总计：<span class="text-primary" id="total-amount">{{ sale.total_amount }}</span></h5>
+                            <h5 class="mb-0">折扣：<span class="text-success" id="discount-amount">{{ sale.discount_amount }}</span></h5>
+                            <h5 class="mb-0">实付：<span class="text-danger" id="final-amount">{{ sale.final_amount }}</span></h5>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-primary" id="complete-sale">完成结算</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">操作日志</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    {% for log in sale.operationlog_set.all|slice:":5" %}
+                    <li class="list-group-item">
+                        {{ log.timestamp|date:'Y-m-d H:i' }} - 
+                        {{ log.get_operation_type_display }}: {{ log.details }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 添加会员模态框 -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="memberModalLabel">添加新会员</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-member-form">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="member-name-input" class="form-label">会员姓名</label>
+                        <input type="text" class="form-control" id="member-name-input" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="member-phone-input" class="form-label">手机号码</label>
+                        <input type="tel" class="form-control" id="member-phone-input" name="phone" required pattern="[0-9]{11}">
+                        <div class="form-text">请输入11位手机号码</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="member-level-input" class="form-label">会员等级</label>
+                        <select class="form-select" id="member-level-input" name="level">
+                            {% for level in member_levels %}
+                            <option value="{{ level.id }}">{{ level.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">添加会员</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

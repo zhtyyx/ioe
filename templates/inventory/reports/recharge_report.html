@@ -1,0 +1,348 @@
+{% extends "inventory/base.html" %}
+{% load crispy_forms_tags %}
+{% load inventory_tags %}
+
+{% block title %}会员充值报表{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">会员充值报表</h1>
+            <p class="text-muted">
+                日期范围: {{ start_date|date:"Y-m-d" }} 至 {{ end_date|date:"Y-m-d" }}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'reports_index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> 返回报表中心
+            </a>
+        </div>
+    </div>
+
+    <!-- 搜索表单 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">设置报表参数</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-5">
+                                {{ form.start_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-5">
+                                {{ form.end_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">查询</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">充值总额</h5>
+                    <h3 class="mb-0">¥{{ recharge_data.summary.total_recharge_amount|floatformat:2 }}</h3>
+                    <p class="mt-2 mb-0">
+                        <small>实收金额: ¥{{ recharge_data.summary.total_actual_amount|floatformat:2 }}</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">充值次数</h5>
+                    <h3 class="mb-0">{{ recharge_data.summary.total_recharge_count }}</h3>
+                    <p class="mt-2 mb-0">
+                        <small>充值会员数: {{ recharge_data.summary.recharged_member_count }}</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">平均充值金额</h5>
+                    <h3 class="mb-0">¥{{ recharge_data.summary.avg_recharge_amount|floatformat:2 }}</h3>
+                    <p class="mt-2 mb-0">
+                        <small>人均充值: ¥{{ recharge_data.summary.total_recharge_amount|div:recharge_data.summary.recharged_member_count|floatformat:2 }}</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="row mb-4">
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">每日充值趋势</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="dailyRechargeChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">支付方式分布</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="paymentMethodChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 充值排行 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">会员充值排行 (TOP 10)</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>排名</th>
+                                    <th>会员姓名</th>
+                                    <th>手机号码</th>
+                                    <th>会员等级</th>
+                                    <th class="text-end">充值总额</th>
+                                    <th class="text-end">充值次数</th>
+                                    <th class="text-end">平均充值</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in recharge_data.top_members %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ member.name }}</td>
+                                    <td>{{ member.phone }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ member.level.color }}">{{ member.level.name }}</span>
+                                    </td>
+                                    <td class="text-end">¥{{ member.total_recharge|floatformat:2 }}</td>
+                                    <td class="text-end">{{ member.recharge_count }}</td>
+                                    <td class="text-end">¥{{ member.total_recharge|div:member.recharge_count|floatformat:2 }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'member_details' member.id %}" class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'member_recharge_records' member.id %}" class="btn btn-outline-info">
+                                                <i class="bi bi-list"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">没有充值数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 充值明细表格 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">充值明细</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>日期</th>
+                                    <th class="text-end">充值金额</th>
+                                    <th class="text-end">实收金额</th>
+                                    <th class="text-end">充值笔数</th>
+                                    <th class="text-end">充值会员数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for recharge in recharge_data.daily_recharge %}
+                                <tr>
+                                    <td>{{ recharge.day|date:"Y-m-d" }}</td>
+                                    <td class="text-end">¥{{ recharge.total_amount|floatformat:2 }}</td>
+                                    <td class="text-end">¥{{ recharge.actual_amount|floatformat:2 }}</td>
+                                    <td class="text-end">{{ recharge.count }}</td>
+                                    <td class="text-end">{{ recharge.member_count }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">没有充值数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if recharge_data.daily_recharge %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 每日充值趋势图表
+        const ctxDaily = document.getElementById('dailyRechargeChart').getContext('2d');
+        
+        // 准备数据
+        const dates = [
+            {% for day_data in recharge_data.daily_recharge %}
+                '{{ day_data.date|date:"m-d" }}',
+            {% endfor %}
+        ];
+        
+        const amounts = [
+            {% for day_data in recharge_data.daily_recharge %}
+                {{ day_data.total_amount }},
+            {% endfor %}
+        ];
+        
+        const counts = [
+            {% for day_data in recharge_data.daily_recharge %}
+                {{ day_data.count }},
+            {% endfor %}
+        ];
+        
+        // 创建图表
+        new Chart(ctxDaily, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [
+                    {
+                        label: '充值金额',
+                        data: amounts,
+                        backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                        borderColor: 'rgba(13, 110, 253, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '充值次数',
+                        data: counts,
+                        backgroundColor: 'rgba(25, 135, 84, 0.5)',
+                        borderColor: 'rgba(25, 135, 84, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '充值金额'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '充值次数'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // 支付方式分布图表
+        const ctxPay = document.getElementById('paymentMethodChart').getContext('2d');
+        
+        // 准备数据
+        const payMethods = [
+            {% for method_data in recharge_data.payment_stats %}
+                '{{ method_data.payment_method }}',
+            {% endfor %}
+        ];
+        
+        const payAmounts = [
+            {% for method_data in recharge_data.payment_stats %}
+                {{ method_data.count }},
+            {% endfor %}
+        ];
+        
+        // 创建图表
+        new Chart(ctxPay, {
+            type: 'doughnut',
+            data: {
+                labels: payMethods,
+                datasets: [{
+                    data: payAmounts,
+                    backgroundColor: [
+                        'rgba(13, 110, 253, 0.7)',
+                        'rgba(25, 135, 84, 0.7)',
+                        'rgba(13, 202, 240, 0.7)',
+                        'rgba(255, 193, 7, 0.7)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    },
+                    title: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %} 
