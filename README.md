@@ -65,17 +65,6 @@ IOE是一个基于Django开发的**综合性库存管理系统**，专为零售�
 - **会员价值评估**：深入了解会员贡献
 - **系统使用审计**：全面操作日志记录
 
-## 🛠️ 技术架构
-
-```mermaid
-graph TD
-    A[前端界面: Bootstrap/HTML/CSS/JS] --> B[Django Web框架]
-    B --> C[业务逻辑层]
-    C --> D[(数据库: SQLite/MySQL/PostgreSQL)]
-    C --> E[第三方集成: 阿里云条码API]
-    F[用户权限管理] --> B
-```
-
 ## 💡 系统特点
 
 | 特点 | 描述 |
