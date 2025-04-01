@@ -3,10 +3,13 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
+import logging
 
 from .models import Product, Inventory, OperationLog
 from .forms import ProductForm
 from .ali_barcode_service import AliBarcodeService
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def barcode_product_create(request):
@@ -51,7 +54,7 @@ def barcode_product_create(request):
                         if category:
                             initial_data['category'] = category.id
                     except Exception as e:
-                        print(f"查找商品类别出错: {e}")
+                        logger.error(f"查找商品类别出错: {e}")
                         # 错误处理，但不影响表单的其他字段
                 messages.success(request, '成功获取商品信息，请确认并完善商品详情')
             else:

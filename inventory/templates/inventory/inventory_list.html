@@ -145,13 +145,13 @@
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="#" class="btn btn-sm btn-outline-primary" title="入库">
+                                        <a href="{% url 'inventory_create' %}" class="btn btn-sm btn-outline-primary" title="入库">
                                             <i class="bi bi-box-arrow-in-down"></i>
                                         </a>
-                                        <a href="#" class="btn btn-sm btn-outline-warning" title="出库">
+                                        <a href="{% url 'inventory_out' %}" class="btn btn-sm btn-outline-warning" title="出库">
                                             <i class="bi bi-box-arrow-up"></i>
                                         </a>
-                                        <a href="#" class="btn btn-sm btn-outline-info" title="调整">
+                                        <a href="{% url 'inventory_adjust' item.id %}" class="btn btn-sm btn-outline-info" title="调整">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                     </div>
