@@ -21,8 +21,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 复制项目文件
 COPY . .
 
-# 创建日志目录
-RUN mkdir -p logs
+# 创建数据库目录
+RUN mkdir -p /app/db
+
+# 设置 /app 目录及其内容的权限为 777 (临时调试)
+RUN chmod -R 777 /app
+
+# 创建日志目录并设置权限
+RUN mkdir -p logs && chmod 777 logs
 
 # 收集静态文件
 RUN python manage.py collectstatic --noinput
