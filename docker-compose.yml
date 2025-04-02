@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: always
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+      - ./db.sqlite3:/app/db.sqlite3
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - SECRET_KEY=your_production_secret_key
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn inventory.wsgi:application --bind 0.0.0.0:8000"
+
+volumes:
+  static_volume:
+  media_volume:

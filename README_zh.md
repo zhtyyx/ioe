@@ -1,14 +1,10 @@
 <div align="center">
 
-# 📦 IOE 库存管理系统 | Inventory Management System
+# 📦 IOE 库存管理系统
 
-[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/) &nbsp; [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/) &nbsp; [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) &nbsp; [![Docker](https://img.shields.io/badge/Docker-Ready-brightgreen.svg)](README.docker.md)
+[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/) &nbsp; [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/) &nbsp; [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 _一站式零售库存解决方案，为您的商店量身定制_
-
-<p align="center">
-  <a href="README_zh.md">中文</a> | <a href="README_en.md">English</a>
-</p>
 
 </div>
 
