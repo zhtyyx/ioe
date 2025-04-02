@@ -1,0 +1,98 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}系统设置{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">系统设置</h2>
+    
+    <div class="row">
+        <!-- 系统信息卡片 -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>系统信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>系统版本</span>
+                            <span class="badge bg-primary">{{ settings.version }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>调试模式</span>
+                            <span class="badge {% if settings.debug_mode %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ settings.debug_mode|yesno:"开启,关闭" }}
+                            </span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>时区设置</span>
+                            <span class="badge bg-info">{{ settings.timezone }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据库设置卡片 -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-database me-2"></i>数据库设置
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>数据库引擎</span>
+                            <span class="badge bg-secondary">{{ settings.database_engine }}</span>
+                        </li>
+                        <li class="list-group-item">
+                            <span>媒体文件路径</span>
+                            <div class="text-muted small mt-1">{{ settings.media_root }}</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 备份管理卡片 -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-archive me-2"></i>备份管理
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">管理系统备份和恢复操作。</p>
+                    <a href="{% url 'backup_list' %}" class="btn btn-primary">
+                        <i class="bi bi-archive me-2"></i>备份管理
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 用户管理卡片 -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-people me-2"></i>用户管理
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">管理系统用户和权限。</p>
+                    <a href="{% url 'admin:auth_user_changelist' %}" class="btn btn-primary" target="_blank">
+                        <i class="bi bi-people me-2"></i>用户管理
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

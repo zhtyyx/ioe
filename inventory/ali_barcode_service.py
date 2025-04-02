@@ -1,6 +1,9 @@
 import urllib3
 import json
 from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AliBarcodeService:
     """
@@ -25,7 +28,7 @@ class AliBarcodeService:
             appcode = getattr(settings, 'ALI_BARCODE_APPCODE', '')
             
             if not appcode:
-                print("未配置阿里云条形码API的APPCODE")
+                logger.error("未配置阿里云条形码API的APPCODE")
                 return None
                 
             # 设置请求头，添加APPCODE认证
@@ -80,18 +83,18 @@ class AliBarcodeService:
                             'english_name': res_body.get('engName', '')
                         }
                     else:
-                        print(f"条码查询失败: {res_body.get('remark')}")
-                        print(f"完整响应体: {res_body}")
+                        logger.error(f"条码查询失败: {res_body.get('remark')}")
+                        logger.debug(f"完整响应体: {res_body}")
                 else:
-                    print(f"API调用失败: {data.get('showapi_res_error')}")
-                    print(f"完整响应: {data}")
+                    logger.error(f"API调用失败: {data.get('showapi_res_error')}")
+                    logger.debug(f"完整响应: {data}")
             else:
-                print(f"HTTP请求失败，状态码: {response.status}")
-                print(f"响应内容: {response.data.decode('utf-8', errors='replace')}")
+                logger.error(f"HTTP请求失败，状态码: {response.status}")
+                logger.debug(f"响应内容: {response.data.decode('utf-8', errors='replace')}")
                 
             return None
         except Exception as e:
-            print(f"条码查询出错: {e}")
+            logger.error(f"条码查询出错: {e}")
             import traceback
-            print(f"详细错误信息: {traceback.format_exc()}")
+            logger.error(f"详细错误信息: {traceback.format_exc()}")
             return None

@@ -1,0 +1,175 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}系统备份 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title mb-0">系统备份管理</h2>
+                        <p class="text-muted">备份和恢复系统数据</p>
+                    </div>
+                    <a href="{% url 'create_backup' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> 创建新备份
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-9">
+        <div class="card">
+            <div class="card-body">
+                {% if backups %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th style="width: 250px;">备份名称</th>
+                                <th>创建时间</th>
+                                <th>创建者</th>
+                                <th>大小</th>
+                                <th style="width: 180px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for backup in backups %}
+                            <tr>
+                                <td><i class="bi bi-archive me-2"></i>{{ backup.name }}</td>
+                                <td>{{ backup.created_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ backup.created_by }}</td>
+                                <td>{{ backup.size }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'restore_backup' backup.name %}" class="btn btn-warning" title="恢复">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </a>
+                                        <a href="{% url 'download_backup' backup.name %}" class="btn btn-info" title="下载">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger delete-backup" data-backup-name="{{ backup.name }}" title="删除">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-archive fs-1 text-muted"></i>
+                    </div>
+                    <h5 class="text-muted">暂无备份数据</h5>
+                    <p class="mb-4">创建备份以保护您的系统数据</p>
+                    <a href="{% url 'create_backup' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i> 创建新备份
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">备份信息</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="bg-light rounded p-2">
+                            <i class="bi bi-hdd-stack fs-3"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">总备份数</h6>
+                        <h4 class="mb-0">{{ backups|length }}</h4>
+                    </div>
+                </div>
+                
+                <div class="d-flex align-items-center mb-4">
+                    <div class="flex-shrink-0 me-3">
+                        <div class="bg-light rounded p-2">
+                            <i class="bi bi-calendar-check fs-3"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">最新备份</h6>
+                        <p class="mb-0">
+                            {% if backups %}
+                                {{ backups.0.created_at|date:"Y-m-d H:i" }}
+                            {% else %}
+                                暂无备份
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <div class="d-flex">
+                        <div class="flex-shrink-0 me-2">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="alert-heading">备份包含：</h6>
+                            <ul class="mb-0 ps-3">
+                                <li>所有系统数据</li>
+                                <li>用户上传的文件</li>
+                                <li>系统配置信息</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteBackupModal" tabindex="-1" aria-labelledby="deleteBackupModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteBackupModalLabel">删除备份</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除备份 <strong id="backup-name-to-delete"></strong> 吗？</p>
+                <p class="text-danger">此操作不可恢复！</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <a href="#" id="confirm-delete-backup" class="btn btn-danger">确认删除</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 删除备份确认
+        const deleteBackupModal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
+        const deleteButtons = document.querySelectorAll('.delete-backup');
+        const backupNameToDelete = document.getElementById('backup-name-to-delete');
+        const confirmDeleteButton = document.getElementById('confirm-delete-backup');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const backupName = this.getAttribute('data-backup-name');
+                backupNameToDelete.textContent = backupName;
+                confirmDeleteButton.href = `/system/backup/delete/${backupName}/`;
+                deleteBackupModal.show();
+            });
+        });
+    });
+</script>
+{% endblock %} 

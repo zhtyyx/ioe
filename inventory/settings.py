@@ -15,26 +15,31 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = ''
+# 从环境变量读取 SECRET_KEY
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-your-secret-key-here')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# 从环境变量读取 ALLOWED_HOSTS
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # 第三方条码API配置
-BARCODE_API_KEY = ''  # 替换为实际的API密钥
-ALI_BARCODE_APPCODE =''
+# 中国商品信息服务平台API密钥
+BARCODE_API_KEY = os.getenv('BARCODE_API_KEY', '')  # 从环境变量读取API密钥，用于查询商品条码信息
+# 阿里云条形码查询API的APPCODE
+ALI_BARCODE_APPCODE = os.getenv('ALI_BARCODE_APPCODE', '')  # 从环境变量读取APPCODE，用于阿里云条形码查询服务
 
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',  # 添加在admin之前
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.staticfiles',  # 只保留一个 staticfiles
     'inventory',
     'crispy_forms',
     'crispy_bootstrap5',
@@ -43,6 +48,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,7 +63,10 @@ ROOT_URLCONF = 'inventory.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+            os.path.join(BASE_DIR, 'inventory', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,17 +81,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'inventory.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+# 从环境变量读取数据库配置
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'ioe'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.getenv('POSTGRES_HOST', 'db'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -102,24 +111,70 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
-LANGUAGE_CODE = 'zh-hans'
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'zh-hans')
 
-TIME_ZONE = 'Asia/Shanghai'
+TIME_ZONE = os.getenv('TIME_ZONE', 'Asia/Shanghai')
 
-USE_I18N = True
+USE_I18N = os.getenv('USE_I18N', 'True').lower() == 'true'
 
-USE_TZ = True
+USE_TZ = os.getenv('USE_TZ', 'True').lower() == 'true'
 
-STATIC_URL = 'static/'
+# CSRF 配置
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://192.168.1.15:8000',
+    'http://192.168.1.15:38178',
+]
+
+# 静态文件配置
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
-MEDIA_URL = 'media/'
+# 确保静态文件目录存在
+os.makedirs(STATIC_ROOT, exist_ok=True)
+os.makedirs(os.path.join(STATIC_ROOT, 'admin'), exist_ok=True)
+os.makedirs(os.path.join(STATIC_ROOT, 'jazzmin'), exist_ok=True)
+
+# 确保静态文件能被正确服务
+WHITENOISE_MANIFEST_STRICT = False
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# 安全设置
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_SSL_REDIRECT = False
+
+# 跨域设置
+CORS_ALLOW_ALL_ORIGINS = True  # 开发环境下允许所有源
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# 媒体文件配置
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# 确保媒体文件目录存在
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+os.makedirs(os.path.join(MEDIA_ROOT, 'products'), exist_ok=True)
+
+# 文件上传配置
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+FILE_UPLOAD_PERMISSIONS = 0o644
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -128,16 +183,24 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 LOGIN_REDIRECT_URL = '/'
 LOGIN_URL = '/accounts/login/'
-LOGOUT_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.example.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'your-email@example.com'
-# EMAIL_HOST_PASSWORD = 'your-password'
-DEFAULT_FROM_EMAIL = 'noreply@example.com'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.example.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your-email@example.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your-email-password')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@example.com')
+
+# 备份配置
+BACKUP_ROOT = os.path.join(BASE_DIR, 'backups')
+BACKUP_FORMAT = 'zip'
+BACKUP_PREFIX = 'backup_'
+BACKUP_KEEP_DAYS = 7  # 保留最近7天的备份
+
+# 确保备份目录存在
+os.makedirs(BACKUP_ROOT, exist_ok=True)
 
 # 日志配置
 LOGGING = {
@@ -145,37 +208,303 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
-        },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
+            'format': os.getenv('LOG_FORMAT', '%(asctime)s - %(name)s - %(levelname)s - %(message)s'),
         },
     },
     'handlers': {
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
         'file': {
-            'level': 'INFO',
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/inventory.log'),
+            'filename': os.path.join(BASE_DIR, 'logs', 'inventory.log'),
             'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
+            'handlers': ['file'],
+            'level': os.getenv('LOG_LEVEL', 'INFO'),
             'propagate': True,
         },
-        'inventory': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
-        },
     },
+}
+
+# 缓存配置
+CACHES = {
+    'default': {
+        'BACKEND': os.getenv('CACHE_BACKEND', 'django.core.cache.backends.redis.RedisCache'),
+        'LOCATION': os.getenv('CACHE_LOCATION', 'redis://redis:6379/1'),
+    }
+}
+
+# 会话配置
+SESSION_ENGINE = os.getenv('SESSION_ENGINE', 'django.contrib.sessions.backends.cache')
+SESSION_CACHE_ALIAS = os.getenv('SESSION_CACHE_ALIAS', 'default')
+
+# 语言和时区配置
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'zh-hans')
+TIME_ZONE = os.getenv('TIME_ZONE', 'Asia/Shanghai')
+USE_I18N = os.getenv('USE_I18N', 'True').lower() == 'true'
+USE_L10N = os.getenv('USE_L10N', 'True').lower() == 'true'
+USE_TZ = os.getenv('USE_TZ', 'True').lower() == 'true'
+
+# Admin站点配置
+JAZZMIN_SETTINGS = {
+    # title of the window (Will default to current_admin_site.site_title if absent or None)
+    "site_title": "库存管理系统",
+    "site_header": "库存管理系统",
+    "site_brand": "库存管理系统",
+    "site_logo": None,
+    "login_logo": None,
+    "login_logo_dark": None,
+    "site_logo_classes": "img-circle",
+    
+    # Welcome text on the login screen
+    "welcome_sign": "欢迎登录库存管理系统",
+    
+    # Copyright on the footer
+    "copyright": "库存管理系统",
+    
+    # The model admin to search from the search bar
+    "search_model": "auth.User",
+    
+    # Field name on user model that contains avatar ImageField/URLField/Charfield or a callable that receives the user
+    "user_avatar": None,
+    
+    ############
+    # Top Menu #
+    ############
+    # Links to put along the top menu
+    "topmenu_links": [
+        {"name": "主页", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "返回前台", "url": "/", "new_window": True},  # 修改前台链接，在新窗口打开
+        {"model": "auth.User"},
+    ],
+    
+    #############
+    # Side Menu #
+    #############
+    # Whether to display the side menu
+    "show_sidebar": True,
+    
+    # Whether to aut expand the menu
+    "navigation_expanded": True,
+    
+    # Hide these apps when generating side menu e.g (auth)
+    "hide_apps": [],
+    
+    # Hide these models when generating side menu (e.g auth.user)
+    "hide_models": [],
+    
+    # List of apps (and/or models) to base side menu ordering off of (does not need to contain all apps/models)
+    "order_with_respect_to": ["auth", "inventory"],
+    
+    # Custom icons for side menu apps/models
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "inventory.Product": "fas fa-box",
+        "inventory.Category": "fas fa-tags",
+        "inventory.Inventory": "fas fa-warehouse",
+        "inventory.InventoryCheck": "fas fa-clipboard-check",
+        "inventory.Sale": "fas fa-shopping-cart",
+        "inventory.Member": "fas fa-user-friends",
+        "inventory.MemberLevel": "fas fa-crown",
+    },
+    
+    # Icons that are used when one is not manually specified
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    
+    #################
+    # Related Modal #
+    #################
+    # Use modals instead of popups
+    "related_modal_active": True,
+    
+    #############
+    # UI Tweaks #
+    #############
+    # Relative paths to custom CSS/JS scripts (must be present in static files)
+    "custom_css": None,
+    "custom_js": None,
+    # Whether to show the UI customizer on the sidebar
+    "show_ui_builder": True,
+    
+    # UI 构建器的自定义文本
+    "ui_builder_texts": {
+        # 主要标题和部分
+        "builder_title": "界面定制",
+        "theme_section": "主题设置",
+        "theme_label": "主题:",
+        "dark_theme_label": "暗黑主题:",
+        "small_text_section": "文字大小",
+        "small_text_label": "小号文字",
+        "body_label": "页面内容",
+        "navbar_label": "导航栏",
+        "sidebar_label": "侧边栏",
+        "footer_label": "页脚",
+        "brand_label": "品牌",
+
+        # 侧边栏设置
+        "sidebar_tweaks_section": "侧边栏设置",
+        "sidebar_tweaks_label": "侧边栏调整",
+        "flat_style_label": "扁平风格",
+        "legacy_style_label": "传统风格",
+        "compact_label": "紧凑模式",
+        "child_indent_label": "子项缩进",
+        "disable_auto_expand_label": "禁用自动展开",
+        "fixed_sidebar_label": "固定侧边栏",
+
+        # 其他设置
+        "misc_section": "其他设置",
+        "boxed_layout_label": "盒式布局",
+        "fixed_footer_label": "固定页脚",
+        "actions_sticky_label": "固定操作栏",
+
+        # 导航栏设置
+        "navbar_tweaks_section": "导航栏设置",
+        "navbar_tweaks_label": "导航栏调整",
+        "no_navbar_border_label": "无边框",
+        "fixed_navbar_label": "固定导航栏",
+
+        # 按钮设置
+        "button_tweaks_section": "按钮样式",
+        "button_tweaks_label": "按钮设置",
+        "button_outline_label": "描边样式",
+
+        # 颜色变体设置
+        "navbar_variants_section": "导航栏颜色",
+        "navbar_variants_label": "导航栏样式",
+        "accent_variants_section": "主题颜色",
+        "accent_variants_label": "主题样式",
+        "dark_sidebar_variants_section": "深色侧边栏",
+        "dark_sidebar_variants_label": "深色样式",
+        "light_sidebar_variants_section": "浅色侧边栏",
+        "light_sidebar_variants_label": "浅色样式",
+        "brand_variants_section": "品牌颜色",
+        "brand_variants_label": "品牌样式",
+
+        # 操作按钮
+        "clear_button": "重置设置",
+        "save_button": "保存设置",
+        "close_button": "关闭",
+
+        # 颜色选择器
+        "primary_button": "主要按钮",
+        "secondary_button": "次要按钮",
+        "info_button": "信息按钮",
+        "warning_button": "警告按钮",
+        "danger_button": "危险按钮",
+        "success_button": "成功按钮",
+
+        # 提示文本
+        "changes_saved": "设置已保存",
+        "changes_cleared": "设置已重置",
+        "save_changes_prompt": "是否保存更改？",
+        "unsaved_changes": "有未保存的更改",
+        
+        # 颜色主题名称
+        "default": "默认",
+        "light": "明亮",
+        "dark": "暗黑",
+        "primary": "主要",
+        "secondary": "次要",
+        "info": "信息",
+        "success": "成功",
+        "warning": "警告",
+        "danger": "危险"
+    },
+    
+    ###############
+    # Change view #
+    ###############
+    # Render out the change view as a single form, or in tabs, current options are
+    # - single
+    # - horizontal_tabs (default)
+    # - vertical_tabs
+    # - collapsible
+    # - carousel
+    "changeform_format": "horizontal_tabs",
+    
+    # override change forms on a per modeladmin basis
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "vertical_tabs",
+    },
+    
+    # 主题设置
+    "theme": "default",
+    "dark_mode_theme": "darkly",
+    
+    # 布局设置
+    "show_ui_builder": True,
+    
+    # 自定义菜单顺序和分组
+    "order_with_respect_to": [
+        "auth",
+        "inventory.Product",
+        "inventory.Category",
+        "inventory.Inventory",
+        "inventory.InventoryCheck",
+        "inventory.Sale",
+        "inventory.Member",
+        "inventory.MemberLevel",
+    ],
+    
+    # 菜单自定义
+    "custom_links": {
+        "inventory": [{
+            "name": "数据统计",
+            "url": "admin:index",
+            "icon": "fas fa-chart-bar",
+        }]
+    },
+}
+
+# UI 相关设置
+JAZZMIN_UI_TWEAKS = {
+    # 主题设置
+    "theme": "cosmo",
+    "dark_mode_theme": "cyborg",
+    
+    # 文字大小设置
+    "navbar_small_text": True,
+    "footer_small_text": True,
+    "body_small_text": True,
+    "brand_small_text": True,
+    
+    # 导航栏设置
+    "navbar": "navbar-dark",
+    "navbar_fixed": True,
+    "no_navbar_border": True,
+    
+    # 侧边栏设置
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": True,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": True,
+    "sidebar_nav_legacy_style": True,
+    "sidebar_nav_flat_style": True,
+    "sidebar_fixed": True,
+    
+    # 布局设置
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "actions_sticky_top": True,
+    
+    # 颜色设置
+    "brand_colour": "navbar-primary",
+    "accent": "accent-primary",
+    
+    # 按钮样式设置
+    "button_classes": {
+        "primary": "btn-outline-primary",
+        "secondary": "btn-outline-secondary",
+        "info": "btn-outline-info",
+        "warning": "btn-outline-warning",
+        "danger": "btn-outline-danger",
+        "success": "btn-outline-success"
+    }
 }

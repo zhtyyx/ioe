@@ -1,0 +1,202 @@
+# 指定 docker-compose 文件格式版本
+version: '3.8'
+
+# 指定项目名称
+name: ioe
+
+# 定义服务列表
+services:
+  # web 服务配置（Django 应用）
+  web:
+    # 使用当前目录的 Dockerfile 构建镜像
+    build: .
+    # 指定镜像名称
+    image: ioe
+    # 指定容器名称
+    container_name: ioe-kcgl
+    # 启动命令：使用 gunicorn 运行 Django 应用
+    command: >
+      sh -c "mkdir -p /app/static &&
+             mkdir -p /app/staticfiles &&
+             mkdir -p /app/media &&
+             chmod -R 777 /app/media &&
+             python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py createcachetable &&
+             python manage.py collectstatic --noinput &&
+             (python manage.py createsuperuser --noinput --username admin --email admin@example.com || true) &&
+             gunicorn --bind 0.0.0.0:8000 inventory.wsgi:application --timeout 300 --workers 4 --threads 4 --worker-class gthread --max-requests 1000 --max-requests-jitter 50 --keep-alive 5 --log-level info"
+    # 配置数据卷挂载
+    volumes:
+      # 将当前目录挂载到容器的 /app 目录，用于开发时实时更新代码
+      - .:/app
+      # 媒体文件卷：存储用户上传的文件（图片、文档等）
+      - media_volume:/app/media
+      # 备份文件卷：存储系统备份文件
+      - backup_volume:/app/backups
+      # 临时文件卷：存储系统运行时临时文件
+      - temp_volume:/app/temp
+      # 日志文件卷：存储应用日志
+      - log_volume:/app/logs
+      # 静态文件卷：存储静态文件
+      - static_volume:/app/staticfiles
+    # 端口映射：将容器的 8000 端口映射到主机的 8000 端口
+    ports:
+      - "8000:8000"
+    # 环境变量配置
+    environment:
+      # Django 设置模块路径
+      - DJANGO_SETTINGS_MODULE=inventory.settings
+      # Django 密钥配置
+      - DJANGO_SECRET_KEY=django-insecure-your-secret-key-here
+      # Django 调试模式
+      - DJANGO_DEBUG=True
+      # Django 允许的主机配置
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,192.168.1.15,192.168.1.15:38178
+      # 数据库配置
+      - POSTGRES_DB=ioe
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST=ioe-db
+      - POSTGRES_PORT=5432
+      # 超级用户配置
+      - DJANGO_SUPERUSER_USERNAME=admin
+      - DJANGO_SUPERUSER_EMAIL=admin@example.com
+      - DJANGO_SUPERUSER_PASSWORD=admin123
+      # 第三方条码API配置
+      # 中国商品信息服务平台API密钥，用于查询商品条码信息
+      - BARCODE_API_KEY=your_api_key_here
+      # 阿里云条形码查询API的APPCODE，用于阿里云条形码查询服务
+      - ALI_BARCODE_APPCODE=your_appcode_here
+      # Gunicorn 配置
+      - GUNICORN_WORKERS=4
+      - GUNICORN_TIMEOUT=300
+      - GUNICORN_MAX_REQUESTS=1000
+      - GUNICORN_MAX_REQUESTS_JITTER=50
+      - GUNICORN_KEEP_ALIVE=5
+      - GUNICORN_WORKER_CLASS=gthread
+      - GUNICORN_THREADS=4
+      # 邮件配置
+      - EMAIL_HOST=smtp.example.com
+      - EMAIL_PORT=587
+      - EMAIL_HOST_USER=your-email@example.com
+      - EMAIL_HOST_PASSWORD=your-email-password
+      - EMAIL_USE_TLS=True
+      - DEFAULT_FROM_EMAIL=noreply@example.com
+      # 静态文件配置
+      - STATIC_URL=/static/
+      - STATIC_ROOT=/app/staticfiles
+      - STATICFILES_DIRS=/app/static
+      # 媒体文件配置
+      - MEDIA_URL=/media/
+      - MEDIA_ROOT=/app/media
+      # 日志配置
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=%(asctime)s - %(name)s - %(levelname)s - %(message)s
+      # 安全配置
+      - CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+      - SECURE_SSL_REDIRECT=False
+      - SESSION_COOKIE_SECURE=False
+      - CSRF_COOKIE_SECURE=False
+      # 跨域配置
+      - CORS_ALLOW_ALL_ORIGINS=True
+      - CORS_ALLOW_CREDENTIALS=True
+      # 缓存配置
+      - CACHE_BACKEND=django.core.cache.backends.redis.RedisCache
+      - CACHE_LOCATION=redis://redis-ioe:6379/1
+      # 会话配置
+      - SESSION_ENGINE=django.contrib.sessions.backends.cache
+      - SESSION_CACHE_ALIAS=default
+      # 语言和时区配置
+      - LANGUAGE_CODE=zh-hans
+      - TIME_ZONE=Asia/Shanghai
+      - USE_I18N=True
+      - USE_L10N=True
+      - USE_TZ=True
+      # 文件上传配置
+      - FILE_UPLOAD_MAX_MEMORY_SIZE=5242880
+      - FILE_UPLOAD_PERMISSIONS=0644
+    # 依赖服务：确保数据库服务先启动
+    depends_on:
+      - db
+      - redis-ioe
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # 重启策略
+    restart: unless-stopped
+
+  # 数据库服务配置（PostgreSQL）
+  db:
+    # 使用 PostgreSQL 15 版本镜像
+    image: postgres:15
+    # 指定容器名称
+    container_name: ioe-db
+    # 配置数据卷挂载
+    volumes:
+      # 数据库数据卷：持久化存储数据库文件
+      - postgres_data:/var/lib/postgresql/data
+    # 端口映射：将容器的 5432 端口映射到主机的 5432 端口
+    ports:
+      - "5432:5432"
+    # 数据库环境变量配置
+    environment:
+      # 数据库名称
+      - POSTGRES_DB=ioe
+      # 数据库用户名
+      - POSTGRES_USER=postgres
+      # 数据库密码
+      - POSTGRES_PASSWORD=postgres
+    # 健康检查
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 重启策略
+    restart: unless-stopped
+
+  # Redis 缓存服务配置
+  redis-ioe:
+    # 使用 Redis 7 版本镜像
+    image: redis:7
+    # 指定容器名称
+    container_name: redis-ioe
+    # 配置数据卷挂载
+    volumes:
+      # Redis 数据卷：持久化存储 Redis 数据
+      - redis_data:/data
+    # 端口映射：将容器的 6379 端口映射到主机的 6379 端口
+    ports:
+      - "6379:6379"
+    # Redis 配置
+    command: redis-server --appendonly yes
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # 重启策略
+    restart: unless-stopped
+
+# 定义数据卷
+volumes:
+  # 数据库数据卷：用于持久化存储数据库文件
+  postgres_data:
+  # 媒体文件卷：用于存储用户上传的文件
+  media_volume:
+  # 备份文件卷：用于存储系统备份
+  backup_volume:
+  # 临时文件卷：用于存储临时文件
+  temp_volume:
+  # 日志文件卷：用于存储应用日志
+  log_volume:
+  # 静态文件卷：用于存储静态文件
+  static_volume:
+  # Redis 数据卷：用于持久化存储 Redis 数据
+  redis_data: 

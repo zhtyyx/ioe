@@ -1,0 +1,199 @@
+{% extends "inventory/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}热销商品报表{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h2">热销商品报表</h1>
+            <p class="text-muted">
+                日期范围: {{ start_date|date:"Y-m-d" }} 至 {{ end_date|date:"Y-m-d" }}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'reports_index' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回报表中心
+            </a>
+        </div>
+    </div>
+
+    <!-- 搜索表单 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">设置报表参数</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-4">
+                                {{ form.start_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.end_date|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2">
+                                {{ form.limit|as_crispy_field }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">查询</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图表 -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">热销商品统计图</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="topProductsChart" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">热销商品明细</h3>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>排名</th>
+                                    <th>商品名称</th>
+                                    <th>商品编码</th>
+                                    <th class="text-end">销售数量</th>
+                                    <th class="text-end">销售额</th>
+                                    <th class="text-end">利润</th>
+                                    <th class="text-end">毛利率</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for product in top_products %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ product.name }}</td>
+                                    <td>{{ product.code }}</td>
+                                    <td class="text-end">{{ product.quantity_sold }}</td>
+                                    <td class="text-end">¥{{ product.total_sales|floatformat:2 }}</td>
+                                    <td class="text-end">¥{{ product.profit|floatformat:2 }}</td>
+                                    <td class="text-end">{{ product.profit_margin|floatformat:2 }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">没有销售数据</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if top_products %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('topProductsChart').getContext('2d');
+        
+        // 准备数据
+        const labels = [
+            {% for product in top_products %}
+                '{{ product.name }}',
+            {% endfor %}
+        ];
+        
+        const quantityData = [
+            {% for product in top_products %}
+                {{ product.quantity_sold|default:0 }},
+            {% endfor %}
+        ];
+        
+        const salesData = [
+            {% for product in top_products %}
+                {{ product.total_sales|default:0 }},
+            {% endfor %}
+        ];
+        
+        // 创建图表
+        const myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '销售数量',
+                        data: quantityData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: '销售额',
+                        data: salesData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '销售额 (¥)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '销售数量'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %} 
