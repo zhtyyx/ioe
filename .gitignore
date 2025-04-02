@@ -24,7 +24,6 @@ wheels/
 
 # 日志文件
 *.log
-logs/
 
 # 本地数据库文件
 db.sqlite3

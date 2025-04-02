@@ -83,6 +83,8 @@ IOE是一个基于Django开发的**综合性库存管理系统**，专为零售�
 pip install -r requirements.txt
 ```
 
+### 配置 `inventory/settings.py` SECRET_KEY
+
 ### 建库、配置到settings.py中，初始化数据库
 
 ```bash
@@ -123,12 +125,12 @@ python manage.py runserver
 本项目采用 MIT License
 
 ## ☕ Buy Me a Coffee
+
 如果你觉得这个项目对你有帮助，你可以通过以下方式支持：
 
 <div align="center">
   <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
 </div>
-
 
 ## 📞 联系我们
 
