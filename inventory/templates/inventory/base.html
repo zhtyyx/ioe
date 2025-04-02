@@ -258,32 +258,17 @@
                     </li>
                 </ul>
                 <div class="d-flex">
-                    {% if user.is_authenticated %}
                     <div class="dropdown">
                         <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle me-1"></i>
                             {{ request.user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            {% if user.is_superuser %}
-                            <li><a class="dropdown-item" href="{% url 'system_settings' %}"><i class="bi bi-gear me-2"></i>设置</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>设置</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            {% endif %}
-                            <li>
-                                <form method="post" action="{% url 'logout' %}" style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" class="dropdown-item" style="background: none; border: none; width: 100%; text-align: left;">
-                                        <i class="bi bi-box-arrow-right me-2"></i>退出登录
-                                    </button>
-                                </form>
-                            </li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
                         </ul>
                     </div>
-                    {% else %}
-                    <a href="{% url 'login' %}" class="nav-link text-white">
-                        <i class="bi bi-box-arrow-in-right me-1"></i>登录
-                    </a>
-                    {% endif %}
                 </div>
             </div>
         </div>

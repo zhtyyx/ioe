@@ -155,18 +155,6 @@
                         <div class="form-text">{{ form.description.help_text }}</div>
                         {% endif %}
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.image.id_for_label }}" class="form-label">商品图片</label>
-                        {{ form.image.errors }}
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-image"></i></span>
-                            {{ form.image }}
-                        </div>
-                        {% if form.image.help_text %}
-                        <div class="form-text">{{ form.image.help_text }}</div>
-                        {% endif %}
-                    </div>
                 </form>
             </div>
         </div>
@@ -175,10 +163,10 @@
     <div class="col-lg-4">
         <div class="card mb-4">
             <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">图片预览</h5>
+                <h5 class="card-title mb-0">商品图片</h5>
             </div>
             <div class="card-body">
-                <div class="text-center">
+                <div class="text-center mb-3">
                     <div class="image-preview bg-light rounded d-flex align-items-center justify-content-center mb-3" style="height: 200px; overflow: hidden;">
                         {% if product.image %}
                         <img src="{{ product.image.url }}" class="img-fluid" style="max-height: 200px;">
@@ -186,6 +174,11 @@
                         <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
                         {% endif %}
                     </div>
+                    <div class="mb-3">
+                        {{ form.image.errors }}
+                        {{ form.image }}
+                    </div>
+                    <small class="text-muted">支持JPG、PNG格式，建议尺寸500x500像素</small>
                 </div>
             </div>
         </div>
@@ -222,31 +215,27 @@
         const imageInput = document.querySelector('input[type="file"]');
         const imagePreview = document.querySelector('.image-preview');
         
-        if (imageInput) {
-            imageInput.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        imagePreview.innerHTML = `<img src="${e.target.result}" class="img-fluid" style="max-height: 200px;">`;
-                    }
-                    
-                    reader.readAsDataURL(this.files[0]);
+        imageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.innerHTML = `<img src="${e.target.result}" class="img-fluid" style="max-height: 200px;">`;
                 }
-            });
-        }
+                
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
         
         // 自动计算成本价为售价的80%
         const priceInput = document.querySelector('input[name="price"]');
         const costInput = document.querySelector('input[name="cost"]');
         
-        if (priceInput && costInput) {
-            priceInput.addEventListener('input', function() {
-                if (this.value && !costInput.value) {
-                    costInput.value = (parseFloat(this.value) * 0.8).toFixed(2);
-                }
-            });
-        }
+        priceInput.addEventListener('input', function() {
+            if (this.value && !costInput.value) {
+                costInput.value = (parseFloat(this.value) * 0.8).toFixed(2);
+            }
+        });
     });
 </script>
 {% endblock %}

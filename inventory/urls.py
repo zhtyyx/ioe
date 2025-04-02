@@ -37,12 +37,10 @@ urlpatterns = [
     path('products/barcode/', views_barcode.barcode_product_create, name='barcode_product_create'),
     path('api/barcode/lookup/', views_barcode.barcode_lookup, name='barcode_lookup'),
     path('inventory/create/', views.inventory_transaction_create, name='inventory_create'),
-    path('inventory/out/', views.inventory_transaction_out, name='inventory_out'),
-    path('inventory/<int:inventory_id>/adjust/', views.inventory_transaction_adjust, name='inventory_adjust'),
     path('sales/create/', views.sale_create, name='sale_create'),
     path('sales/<int:sale_id>/items/create/', views.sale_item_create, name='sale_item_create'),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/accounts/login/'), name='logout'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('members/', views.member_list, name='member_list'),
     path('members/create/', views.member_create, name='member_create'),
     path('members/<int:member_id>/edit/', views.member_edit, name='member_edit'),
@@ -93,15 +91,7 @@ urlpatterns = [
     path('system/backup/restore/<str:backup_name>/', views_system.restore_backup, name='restore_backup'),
     path('system/backup/delete/<str:backup_name>/', views_system.delete_backup, name='delete_backup'),
     path('system/backup/download/<str:backup_name>/', views_system.download_backup, name='download_backup'),
-    
-    # 系统设置
-    path('system/settings/', views_system.system_settings, name='system_settings'),
 ]
 
-# 添加媒体文件的 URL 配置
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# 在开发环境中提供静态文件服务
 if settings.DEBUG:
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -8,9 +8,7 @@ from .models import OperationLog
 from django.db.models import Q
 from decimal import Decimal
 from django.utils import timezone
-import logging
 
-logger = logging.getLogger(__name__)
 
 def product_by_barcode(request, barcode):
     try:
@@ -58,7 +56,6 @@ def member_search_by_phone(request, phone):
             
 from .forms import ProductForm, InventoryTransactionForm, SaleForm, SaleItemForm, MemberForm
 
-@login_required
 def index(request):
     products = Product.objects.all()[:5]  # 获取最新的5个商品
     low_stock_items = Inventory.objects.filter(quantity__lte=F('warning_level'))[:5]  # 获取库存预警商品
@@ -182,15 +179,25 @@ def product_create(request):
 
 @login_required
 def product_edit(request, product_id):
+    """编辑商品信息"""
     product = get_object_or_404(Product, id=product_id)
+    
     if request.method == 'POST':
-        logger.debug(f"处理商品编辑请求 - 商品ID: {product_id}")
-        logger.debug(f"表单数据: {request.POST}")
-        logger.debug(f"文件数据: {request.FILES}")
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
             form.save()
-            messages.success(request, '商品更新成功！')
+            
+            # 记录操作日志
+            from django.contrib.contenttypes.models import ContentType
+            OperationLog.objects.create(
+                operator=request.user,
+                operation_type='INVENTORY',
+                details=f'编辑商品: {product.name} (条码: {product.barcode})',
+                related_object_id=product.id,
+                related_content_type=ContentType.objects.get_for_model(Product)
+            )
+            
+            messages.success(request, '商品信息更新成功')
             return redirect('product_list')
     else:
         form = ProductForm(instance=product)
@@ -198,9 +205,7 @@ def product_edit(request, product_id):
     return render(request, 'inventory/product_form.html', {
         'form': form,
         'product': product,
-        'is_edit': True,
-        'title': '编辑商品',
-        'submit_text': '保存修改'
+        'is_edit': True
     })
 
 @login_required
@@ -230,9 +235,6 @@ def sale_create(request):
         if form.is_valid():
             sale = form.save(commit=False)
             sale.operator = request.user
-            # 设置初始金额
-            sale.total_amount = 0
-            sale.final_amount = 0
             
             # 添加会员关联
             member_id = request.POST.get('member')
@@ -643,71 +645,3 @@ def member_add_ajax(request):
             return JsonResponse({'success': False, 'message': str(e)})
     
     return JsonResponse({'success': False, 'message': '不支持的请求方法'})
-
-@login_required
-def inventory_transaction_out(request):
-    """出库操作"""
-    if request.method == 'POST':
-        form = InventoryTransactionForm(request.POST)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.transaction_type = 'OUT'
-            transaction.operator = request.user
-            transaction.save()
-            
-            # 记录操作日志
-            from django.contrib.contenttypes.models import ContentType
-            OperationLog.objects.create(
-                operator=request.user,
-                operation_type='INVENTORY',
-                details=f'出库: {transaction.product.name} (数量: {transaction.quantity})',
-                related_object_id=transaction.id,
-                related_content_type=ContentType.objects.get_for_model(InventoryTransaction)
-            )
-            
-            messages.success(request, '出库操作成功')
-            return redirect('inventory_list')
-    else:
-        form = InventoryTransactionForm()
-    
-    return render(request, 'inventory/inventory_form.html', {
-        'form': form,
-        'title': '出库操作'
-    })
-
-@login_required
-def inventory_transaction_adjust(request, inventory_id):
-    """调整库存"""
-    inventory = get_object_or_404(Inventory, id=inventory_id)
-    
-    if request.method == 'POST':
-        form = InventoryTransactionForm(request.POST)
-        if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.transaction_type = 'ADJUST'
-            transaction.operator = request.user
-            transaction.save()
-            
-            # 记录操作日志
-            from django.contrib.contenttypes.models import ContentType
-            OperationLog.objects.create(
-                operator=request.user,
-                operation_type='INVENTORY',
-                details=f'调整库存: {inventory.product.name} (调整后数量: {transaction.quantity})',
-                related_object_id=transaction.id,
-                related_content_type=ContentType.objects.get_for_model(InventoryTransaction)
-            )
-            
-            messages.success(request, '库存调整成功')
-            return redirect('inventory_list')
-    else:
-        form = InventoryTransactionForm(initial={
-            'product': inventory.product,
-            'quantity': inventory.quantity
-        })
-    
-    return render(request, 'inventory/inventory_form.html', {
-        'form': form,
-        'title': '调整库存',
-        'inventory': inventory
-    })

@@ -4,39 +4,11 @@ from django.utils import timezone
 from datetime import timedelta
 
 class ProductForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        print("表单初始化参数:", args, kwargs)  # 打印初始化参数
-        
-    def clean(self):
-        cleaned_data = super().clean()
-        print("表单清理后的数据:", cleaned_data)  # 打印清理后的数据
-        return cleaned_data
-        
-    def clean_image(self):
-        image = self.cleaned_data.get('image')
-        print("图片字段清理:", image)  # 打印图片字段
-        if image:
-            print("图片大小:", image.size)  # 打印图片大小
-            print("图片名称:", image.name)  # 打印图片名称
-            print("图片类型:", image.content_type)  # 打印图片类型
-        return image
-        
     class Meta:
         model = Product
         fields = ['barcode', 'name', 'category', 'color', 'size', 'description', 'price', 'cost', 'image', 'specification', 'manufacturer']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 3}),
-            'image': forms.FileInput(attrs={
-                'accept': 'image/*',
-                'class': 'form-control',
-                'style': 'max-width: 100%;',
-                'required': False,
-                'capture': 'environment'  # 允许使用相机拍照
-            }),
-        }
-        help_texts = {
-            'image': '支持JPG、PNG格式，建议尺寸500x500像素',
         }
 
 class InventoryTransactionForm(forms.ModelForm):
