@@ -40,7 +40,7 @@ urlpatterns = [
     path('sales/create/', views.sale_create, name='sale_create'),
     path('sales/<int:sale_id>/items/create/', views.sale_item_create, name='sale_item_create'),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
     path('members/', views.member_list, name='member_list'),
     path('members/create/', views.member_create, name='member_create'),
     path('members/<int:member_id>/edit/', views.member_edit, name='member_edit'),
