@@ -2,34 +2,20 @@ services:
   web:
     build: .
     restart: always
-    volumes: # 服务级别的 volumes 定义 (这是一个列表 List)
-      # 挂载宿主机当前目录到容器 /app，主要用于代码同步
-      # 注意：容器内对 /app 的写入权限（除 db/ staticfiles/ media/ logs/ 目录外）
-      # 仍可能受宿主机权限影响，但数据库本身已隔离
+    volumes: 
       - .:/app
-      # 使用命名卷存储收集后的静态文件
       - static_volume:/app/staticfiles
-      # 使用命名卷存储上传的媒体文件
       - media_volume:/app/media
-      # 使用命名卷存储 SQLite 数据库及其辅助文件 (推荐)
       - db_volume:/app/db
-      # 将宿主机的 ./logs 目录挂载到容器 /app/logs，用于持久化日志
-      # 请确保宿主机上 ./logs 目录存在且容器用户可写
       - ./logs:/app/logs
     ports:
       - "8000:8000"
     environment:
-      # 生产环境建议将 DEBUG 设置为 False
-      - DEBUG=${DEBUG:-True} # 或者直接用 False
-      # 强烈建议从环境变量或 Docker Secrets 读取 SECRET_KEY
+      - DEBUG=${DEBUG:-True} 
       - SECRET_KEY=${SECRET_KEY}
-      # 配置允许的主机，根据需要调整
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
-    # 没有 command 指令，将执行 Dockerfile 中的 CMD ["gunicorn", ...]
 
-# --- 顶层 volumes 定义 (这是一个映射 Mapping) ---
-# 声明在上面 services.web.volumes 中使用的所有命名卷
 volumes:
-  static_volume: {}   # 声明命名卷 static_volume
-  media_volume: {}    # 声明命名卷 media_volume
-  db_volume: {}       # 声明命名卷 db_volume (用于数据库)
+  static_volume: {}   
+  media_volume: {}    
+  db_volume: {}       
