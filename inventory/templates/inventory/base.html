@@ -22,6 +22,8 @@
             --border-radius: 0.75rem;
             --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
             --transition-speed: 0.3s;
+            --mobile-padding: 0.5rem;
+            --mobile-font-size: 0.9rem;
         }
         
         body {
@@ -194,7 +196,103 @@
             
             .table-responsive {
                 border-radius: var(--border-radius);
-                overflow: hidden;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+            }
+            
+            /* 改善表格在移动设备上的显示 */
+            .table th, .table td {
+                white-space: nowrap;
+                padding: 0.5rem 0.75rem;
+                font-size: var(--mobile-font-size);
+            }
+            
+            /* 改善表单在移动设备上的布局 */
+            .input-group {
+                flex-wrap: nowrap;
+            }
+            
+            /* 确保下拉菜单不会溢出屏幕 */
+            .dropdown-menu {
+                position: absolute;
+                left: auto;
+                right: 0;
+            }
+            
+            /* 优化按钮组在移动设备上的显示 */
+            .btn-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+            }
+            
+            /* 确保表单元素在小屏幕上正确显示 */
+            .form-control, .form-select {
+                max-width: 100%;
+                font-size: var(--mobile-font-size);
+            }
+            
+            /* 优化导航栏在移动设备上的显示 */
+            .navbar-collapse {
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+            
+            .nav-link {
+                padding: 0.75rem 1rem;
+                margin: 0.1rem 0;
+            }
+            
+            /* 优化表单布局 */
+            .row > [class*="col-"] {
+                margin-bottom: 0.75rem;
+            }
+            
+            /* 优化按钮在移动设备上的显示 */
+            .d-flex.flex-wrap.gap-2 {
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+            
+            /* 确保搜索框和筛选器在移动设备上正确显示 */
+            .d-flex.flex-column.flex-md-row {
+                gap: 0.5rem;
+            }
+            
+            /* 优化移动端表格内容显示 */
+            .table-container {
+                padding: 0;
+                margin-bottom: 1rem;
+            }
+            
+            /* 优化移动端按钮大小 */
+            .btn {
+                padding: 0.4rem 0.75rem;
+                font-size: var(--mobile-font-size);
+            }
+            
+            /* 优化移动端卡片内容 */
+            .card-body {
+                padding: var(--mobile-padding);
+            }
+            
+            /* 确保表单在移动端正确对齐 */
+            .form-label {
+                font-size: var(--mobile-font-size);
+                margin-bottom: 0.25rem;
+            }
+            
+            /* 优化移动端搜索和筛选区域 */
+            .d-flex.flex-wrap {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            /* 确保下拉选择框在移动端正确显示 */
+            select.form-select[style="width: auto;"] {
+                width: 100% !important;
+                margin-bottom: 0.5rem;
             }
         }
         
