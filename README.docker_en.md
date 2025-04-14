@@ -19,7 +19,7 @@ cd ioe
 2. Create environment variable file
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 # Edit the .env file and fill in the correct configuration information
 ```
 
@@ -45,7 +45,7 @@ cd ioe
 2. Create environment variable file
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 # Edit the .env file and fill in the correct configuration information, especially SECRET_KEY and ALLOWED_HOSTS
 ```
 
