@@ -19,7 +19,7 @@ cd ioe
 2. 创建环境变量文件
 
 ```bash
-cp .env.example .env
+cp .env.template .env
 # 编辑.env文件，填入正确的配置信息
 ```
 
