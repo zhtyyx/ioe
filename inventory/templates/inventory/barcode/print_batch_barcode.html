@@ -1,0 +1,217 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}打印批次条码{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .barcode-container, .barcode-container * {
+            visibility: visible;
+        }
+        
+        .barcode-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
+    }
+    
+    .barcode-preview {
+        border: 1px dashed #ccc;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .barcode-preview img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .barcode-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .batch-details {
+        font-size: 0.8rem;
+        color: #555;
+        margin-top: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 no-print">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">打印批次条码</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">批次信息</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>商品名称:</strong> {{ batch.product.name }}</p>
+                            <p><strong>批次编号:</strong> {{ batch.batch_number }}</p>
+                            <p><strong>生产日期:</strong> {{ batch.manufacturing_date|date:"Y-m-d"|default:"未设置" }}</p>
+                            <p><strong>到期日期:</strong> {{ batch.expiry_date|date:"Y-m-d"|default:"未设置" }}</p>
+                            <p><strong>剩余数量:</strong> {{ batch.remaining_quantity }}</p>
+                            <p><strong>商品条码:</strong> {{ batch.product.barcode|default:"未设置" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">打印设置</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">打印数量</label>
+                                <input type="number" class="form-control" id="quantity" value="{{ quantity }}" min="1" max="100">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show-product-name" checked>
+                                    <label class="form-check-label" for="show-product-name">显示商品名称</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show-batch-number" checked>
+                                    <label class="form-check-label" for="show-batch-number">显示批次编号</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show-dates" checked>
+                                    <label class="form-check-label" for="show-dates">显示日期信息</label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" id="print-btn" class="btn btn-primary">
+                                    <i class="fas fa-print"></i> 打印条码
+                                </button>
+                                <a href="{% url 'batch_barcode_view' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> 返回批次条码生成
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">条码预览</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="barcode-preview">
+                                <img src="data:image/png;base64,{{ barcode_data }}" alt="{{ batch.product.name }}批次条码">
+                                <div class="barcode-info">
+                                    <p class="mb-0"><strong>{{ batch.product.name }}</strong></p>
+                                    <p class="mb-0 batch-details">批次: {{ batch.batch_number }}</p>
+                                    {% if batch.manufacturing_date or batch.expiry_date %}
+                                    <p class="mb-0 batch-details">
+                                        {% if batch.manufacturing_date %}生产: {{ batch.manufacturing_date|date:"Y-m-d" }}{% endif %}
+                                        {% if batch.manufacturing_date and batch.expiry_date %} | {% endif %}
+                                        {% if batch.expiry_date %}到期: {{ batch.expiry_date|date:"Y-m-d" }}{% endif %}
+                                    </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 打印区域 -->
+<div class="barcode-container" style="display: none;">
+    <!-- 条码将在这里动态生成 -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 打印按钮点击事件
+        $('#print-btn').click(function() {
+            // 获取打印数量
+            let quantity = parseInt($('#quantity').val()) || 1;
+            let showProductName = $('#show-product-name').is(':checked');
+            let showBatchNumber = $('#show-batch-number').is(':checked');
+            let showDates = $('#show-dates').is(':checked');
+            
+            // 清空打印容器
+            $('.barcode-container').empty();
+            
+            // 根据数量生成条码
+            for (let i = 0; i < quantity; i++) {
+                let barcodeDiv = $('<div class="barcode-item"></div>');
+                
+                // 添加条码图像
+                barcodeDiv.append('<img src="data:image/png;base64,{{ barcode_data }}" alt="{{ batch.product.name }}批次条码">');
+                
+                // 添加信息
+                let infoDiv = $('<div class="barcode-info"></div>');
+                
+                if (showProductName) {
+                    infoDiv.append('<p class="mb-0"><strong>{{ batch.product.name }}</strong></p>');
+                }
+                
+                if (showBatchNumber) {
+                    infoDiv.append('<p class="mb-0 batch-details">批次: {{ batch.batch_number }}</p>');
+                }
+                
+                if (showDates && ({{ batch.manufacturing_date|yesno:"true,false" }} || {{ batch.expiry_date|yesno:"true,false" }})) {
+                    let dateStr = '<p class="mb-0 batch-details">';
+                    {% if batch.manufacturing_date %}
+                    dateStr += '生产: {{ batch.manufacturing_date|date:"Y-m-d" }}';
+                    {% endif %}
+                    
+                    {% if batch.manufacturing_date and batch.expiry_date %}
+                    dateStr += ' | ';
+                    {% endif %}
+                    
+                    {% if batch.expiry_date %}
+                    dateStr += '到期: {{ batch.expiry_date|date:"Y-m-d" }}';
+                    {% endif %}
+                    
+                    dateStr += '</p>';
+                    infoDiv.append(dateStr);
+                }
+                
+                barcodeDiv.append(infoDiv);
+                $('.barcode-container').append(barcodeDiv);
+            }
+            
+            // 显示打印容器
+            $('.barcode-container').show();
+            
+            // 调用打印
+            setTimeout(function() {
+                window.print();
+                $('.barcode-container').hide();
+            }, 200);
+        });
+    });
+</script>
+{% endblock %} 

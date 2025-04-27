@@ -112,14 +112,19 @@ python manage.py runserver
 ## 📸 系统截图
 
 <div align="center">
-  <img src="./asset/report_center.png" width="100%" /><br/><br/>
-  <img src="./asset/create_sale.png" width="100%" /><br/><br/>
-  <img src="./asset/sale_record.png" width="100%" /><br/><br/>
-  <img src="./asset/category_list.png" width="100%" /><br/><br/>
-  <img src="./asset/stock_list.png" width="100%" /><br/><br/>
-  <img src="./asset/stock_check.png" width="100%" /><br/><br/>
-  <img src="./asset/product_list.png" width="100%" /><br/><br/>
-  <img src="./asset/member_mgmt.png" width="100%" />
+  <img src="./asset/开始盘点.png" width="100%" /><br/><br/>
+  <img src="./asset/报表中心.png" width="100%" /><br/><br/>
+  <img src="./asset/会员等级管理.png" width="100%" /><br/><br/>
+  <img src="./asset/会员管理.png" width="100%" /><br/><br/>
+  <img src="./asset/商品分类列表.png" width="100%" /><br/><br/>
+  <img src="./asset/导入会员.png" width="100%" /><br/><br/>
+  <img src="./asset/库存列表.png" width="100%" /><br/><br/>
+  <img src="./asset/库存盘点.png" width="100%" /><br/><br/>
+  <img src="./asset/收银台-添加商品.png" width="100%" /><br/><br/>
+  <img src="./asset/添加会员.png" width="100%" /><br/><br/>
+  <img src="./asset/销售记录.png" width="100%" /><br/><br/>
+  <img src="./asset/main_page.png" width="100%" /><br/><br/>
+
 </div>
 
 ## 📄 License

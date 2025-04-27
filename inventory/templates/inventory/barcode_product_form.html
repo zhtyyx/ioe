@@ -1,4 +1,5 @@
 {% extends 'inventory/base.html' %}
+{% load static %}
 
 {% block title %}扫码添加商品 - {{ block.super }}{% endblock %}
 
@@ -138,24 +139,28 @@
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0"><i class="bi bi-pencil-square me-2"></i>商品录入</h5>
             </div>
-            <div class="card-body overflow-auto" style="max-height: 500px;">
+            <div class="card-body overflow-auto" style="max-height: 700px;">
                 <form method="post" enctype="multipart/form-data" id="productForm">
                     {% csrf_token %}
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="id_barcode" class="form-label">商品条码</label>
-                            {{ form.barcode.errors }}
+                            {% if form.barcode.errors %}
+                                <div class="alert alert-danger">{{ form.barcode.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-upc"></i></span>
-                                {{ form.barcode }}
+                                <input type="text" name="barcode" id="id_barcode" class="form-control" value="{{ form.barcode.value|default:barcode }}" required>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="id_name" class="form-label">商品名称</label>
-                            {{ form.name.errors }}
+                            {% if form.name.errors %}
+                                <div class="alert alert-danger">{{ form.name.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-tag"></i></span>
-                                {{ form.name }}
+                                <input type="text" name="name" id="id_name" class="form-control" value="{{ form.name.value|default:'' }}{% if not form.name.value and barcode_data %}{{ barcode_data.name|default:'' }}{% endif %}" required>
                             </div>
                         </div>
                     </div>
@@ -163,18 +168,29 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="id_category" class="form-label">商品分类</label>
-                            {{ form.category.errors }}
+                            {% if form.category.errors %}
+                                <div class="alert alert-danger">{{ form.category.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-folder"></i></span>
-                                {{ form.category }}
+                                <select name="category" id="id_category" class="form-select">
+                                    <option value="">--选择分类--</option>
+                                    {% for choice in form.category.field.choices %}
+                                        {% if choice.0 %}
+                                            <option value="{{ choice.0 }}" {% if form.category.value == choice.0|stringformat:"s" %}selected{% elif barcode_data and barcode_data.category == choice.1 %}selected{% endif %}>{{ choice.1 }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="id_specification" class="form-label">规格</label>
-                            {{ form.specification.errors }}
+                            {% if form.specification.errors %}
+                                <div class="alert alert-danger">{{ form.specification.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-rulers"></i></span>
-                                {{ form.specification }}
+                                <input type="text" name="specification" id="id_specification" class="form-control" value="{{ form.specification.value|default:'' }}{% if not form.specification.value and barcode_data %}{{ barcode_data.specification|default:'' }}{% endif %}">
                             </div>
                         </div>
                     </div>
@@ -182,18 +198,22 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="id_price" class="form-label">售价</label>
-                            {{ form.price.errors }}
+                            {% if form.price.errors %}
+                                <div class="alert alert-danger">{{ form.price.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text">¥</span>
-                                {{ form.price }}
+                                <input type="number" name="price" id="id_price" class="form-control" value="{{ form.price.value|default:'' }}{% if not form.price.value and barcode_data %}{{ barcode_data.suggested_price|default:'' }}{% endif %}" step="0.01" min="0" required>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="id_cost" class="form-label">成本价</label>
-                            {{ form.cost.errors }}
+                            {% if form.cost.errors %}
+                                <div class="alert alert-danger">{{ form.cost.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text">¥</span>
-                                {{ form.cost }}
+                                <input type="number" name="cost" id="id_cost" class="form-control" value="{{ form.cost.value|default:'0.00' }}" step="0.01" min="0">
                             </div>
                         </div>
                     </div>
@@ -201,10 +221,12 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="id_manufacturer" class="form-label">制造商</label>
-                            {{ form.manufacturer.errors }}
+                            {% if form.manufacturer.errors %}
+                                <div class="alert alert-danger">{{ form.manufacturer.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-building"></i></span>
-                                {{ form.manufacturer }}
+                                <input type="text" name="manufacturer" id="id_manufacturer" class="form-control" value="{{ form.manufacturer.value|default:'' }}{% if not form.manufacturer.value and barcode_data %}{{ barcode_data.manufacturer|default:'' }}{% endif %}">
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -219,56 +241,54 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="id_color" class="form-label">颜色</label>
-                            {{ form.color.errors }}
+                            {% if form.color.errors %}
+                                <div class="alert alert-danger">{{ form.color.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-palette"></i></span>
-                                {{ form.color }}
+                                <select name="color" id="id_color" class="form-control form-select">
+                                    {% for value, text in form.fields.color.choices %}
+                                        <option value="{{ value }}" {% if form.color.value == value %}selected{% endif %}>{{ text }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="id_size" class="form-label">尺码</label>
-                            {{ form.size.errors }}
+                            {% if form.size.errors %}
+                                <div class="alert alert-danger">{{ form.size.errors }}</div>
+                            {% endif %}
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-rulers"></i></span>
-                                {{ form.size }}
+                                <select name="size" id="id_size" class="form-control form-select">
+                                    {% for value, text in form.fields.size.choices %}
+                                        <option value="{{ value }}" {% if form.size.value == value %}selected{% endif %}>{{ text }}</option>
+                                    {% endfor %}
+                                </select>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="id_description" class="form-label">商品描述</label>
-                        {{ form.description.errors }}
-                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="alert alert-danger">{{ form.description.errors }}</div>
+                        {% endif %}
+                        <textarea name="description" id="id_description" class="form-control" rows="3">{{ form.description.value|default:'' }}{% if not form.description.value and barcode_data %}{{ barcode_data.description|default:'' }}{% endif %}</textarea>
                     </div>
                     
                     <div class="mb-4">
                         <label for="id_image" class="form-label">商品图片</label>
-                        <div class="row">
-                            <div class="col-md-4 mb-3 mb-md-0">
-                                <div class="image-preview bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px; overflow: hidden;">
-                                    {% if barcode_data.image_url %}
-                                    <img src="{{ barcode_data.image_url }}" alt="预览图片" class="img-fluid" style="max-height: 150px;">
-                                    {% else %}
-                                    <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="col-md-8">
-                                {{ form.image.errors }}
-                                {{ form.image }}
-                                <div class="form-text mt-2">
-                                    {% if barcode_data.image_url %}
-                                    已从条码服务获取图片，您可以上传新图片替换。
-                                    {% else %}
-                                    支持JPG、PNG格式，建议尺寸500x500像素。
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
+                        {% if form.image.errors %}
+                            <div class="alert alert-danger">{{ form.image.errors }}</div>
+                        {% endif %}
+                        <input type="file" name="image" id="id_image" class="form-control" accept="image/*">
+                        <div class="form-text">支持JPG、PNG格式，建议尺寸500x500像素</div>
+                        <div class="image-preview mt-2"></div>
                     </div>
                     
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'product_list' %}" class="btn btn-secondary me-md-2">
                             <i class="bi bi-x-circle me-1"></i> 取消
                         </a>
                         <button type="submit" class="btn btn-primary">
@@ -281,93 +301,46 @@
     </div>
 </div>
 
+{% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 自动聚焦到条码输入框
-        const barcodeInput = document.querySelector('input[name="barcode"]');
-        if (barcodeInput) {
-            barcodeInput.focus();
-        }
-        
-        // 为表单元素添加Bootstrap样式
-        document.querySelectorAll('input[type="text"], input[type="number"], textarea, select').forEach(function(element) {
-            if (!element.classList.contains('form-control') && !element.classList.contains('form-select')) {
-                if (element.tagName === 'SELECT') {
-                    element.classList.add('form-select');
-                } else {
-                    element.classList.add('form-control');
-                }
-            }
-        });
-        
-        // 确保在小屏幕上表单元素正确显示
-        const adjustFormLayout = function() {
-            const windowWidth = window.innerWidth;
-            const formElements = document.querySelectorAll('.input-group, .form-control, .form-select');
-            
-            if (windowWidth < 768) { // 在移动设备上
-                formElements.forEach(function(element) {
-                    element.classList.add('mb-2');
-                });
-            } else {
-                formElements.forEach(function(element) {
-                    element.classList.remove('mb-2');
-                });
-            }
-        };
-        
-        // 初始调整和窗口大小变化时调整
-        adjustFormLayout();
-        window.addEventListener('resize', adjustFormLayout);
-        
-        // 图片预览功能
-        const imageInput = document.querySelector('input[type="file"]');
-        const imagePreview = document.querySelector('.image-preview');
-        
-        if (imageInput && imagePreview) {
-            imageInput.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        imagePreview.innerHTML = `<img src="${e.target.result}" class="img-fluid" style="max-height: 150px;">`;
-                    }
-                    
-                    reader.readAsDataURL(this.files[0]);
-                }
-            });
-        }
-        
         // 自动计算成本价为售价的80%
-        const priceInput = document.querySelector('input[name="price"]');
-        const costInput = document.querySelector('input[name="cost"]');
+        const priceInput = document.getElementById('id_price');
+        const costInput = document.getElementById('id_cost');
         
-        if (priceInput && costInput) {
+        if(priceInput && costInput) {
             priceInput.addEventListener('input', function() {
-                if (this.value && !costInput.value) {
+                if (this.value && (!costInput.value || costInput.value == '0.00')) {
                     costInput.value = (parseFloat(this.value) * 0.8).toFixed(2);
                 }
             });
         }
         
-        // 一键录入商品功能
+        // 一键录入按钮点击事件
         const quickSaveBtn = document.getElementById('quickSaveBtn');
-        if (quickSaveBtn) {
+        if(quickSaveBtn) {
             quickSaveBtn.addEventListener('click', function() {
-                // 获取表单并自动填充数据
-                const productForm = document.getElementById('productForm');
-                if (productForm) {
-                    // 自动填充表单中的初始库存为1
-                    const initialStockInput = document.getElementById('id_initial_stock');
-                    if (initialStockInput && !initialStockInput.value) {
-                        initialStockInput.value = 1;
+                document.getElementById('productForm').submit();
+            });
+        }
+        
+        // 图片预览功能
+        const imageInput = document.getElementById('id_image');
+        if(imageInput) {
+            imageInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imgPreview = document.querySelector('.image-preview');
+                        if(imgPreview) {
+                            imgPreview.innerHTML = `<img src="${e.target.result}" class="img-fluid rounded" style="max-height: 200px;">`;
+                        }
                     }
-                    
-                    // 提交表单
-                    productForm.submit();
+                    reader.readAsDataURL(this.files[0]);
                 }
             });
         }
     });
 </script>
+{% endblock %}
 {% endblock %}

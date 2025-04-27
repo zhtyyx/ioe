@@ -89,4 +89,23 @@ def owner_or_permission_required(owner_field, permission):
                 
             return view_func(request, *args, **kwargs)
         return wrapper
-    return decorator 
+    return decorator
+
+def system_admin_required(view_func):
+    """
+    装饰器，检查用户是否是系统管理员。
+    如果不是，会重定向到首页或显示权限错误页面。
+    """
+    @functools.wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if request.user.is_superuser or (
+            request.user.groups.filter(name='系统管理员').exists() or 
+            request.user.groups.filter(name='admin').exists()
+        ):
+            return view_func(request, *args, **kwargs)
+        else:
+            # 重定向到首页并显示错误消息
+            from django.contrib import messages
+            messages.error(request, "您需要系统管理员权限才能访问此页面")
+            return redirect('index')
+    return wrapper 

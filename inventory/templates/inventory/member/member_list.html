@@ -1,0 +1,234 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}会员列表{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">会员管理</h1>
+        <div>
+            <a href="{% url 'member_level_list' %}" class="btn btn-info">
+                <i class="bi bi-list-stars"></i> 会员等级
+            </a>
+            <a href="{% url 'member_import' %}" class="btn btn-success">
+                <i class="bi bi-file-earmark-arrow-up"></i> 导入会员
+            </a>
+            <a href="{% url 'member_export' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn btn-secondary">
+                <i class="bi bi-file-earmark-arrow-down"></i> 导出会员
+            </a>
+            <a href="{% url 'member_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> 添加会员
+            </a>
+        </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">总会员数</h5>
+                    <h2 class="display-5">{{ total_members }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-success">活跃会员</h5>
+                    <h2 class="display-5">{{ active_members }}</h2>
+                    <p class="text-muted">{{ active_members|floatformat:0 }}% 的会员状态活跃</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-info">当前筛选</h5>
+                    <h2 class="display-5">{{ page_obj.paginator.count }}</h2>
+                    <p class="text-muted">当前条件下的会员数量</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">会员等级</h5>
+                    <h2 class="display-5">{{ levels.count }}</h2>
+                    <p class="text-muted">已定义的会员等级数量</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选表单 -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">会员筛选</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="mb-0">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" name="search" placeholder="搜索姓名/手机/邮箱/会员号" value="{{ search_query }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="level">
+                            <option value="">-- 选择会员等级 --</option>
+                            {% for level in levels %}
+                            <option value="{{ level.id }}" {% if selected_level == level.id|stringformat:"i" %}selected{% endif %}>
+                                {{ level.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="status">
+                            <option value="">-- 会员状态 --</option>
+                            <option value="active" {% if selected_status == 'active' %}selected{% endif %}>活跃</option>
+                            <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>不活跃</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="sort">
+                            <option value="name" {% if sort_by == 'name' %}selected{% endif %}>按姓名排序</option>
+                            <option value="points" {% if sort_by == 'points' %}selected{% endif %}>按积分排序</option>
+                            <option value="level" {% if sort_by == 'level' %}selected{% endif %}>按等级排序</option>
+                            <option value="created" {% if sort_by == 'created' %}selected{% endif %}>按注册时间排序</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="submit" class="btn btn-primary w-100">筛选</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 会员列表 -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">会员列表</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>会员号</th>
+                            <th>姓名</th>
+                            <th>手机号</th>
+                            <th>等级</th>
+                            <th>积分</th>
+                            <th>余额</th>
+                            <th>注册时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in page_obj %}
+                        <tr>
+                            <td>{{ member.id }}</td>
+                            <td>{{ member.member_id|default:"-" }}</td>
+                            <td>{{ member.name }}</td>
+                            <td>{{ member.phone }}</td>
+                            <td>
+                                <span class="badge bg-{{ member.level.color|default:'primary' }}">
+                                    {{ member.level.name }}
+                                </span>
+                            </td>
+                            <td>{{ member.points }}</td>
+                            <td>{{ member.balance }}</td>
+                            <td>{{ member.created_at|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if member.is_active %}
+                                <span class="badge bg-success">活跃</span>
+                                {% else %}
+                                <span class="badge bg-danger">不活跃</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{% url 'member_edit' pk=member.id %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'member_recharge' pk=member.id %}" class="btn btn-outline-success">
+                                        <i class="bi bi-wallet2"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">暂无会员数据</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- 分页 -->
+        {% if page_obj.has_other_pages %}
+        <div class="card-footer">
+            <nav aria-label="分页导航">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">首页</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">上一页</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">首页</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">上一页</a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <a class="page-link" href="#">{{ num }}</a>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">下一页</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_level %}&level={{ selected_level }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">尾页</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">下一页</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">尾页</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

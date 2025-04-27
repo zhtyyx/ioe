@@ -2,16 +2,20 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
-from .models import Category, OperationLog
-from .forms import CategoryForm
+
+# 使用重构后的模型导入
+from inventory.models import Category, OperationLog
+from inventory.forms import CategoryForm
 
 @login_required
 def category_list(request):
+    """商品分类列表视图"""
     categories = Category.objects.all().order_by('name')
     return render(request, 'inventory/category_list.html', {'categories': categories})
 
 @login_required
 def category_create(request):
+    """创建商品分类视图"""
     if request.method == 'POST':
         form = CategoryForm(request.POST)
         if form.is_valid():
@@ -20,13 +24,13 @@ def category_create(request):
             # 记录操作日志
             OperationLog.objects.create(
                 operator=request.user,
-                operation_type='OTHER',
-                details=f'创建商品分类: {category.name}',
+                operation_type='INVENTORY',
+                details=f'添加商品分类: {category.name}',
                 related_object_id=category.id,
-                related_content_type=ContentType.objects.get_for_model(Category)
+                related_content_type=ContentType.objects.get_for_model(category)
             )
             
-            messages.success(request, '分类添加成功')
+            messages.success(request, '商品分类添加成功')
             return redirect('category_list')
     else:
         form = CategoryForm()
@@ -35,7 +39,9 @@ def category_create(request):
 
 @login_required
 def category_edit(request, category_id):
+    """编辑商品分类视图"""
     category = get_object_or_404(Category, id=category_id)
+    
     if request.method == 'POST':
         form = CategoryForm(request.POST, instance=category)
         if form.is_valid():
@@ -44,13 +50,13 @@ def category_edit(request, category_id):
             # 记录操作日志
             OperationLog.objects.create(
                 operator=request.user,
-                operation_type='OTHER',
+                operation_type='INVENTORY',
                 details=f'编辑商品分类: {category.name}',
                 related_object_id=category.id,
-                related_content_type=ContentType.objects.get_for_model(Category)
+                related_content_type=ContentType.objects.get_for_model(category)
             )
             
-            messages.success(request, '分类更新成功')
+            messages.success(request, '商品分类更新成功')
             return redirect('category_list')
     else:
         form = CategoryForm(instance=category)

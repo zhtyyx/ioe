@@ -1,0 +1,67 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}调整会员余额 - {{ member.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">调整会员余额</h1>
+                <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回会员详情
+                </a>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">会员信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>会员姓名:</strong> {{ member.name }}</p>
+                            <p><strong>会员级别:</strong> {{ member.level.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>当前余额:</strong> <span class="badge bg-success">{{ member.balance }} 元</span></p>
+                            <p><strong>会员卡号:</strong> {{ member.member_id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">余额调整</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="balance_change" class="form-label">余额变更量</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="balance_change" name="balance_change" step="0.01" required>
+                                <span class="input-group-text">元</span>
+                            </div>
+                            <div class="form-text">输入正数增加余额，输入负数减少余额</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">调整原因</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span>余额调整是敏感操作，请确保有合理的理由，调整记录将被系统记录。</span>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">保存调整</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

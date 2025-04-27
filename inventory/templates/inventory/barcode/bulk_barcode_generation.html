@@ -1,0 +1,225 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}批量生成条码{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">批量生成商品条码</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" id="bulk-barcode-form">
+                {% csrf_token %}
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">筛选条件</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="category-filter" class="form-label">按分类筛选</label>
+                                    <select class="form-select" id="category-filter">
+                                        <option value="">所有分类</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="search-filter" class="form-label">搜索商品</label>
+                                    <input type="text" class="form-control" id="search-filter" placeholder="输入商品名称或条码">
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">价格类型</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="price_type" id="retail_price" value="retail" checked>
+                                        <label class="form-check-label" for="retail_price">零售价</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="price_type" id="wholesale_price" value="wholesale">
+                                        <label class="form-check-label" for="wholesale_price">批发价</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">操作</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button type="button" id="select-all-btn" class="btn btn-outline-primary">
+                                        <i class="fas fa-check-square"></i> 全选商品
+                                    </button>
+                                    
+                                    <button type="button" id="deselect-all-btn" class="btn btn-outline-secondary">
+                                        <i class="fas fa-square"></i> 取消全选
+                                    </button>
+                                    
+                                    <button type="submit" id="generate-btn" class="btn btn-primary">
+                                        <i class="fas fa-barcode"></i> 生成所选商品条码
+                                    </button>
+                                    
+                                    <a href="{% url 'generate_barcode' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-box"></i> 单个商品条码
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">商品列表</h6>
+                            <span id="selected-count" class="badge bg-primary">已选择: 0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;">选择</th>
+                                        <th>商品名称</th>
+                                        <th>条码</th>
+                                        <th>分类</th>
+                                        <th>零售价</th>
+                                        <th>批发价</th>
+                                        <th>库存</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product-list">
+                                    {% for product in products %}
+                                    <tr data-category="{{ product.category.id|default:'' }}">
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input product-checkbox" type="checkbox" name="product_ids" value="{{ product.id }}" id="product-{{ product.id }}">
+                                            </div>
+                                        </td>
+                                        <td>{{ product.name }}</td>
+                                        <td>{{ product.barcode|default:"未设置" }}</td>
+                                        <td>{{ product.category.name|default:"未分类" }}</td>
+                                        <td>¥{{ product.retail_price }}</td>
+                                        <td>¥{{ product.wholesale_price }}</td>
+                                        <td>{{ product.current_inventory }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="7" class="text-center">没有商品记录</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 统计已选商品数量
+        function updateSelectedCount() {
+            let count = $('.product-checkbox:checked').length;
+            $('#selected-count').text('已选择: ' + count);
+            
+            // 根据选择数量启用/禁用生成按钮
+            if (count > 0) {
+                $('#generate-btn').prop('disabled', false);
+            } else {
+                $('#generate-btn').prop('disabled', true);
+            }
+        }
+        
+        // 全选按钮
+        $('#select-all-btn').click(function() {
+            $('.product-checkbox:visible').prop('checked', true);
+            updateSelectedCount();
+        });
+        
+        // 取消全选按钮
+        $('#deselect-all-btn').click(function() {
+            $('.product-checkbox').prop('checked', false);
+            updateSelectedCount();
+        });
+        
+        // 当选择商品时更新计数
+        $(document).on('change', '.product-checkbox', function() {
+            updateSelectedCount();
+        });
+        
+        // 按分类筛选
+        $('#category-filter').change(function() {
+            let categoryId = $(this).val();
+            filterProducts();
+        });
+        
+        // 按名称或条码搜索
+        $('#search-filter').on('input', function() {
+            filterProducts();
+        });
+        
+        // 筛选商品函数
+        function filterProducts() {
+            let categoryId = $('#category-filter').val();
+            let searchText = $('#search-filter').val().toLowerCase();
+            
+            $('#product-list tr').each(function() {
+                let $row = $(this);
+                let rowCategoryId = $row.data('category');
+                let productName = $row.find('td:nth-child(2)').text().toLowerCase();
+                let productBarcode = $row.find('td:nth-child(3)').text().toLowerCase();
+                
+                let categoryMatch = !categoryId || rowCategoryId == categoryId;
+                let searchMatch = !searchText || 
+                                  productName.includes(searchText) || 
+                                  productBarcode.includes(searchText);
+                
+                if (categoryMatch && searchMatch) {
+                    $row.show();
+                } else {
+                    $row.hide();
+                    // 取消选中隐藏的行
+                    $row.find('.product-checkbox').prop('checked', false);
+                }
+            });
+            
+            updateSelectedCount();
+        }
+        
+        // 增强分类选择器
+        $('#category-filter').select2({
+            placeholder: '选择分类',
+            allowClear: true
+        });
+        
+        // 初始禁用生成按钮
+        $('#generate-btn').prop('disabled', true);
+        
+        // 表单提交前检查
+        $('#bulk-barcode-form').submit(function(e) {
+            if ($('.product-checkbox:checked').length === 0) {
+                e.preventDefault();
+                alert('请至少选择一个商品');
+                return false;
+            }
+            return true;
+        });
+    });
+</script>
+{% endblock %} 

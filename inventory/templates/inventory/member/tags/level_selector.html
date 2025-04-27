@@ -1,0 +1,8 @@
+<select class="form-select">
+    <option value="">-- 选择会员等级 --</option>
+    {% for level in levels %}
+    <option value="{{ level.id }}" {% if selected_id == level.id %}selected{% endif %}>
+        {{ level.name }}{% if level.is_default %} (默认){% endif %}
+    </option>
+    {% endfor %}
+</select> 

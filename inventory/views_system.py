@@ -279,7 +279,7 @@ def restore_backup(request, backup_name):
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
                 
-            return redirect('dashboard')
+            return redirect('index')
             
         except Exception as e:
             # 恢复失败

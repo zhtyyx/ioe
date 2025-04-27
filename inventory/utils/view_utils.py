@@ -120,3 +120,77 @@ def search_objects(queryset, search_term, search_fields):
         q_objects |= Q(**{f"{field}__icontains": search_term})
         
     return queryset.filter(q_objects)
+
+def require_ajax(view_func):
+    """
+    装饰器：确保视图只能通过AJAX调用
+    
+    Args:
+        view_func: 被装饰的视图函数
+        
+    Returns:
+        包装后的视图函数
+    """
+    from django.http import HttpResponseBadRequest
+    from functools import wraps
+    
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if not request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return HttpResponseBadRequest('该接口只接受AJAX请求')
+        return view_func(request, *args, **kwargs)
+    return wrapped
+
+def require_post(view_func):
+    """
+    装饰器：确保视图只能通过POST方法调用
+    
+    Args:
+        view_func: 被装饰的视图函数
+        
+    Returns:
+        包装后的视图函数
+    """
+    from django.http import HttpResponseNotAllowed
+    from functools import wraps
+    
+    @wraps(view_func)
+    def wrapped(request, *args, **kwargs):
+        if request.method != 'POST':
+            return HttpResponseNotAllowed(['POST'], '该接口只接受POST请求')
+        return view_func(request, *args, **kwargs)
+    return wrapped
+
+def get_referer_url(request, default_url='/'):
+    """
+    获取请求的Referer URL，如果不存在则返回默认URL
+    
+    Args:
+        request: HTTP请求对象
+        default_url: 默认的返回URL
+        
+    Returns:
+        str: Referer URL或默认URL
+    """
+    referer = request.META.get('HTTP_REFERER')
+    return referer if referer else default_url
+
+def get_int_param(request, param_name, default=None):
+    """
+    从请求中获取整数参数
+    
+    Args:
+        request: HTTP请求对象
+        param_name: 参数名称
+        default: 默认值
+        
+    Returns:
+        int/None: 转换后的整数值或默认值
+    """
+    value = request.GET.get(param_name) or request.POST.get(param_name)
+    if value:
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            pass
+    return default

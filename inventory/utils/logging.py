@@ -54,6 +54,53 @@ def log_action(user, operation_type, details, related_object=None):
     log_entry.save()
     return log_entry
 
+def log_operation(user, operation_type, details, related_object=None, request=None):
+    """
+    记录系统操作日志的主要入口函数
+    
+    参数:
+        user (User): 执行操作的用户
+        operation_type (str): 操作类型（来自OperationLog.OPERATION_TYPES）
+        details (str): 操作详情
+        related_object (Model, optional): 与操作相关的对象
+        request (HttpRequest, optional): 当前请求对象，用于获取IP等信息
+        
+    返回:
+        OperationLog: 创建的日志记录对象
+    """
+    from inventory.models import OperationLog
+    
+    try:
+        # 准备日志内容
+        log_details = details
+        
+        # 如果提供了请求对象，添加额外信息
+        if request:
+            ip = get_client_ip(request)
+            agent = request.META.get('HTTP_USER_AGENT', 'Unknown')
+            path = request.path
+            
+            # 将额外信息添加到详细信息中
+            if isinstance(details, dict):
+                details.update({
+                    'ip': ip,
+                    'user_agent': agent,
+                    'path': path
+                })
+                log_details = json.dumps(details)
+            else:
+                # 如果详细信息是字符串，附加额外信息
+                log_details = f"{details} [IP: {ip}, 路径: {path}]"
+        
+        # 使用事务保证日志记录的原子性
+        with transaction.atomic():
+            return log_action(user, operation_type, log_details, related_object)
+    
+    except Exception as e:
+        # 记录错误但不影响主程序流程
+        logger.error(f"记录操作日志时出错: {str(e)}", exc_info=True)
+        return None
+
 def log_view_access(operation_type):
     """Decorator to log access to views."""
     def decorator(view_func):

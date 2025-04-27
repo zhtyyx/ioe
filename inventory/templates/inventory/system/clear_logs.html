@@ -1,0 +1,79 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}清除系统日志{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'log_list' %}">系统日志</a></li>
+            <li class="breadcrumb-item active" aria-current="page">清除日志</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-trash-alt me-2"></i> 确认清除系统日志
+                </div>
+                <div class="card-body">
+                    <!-- 警告提示 -->
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i> <strong>警告：此操作不可逆！</strong>
+                        <p class="mb-0 mt-2">清除的日志记录将永久删除且无法恢复。建议在执行此操作前备份系统。</p>
+                    </div>
+
+                    <!-- 清除日志表单 -->
+                    <form method="post" action="{% url 'clear_logs' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="log_type" class="form-label">日志类型</label>
+                                    <select class="form-select" id="log_type" name="log_type">
+                                        <option value="">全部类型</option>
+                                        <option value="1">添加操作</option>
+                                        <option value="2">修改操作</option>
+                                        <option value="3">删除操作</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="date_before" class="form-label">清除此日期之前的日志</label>
+                                    <input type="date" class="form-control" id="date_before" name="date_before" value="{{ default_date }}">
+                                    <small class="form-text text-muted">默认清除30天前的日志。留空将清除所有符合类型条件的日志。</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="confirm" id="confirm" required>
+                                <label class="form-check-label" for="confirm">
+                                    我已了解此操作不可逆，确认要永久删除选定的系统日志
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'log_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> 返回日志列表
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt me-1"></i> 确认清除日志
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

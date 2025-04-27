@@ -8,54 +8,128 @@ from .models import OperationLog
 from django.db.models import Q
 from decimal import Decimal
 from django.utils import timezone
+import re
 
 
 def product_by_barcode(request, barcode):
     try:
+        # 先尝试精确匹配条码
         product = Product.objects.get(barcode=barcode)
+        # 获取库存信息
+        try:
+            inventory = Inventory.objects.get(product=product)
+            stock = inventory.quantity
+        except Inventory.DoesNotExist:
+            stock = 0
+            
         return JsonResponse({
             'success': True,
             'product_id': product.id,
             'name': product.name,
-            'price': product.price
+            'price': product.price,
+            'stock': stock,
+            'category': product.category.name if product.category else '',
+            'specification': product.specification,
+            'manufacturer': product.manufacturer
         })
     except Product.DoesNotExist:
-        return JsonResponse({'success': False, 'message': '未找到商品'})
+        # 如果精确匹配失败，尝试模糊匹配条码
+        products = Product.objects.filter(barcode__icontains=barcode).order_by('barcode')[:5]
+        if products.exists():
+            # 返回匹配的多个商品
+            product_list = []
+            for product in products:
+                try:
+                    inventory = Inventory.objects.get(product=product)
+                    stock = inventory.quantity
+                except Inventory.DoesNotExist:
+                    stock = 0
+                    
+                product_list.append({
+                    'product_id': product.id,
+                    'barcode': product.barcode,
+                    'name': product.name,
+                    'price': float(product.price),
+                    'stock': stock
+                })
+                
+            return JsonResponse({
+                'success': True,
+                'multiple_matches': True,
+                'products': product_list
+            })
+        else:
+            return JsonResponse({'success': False, 'message': '未找到商品'})
 
 # 新增会员搜索API
 def member_search_by_phone(request, phone):
     """
     根据手机号搜索会员的API
+    支持精确匹配和模糊匹配，返回多个匹配结果
     """
     try:
         # 先尝试精确匹配手机号
         member = Member.objects.get(phone=phone)
         return JsonResponse({
             'success': True,
+            'multiple_matches': False,
             'member_id': member.id,
             'member_name': member.name,
             'member_level': member.level.name,
             'member_balance': float(member.balance),
-            'member_points': member.points
+            'member_points': member.points,
+            'member_gender': member.get_gender_display(),
+            'member_birthday': member.birthday.strftime('%Y-%m-%d') if member.birthday else '',
+            'member_total_spend': float(member.total_spend),
+            'member_purchase_count': member.purchase_count
         })
     except Member.DoesNotExist:
         # 如果精确匹配失败，尝试模糊匹配手机号或姓名
-        members = Member.objects.filter(Q(phone__icontains=phone) | Q(name__icontains=phone))
+        members = Member.objects.filter(
+            models.Q(phone__icontains=phone) | 
+            models.Q(name__icontains=phone)
+        ).order_by('phone')[:5]  # 限制返回数量
+        
         if members.exists():
-            member = members.first()
-            return JsonResponse({
-                'success': True,
-                'member_id': member.id,
-                'member_name': member.name,
-                'member_level': member.level.name,
-                'member_balance': float(member.balance),
-                'member_points': member.points
-            })
+            # 如果只有一个匹配结果
+            if members.count() == 1:
+                member = members.first()
+                return JsonResponse({
+                    'success': True,
+                    'multiple_matches': False,
+                    'member_id': member.id,
+                    'member_name': member.name,
+                    'member_level': member.level.name,
+                    'member_balance': float(member.balance),
+                    'member_points': member.points,
+                    'member_gender': member.get_gender_display(),
+                    'member_birthday': member.birthday.strftime('%Y-%m-%d') if member.birthday else '',
+                    'member_total_spend': float(member.total_spend),
+                    'member_purchase_count': member.purchase_count
+                })
+            # 如果有多个匹配结果
+            else:
+                member_list = []
+                for member in members:
+                    member_list.append({
+                        'member_id': member.id,
+                        'member_name': member.name,
+                        'member_phone': member.phone,
+                        'member_level': member.level.name,
+                        'member_balance': float(member.balance),
+                        'member_points': member.points
+                    })
+                return JsonResponse({
+                    'success': True,
+                    'multiple_matches': True,
+                    'members': member_list
+                })
         else:
             return JsonResponse({'success': False, 'message': '未找到会员'})
             
 from .forms import ProductForm, InventoryTransactionForm, SaleForm, SaleItemForm, MemberForm
 
+@login_required
 def index(request):
     products = Product.objects.all()[:5]  # 获取最新的5个商品
     low_stock_items = Inventory.objects.filter(quantity__lte=F('warning_level'))[:5]  # 获取库存预警商品
@@ -605,19 +679,39 @@ def member_add_ajax(request):
             phone = request.POST.get('phone')
             level_id = request.POST.get('level')
             
-            # 验证数据
-            if not name or not phone or not level_id:
-                return JsonResponse({'success': False, 'message': '请填写所有必填字段'})
+            # 详细验证数据
+            errors = {}
+            if not name:
+                errors['name'] = '会员姓名不能为空'
+            if not phone:
+                errors['phone'] = '手机号不能为空'
+            elif not re.match(r'^\d{11}$', phone):
+                errors['phone'] = '请输入11位手机号码'
+            if not level_id:
+                errors['level'] = '请选择会员等级'
+            
+            if errors:
+                return JsonResponse({
+                    'success': False, 
+                    'message': '表单验证失败',
+                    'errors': errors
+                })
             
             # 检查手机号是否已存在
             if Member.objects.filter(phone=phone).exists():
-                return JsonResponse({'success': False, 'message': '该手机号已存在'})
+                return JsonResponse({
+                    'success': False, 
+                    'message': '该手机号已注册为会员，请使用其他手机号'
+                })
             
             # 获取会员等级
             try:
                 level = MemberLevel.objects.get(id=level_id)
             except MemberLevel.DoesNotExist:
-                return JsonResponse({'success': False, 'message': '会员等级不存在'})
+                return JsonResponse({
+                    'success': False, 
+                    'message': '所选会员等级不存在，请重新选择'
+                })
             
             # 创建会员
             member = Member.objects.create(
@@ -629,19 +723,30 @@ def member_add_ajax(request):
             )
             
             # 记录操作日志
+            from django.contrib.contenttypes.models import ContentType
             OperationLog.objects.create(
                 operator=request.user,
                 operation_type='MEMBER',
-                details=f'添加会员: {name} (手机: {phone})'
+                details=f'添加会员: {name} (手机: {phone})',
+                related_object_id=member.id,
+                related_content_type=ContentType.objects.get_for_model(Member)
             )
             
             return JsonResponse({
                 'success': True,
                 'member_id': member.id,
-                'member_name': member.name
+                'member_name': member.name,
+                'member_phone': member.phone,
+                'member_level': member.level.name
             })
             
         except Exception as e:
-            return JsonResponse({'success': False, 'message': str(e)})
+            import traceback
+            print(f"会员添加错误: {str(e)}")
+            print(traceback.format_exc())
+            return JsonResponse({
+                'success': False, 
+                'message': f'添加会员时发生错误: {str(e)}'
+            })
     
     return JsonResponse({'success': False, 'message': '不支持的请求方法'})

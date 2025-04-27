@@ -1,0 +1,224 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}打印批量条码{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .barcode-print-area, .barcode-print-area * {
+            visibility: visible;
+        }
+        
+        .barcode-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
+    }
+    
+    .barcode-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .barcode-item {
+        border: 1px dashed #ccc;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        break-inside: avoid;
+    }
+    
+    .barcode-item img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .barcode-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 no-print">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">打印批量商品条码</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-4">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>已生成 {{ barcode_data_list|length }} 个商品的条码，您可以直接打印或先调整打印选项。</span>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">打印设置</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">价格类型</label>
+                                    <div class="form-control-plaintext">
+                                        {% if price_type == 'retail' %}零售价{% else %}批发价{% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="show-price" checked>
+                                        <label class="form-check-label" for="show-price">显示价格</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="show-name" checked>
+                                        <label class="form-check-label" for="show-name">显示商品名称</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="columns" class="form-label">每行条码数量</label>
+                                    <select class="form-select" id="columns">
+                                        <option value="2">2个/行</option>
+                                        <option value="3" selected>3个/行</option>
+                                        <option value="4">4个/行</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">操作</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button type="button" id="print-btn" class="btn btn-primary">
+                                        <i class="fas fa-print"></i> 打印条码
+                                    </button>
+                                    <a href="{% url 'bulk_barcode_generation' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left"></i> 返回条码生成
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">条码预览</h6>
+                </div>
+                <div class="card-body">
+                    <div id="barcode-preview" class="barcode-grid">
+                        {% for item in barcode_data_list %}
+                        <div class="barcode-item">
+                            <img src="data:image/png;base64,{{ item.barcode_data }}" alt="{{ item.product.name }}条码">
+                            <div class="barcode-info">
+                                <p class="barcode-name mb-0"><strong>{{ item.product.name }}</strong></p>
+                                <p class="barcode-price mb-0">¥{{ item.price }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 打印区域 -->
+<div class="barcode-print-area" style="display: none;">
+    <div id="print-container" class="barcode-grid">
+        <!-- 条码将在这里动态生成 -->
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 更新预览网格的列数
+        function updateGridColumns() {
+            let columns = $('#columns').val();
+            $('#barcode-preview').css('grid-template-columns', `repeat(${columns}, 1fr)`);
+        }
+        
+        // 绑定列数选择事件
+        $('#columns').change(updateGridColumns);
+        
+        // 显示/隐藏价格
+        $('#show-price').change(function() {
+            $('.barcode-price').toggle($(this).is(':checked'));
+        });
+        
+        // 显示/隐藏名称
+        $('#show-name').change(function() {
+            $('.barcode-name').toggle($(this).is(':checked'));
+        });
+        
+        // 打印按钮点击事件
+        $('#print-btn').click(function() {
+            let showPrice = $('#show-price').is(':checked');
+            let showName = $('#show-name').is(':checked');
+            let columns = $('#columns').val();
+            
+            // 准备打印容器
+            let $printContainer = $('#print-container');
+            $printContainer.empty();
+            $printContainer.css('grid-template-columns', `repeat(${columns}, 1fr)`);
+            
+            // 复制条码数据到打印区域
+            {% for item in barcode_data_list %}
+            let barcodeDiv = $('<div class="barcode-item"></div>');
+            barcodeDiv.append('<img src="data:image/png;base64,{{ item.barcode_data }}" alt="{{ item.product.name }}条码">');
+            
+            let infoDiv = $('<div class="barcode-info"></div>');
+            
+            if (showName) {
+                infoDiv.append('<p class="barcode-name mb-0"><strong>{{ item.product.name }}</strong></p>');
+            }
+            
+            if (showPrice) {
+                infoDiv.append('<p class="barcode-price mb-0">¥{{ item.price }}</p>');
+            }
+            
+            barcodeDiv.append(infoDiv);
+            $printContainer.append(barcodeDiv);
+            {% endfor %}
+            
+            // 显示打印区域
+            $('.barcode-print-area').show();
+            
+            // 调用打印
+            setTimeout(function() {
+                window.print();
+                $('.barcode-print-area').hide();
+            }, 200);
+        });
+        
+        // 初始化
+        updateGridColumns();
+    });
+</script>
+{% endblock %} 

@@ -135,7 +135,7 @@
                         <span>+{{ sale.final_amount|floatformat:0 }}</span>
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
-                        <a href="{% url 'member_details' sale.member.id %}" class="btn btn-sm btn-outline-info mt-2">
+                        <a href="{% url 'member_detail' sale.member.id %}" class="btn btn-sm btn-outline-info mt-2">
                             <i class="bi bi-person-badge me-1"></i> 查看会员详情
                         </a>
                     </li>

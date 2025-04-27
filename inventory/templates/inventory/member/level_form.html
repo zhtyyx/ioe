@@ -1,0 +1,122 @@
+{% extends 'inventory/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'member_list' %}">会员管理</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'member_level_list' %}">会员等级</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">{{ title }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                {{ form.name|as_crispy_field }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.discount|as_crispy_field }}
+                                <small class="text-muted">折扣率范围: 0.00-1.00 (0表示无折扣，1表示不打折)</small>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.points_threshold|as_crispy_field }}
+                                <small class="text-muted">会员积分达到此阈值时将自动升级到此等级</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                {{ form.color|as_crispy_field }}
+                                <small class="text-muted">可选值: primary, secondary, success, danger, warning, info, light, dark</small>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.priority|as_crispy_field }}
+                                <small class="text-muted">数字越小优先级越高，用于排序显示</small>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                {{ form.is_default|as_crispy_field }}
+                                <small class="text-muted">设为默认等级后，新会员将默认使用此等级</small>
+                            </div>
+                            <div class="col-md-6">
+                                {{ form.is_active|as_crispy_field }}
+                                <small class="text-muted">禁用后此等级将不可用于新会员</small>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'member_level_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> {{ submit_text|default:"保存" }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 表单验证
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // 颜色选择下拉框增强
+        $('#id_color').on('change', function() {
+            var color = $(this).val();
+            var previewIcon = $('<i>').addClass('bi bi-award me-2 text-' + color);
+            var previewText = $('<span>').addClass('text-' + color).text('预览效果');
+            
+            $('#color-preview').remove();
+            $(this).after(
+                $('<div>').attr('id', 'color-preview')
+                    .addClass('mt-2 d-flex align-items-center')
+                    .append(previewIcon)
+                    .append(previewText)
+            );
+        });
+        
+        // 触发初始颜色预览
+        $('#id_color').trigger('change');
+    });
+</script>
+{% endblock %} 

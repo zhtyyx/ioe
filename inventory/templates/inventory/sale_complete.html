@@ -1,0 +1,244 @@
+{% extends 'inventory/base.html' %}
+{% load custom_filters %}
+
+{% block title %}完成销售 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">完成销售</h4>
+                    <div class="sales-info">
+                        <span class="badge bg-light text-dark">销售单号: #{{ sale.id }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- 销售信息摘要 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>销售信息</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">操作员:</th>
+                                    <td>{{ sale.operator.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>创建时间:</th>
+                                    <td>{{ sale.created_at|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>商品数量:</th>
+                                    <td>{{ sale.items.count }} 件商品</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>会员信息</h5>
+                            {% if sale.member %}
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">会员姓名:</th>
+                                    <td>{{ sale.member.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>会员电话:</th>
+                                    <td>{{ sale.member.phone }}</td>
+                                </tr>
+                                <tr>
+                                    <th>会员等级:</th>
+                                    <td>{{ sale.member.level.name }}</td>
+                                </tr>
+                            </table>
+                            {% else %}
+                            <p class="text-muted">未选择会员</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 商品列表 -->
+                    <h5 class="mb-3">商品明细</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>商品名称</th>
+                                    <th>单价</th>
+                                    <th>数量</th>
+                                    <th class="text-end">小计</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>¥{{ item.actual_price|floatformat:2 }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td class="text-end">¥{{ item.subtotal|floatformat:2 }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="3" class="text-end">商品总额:</th>
+                                    <th class="text-end">¥{{ sale.total_amount|floatformat:2 }}</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="3" class="text-end">折扣金额:</th>
+                                    <th class="text-end">¥{{ sale.discount_amount|floatformat:2 }}</th>
+                                </tr>
+                                <tr>
+                                    <th colspan="3" class="text-end">应付金额:</th>
+                                    <th class="text-end">¥{{ sale.final_amount|floatformat:2 }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- 支付方式选择表单 -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <h5 class="mb-3">支付方式</h5>
+                        <div class="row mb-3">
+                            {% for value, label in form.payment_method.field.choices %}
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_method" id="payment_{{ value }}" 
+                                        value="{{ value }}" {% if sale.payment_method == value %}checked{% endif %}>
+                                    <label class="form-check-label" for="payment_{{ value }}">
+                                        {{ label }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- 会员余额支付 (仅当选择了会员且有支付方式为余额或混合支付时显示) -->
+                        <div id="balance-payment-section" class="mb-4" style="display: none;">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>会员余额支付</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>当前可用余额:</label>
+                                                <div class="form-control-plaintext">
+                                                    {% if sale.member %}
+                                                    ¥{{ sale.member.balance|floatformat:2 }}
+                                                    {% else %}
+                                                    ¥0.00
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="balance_amount">使用余额金额:</label>
+                                                <input type="number" class="form-control" id="balance_amount" name="balance_amount" 
+                                                    step="0.01" min="0" max="{{ sale.member.balance|default:0 }}" value="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label for="remark">备注:</label>
+                            <textarea class="form-control" id="remark" name="remark" rows="2">{{ sale.remark }}</textarea>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success btn-lg px-5">
+                                <i class="bi bi-check-circle me-2"></i> 完成收款
+                            </button>
+                            <a href="{% url 'sale_detail' sale.id %}" class="btn btn-outline-secondary btn-lg ms-2">
+                                <i class="bi bi-arrow-left me-2"></i> 返回详情
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧信息栏 -->
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">销售单信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="text-muted">销售单号</h6>
+                        <p class="fs-5 fw-bold">#{{ sale.id }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">销售日期</h6>
+                        <p>{{ sale.created_at|date:"Y-m-d H:i" }}</p>
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted">商品总额</h6>
+                        <p class="fs-5">¥{{ sale.total_amount|floatformat:2 }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">折扣金额</h6>
+                        <p>¥{{ sale.discount_amount|floatformat:2 }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">应付金额</h6>
+                        <p class="fs-4 fw-bold text-danger">¥{{ sale.final_amount|floatformat:2 }}</p>
+                    </div>
+                    {% if sale.member %}
+                    <hr>
+                    <div class="mb-3">
+                        <h6 class="text-muted">会员</h6>
+                        <p>{{ sale.member.name }} ({{ sale.member.phone }})</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">折扣率</h6>
+                        <p>{{ sale.member.level.discount|multiply:10|floatformat:1 }}折</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-muted">可用余额</h6>
+                        <p>¥{{ sale.member.balance|floatformat:2 }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 处理支付方式选择，显示/隐藏余额支付部分
+    const paymentInputs = document.querySelectorAll('input[name="payment_method"]');
+    const balanceSection = document.getElementById('balance-payment-section');
+    
+    function updateBalanceSection() {
+        const selectedPayment = document.querySelector('input[name="payment_method"]:checked')?.value;
+        if (selectedPayment === 'balance' || selectedPayment === 'mixed') {
+            {% if sale.member %}
+            balanceSection.style.display = 'block';
+            {% else %}
+            balanceSection.style.display = 'none';
+            alert('需要选择会员才能使用余额支付');
+            document.getElementById('payment_cash').checked = true;
+            {% endif %}
+        } else {
+            balanceSection.style.display = 'none';
+        }
+    }
+    
+    // 初始化时检查一次
+    updateBalanceSection();
+    
+    // 添加事件监听器
+    paymentInputs.forEach(input => {
+        input.addEventListener('change', updateBalanceSection);
+    });
+});
+</script>
+{% endblock %} 

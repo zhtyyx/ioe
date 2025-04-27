@@ -1,0 +1,168 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}系统设置{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item active" aria-current="page">系统设置</li>
+        </ol>
+    </nav>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">系统设置</h1>
+    </div>
+    
+    <!-- 设置模块 -->
+    <div class="row">
+        <!-- 用户管理 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-primary text-white">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h5 class="card-title ms-3 mb-0">用户管理</h5>
+                    </div>
+                    <p class="card-text">管理系统用户，包括创建销售员、管理员和其他角色的用户。设置用户权限和访问控制。</p>
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i> 前往用户管理
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系统信息 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-info text-white">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <h5 class="card-title ms-3 mb-0">系统信息</h5>
+                    </div>
+                    <p class="card-text">查看系统运行状态，包括服务器信息、数据库状态、磁盘使用情况和系统性能指标。</p>
+                    <a href="{% url 'system_info' %}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i> 查看系统信息
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 日志管理 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-secondary text-white">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h5 class="card-title ms-3 mb-0">日志管理</h5>
+                    </div>
+                    <p class="card-text">浏览和管理系统操作日志，查看用户活动记录，清理或下载日志数据。</p>
+                    <a href="{% url 'log_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i> 查看系统日志
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 备份管理 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-success text-white">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h5 class="card-title ms-3 mb-0">备份管理</h5>
+                    </div>
+                    <p class="card-text">创建和管理系统数据备份，设置自动备份计划，恢复数据和下载备份文件。</p>
+                    <a href="{% url 'backup_list' %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i> 管理数据备份
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 商店设置 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-warning text-white">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <h5 class="card-title ms-3 mb-0">商店设置</h5>
+                    </div>
+                    <p class="card-text">配置商店基本信息，包括名称、地址、联系方式、营业时间和其他设置。</p>
+                    <a href="{% url 'store_settings' %}" class="btn btn-outline-warning btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i> 设置商店信息
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系统维护 -->
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="icon-circle bg-danger text-white">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <h5 class="card-title ms-3 mb-0">系统维护</h5>
+                    </div>
+                    <p class="card-text">执行系统维护操作，包括清理缓存、优化数据库和其他维护任务。</p>
+                    <a href="{% url 'system_maintenance' %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i> 进行系统维护
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="card-title mb-0">系统配置信息</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">系统版本</dt>
+                <dd class="col-sm-9">{{ settings.version }}</dd>
+                
+                <dt class="col-sm-3">调试模式</dt>
+                <dd class="col-sm-9">{{ settings.debug_mode|yesno:"启用,禁用" }}</dd>
+                
+                <dt class="col-sm-3">系统时区</dt>
+                <dd class="col-sm-9">{{ settings.timezone }}</dd>
+                
+                <dt class="col-sm-3">数据库引擎</dt>
+                <dd class="col-sm-9">{{ settings.database_engine }}</dd>
+                
+                <dt class="col-sm-3">媒体文件目录</dt>
+                <dd class="col-sm-9">{{ settings.media_root }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+
+<style>
+    .icon-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+    }
+</style>
+{% endblock %} 

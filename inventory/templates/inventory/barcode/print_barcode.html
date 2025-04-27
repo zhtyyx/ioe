@@ -1,0 +1,180 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}打印商品条码{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .barcode-container, .barcode-container * {
+            visibility: visible;
+        }
+        
+        .barcode-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
+    }
+    
+    .barcode-preview {
+        border: 1px dashed #ccc;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .barcode-preview img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .barcode-info {
+        text-align: center;
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 no-print">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">打印商品条码</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">商品信息</h6>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>商品名称:</strong> {{ product.name }}</p>
+                            <p><strong>条码:</strong> {{ product.barcode|default:"未设置" }}</p>
+                            <p><strong>分类:</strong> {{ product.category.name|default:"未分类" }}</p>
+                            <p><strong>价格类型:</strong> {% if price_type == 'retail' %}零售价{% else %}批发价{% endif %}</p>
+                            <p><strong>单价:</strong> ¥{{ price }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">打印设置</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">打印数量</label>
+                                <input type="number" class="form-control" id="quantity" value="{{ quantity }}" min="1" max="100">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show-price" checked>
+                                    <label class="form-check-label" for="show-price">显示价格</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="show-name" checked>
+                                    <label class="form-check-label" for="show-name">显示名称</label>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" id="print-btn" class="btn btn-primary">
+                                    <i class="fas fa-print"></i> 打印条码
+                                </button>
+                                <a href="{% url 'generate_barcode' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> 返回条码生成
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">条码预览</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="barcode-preview">
+                                <img src="data:image/png;base64,{{ barcode_data }}" alt="{{ product.name }}条码">
+                                <div class="barcode-info">
+                                    <p class="mb-0"><strong>{{ product.name }}</strong></p>
+                                    <p class="mb-0">¥{{ price }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 打印区域 -->
+<div class="barcode-container" style="display: none;">
+    <!-- 条码将在这里动态生成 -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 打印按钮点击事件
+        $('#print-btn').click(function() {
+            // 获取打印数量
+            let quantity = parseInt($('#quantity').val()) || 1;
+            let showPrice = $('#show-price').is(':checked');
+            let showName = $('#show-name').is(':checked');
+            
+            // 清空打印容器
+            $('.barcode-container').empty();
+            
+            // 根据数量生成条码
+            for (let i = 0; i < quantity; i++) {
+                let barcodeDiv = $('<div class="barcode-item"></div>');
+                
+                // 添加条码图像
+                barcodeDiv.append('<img src="data:image/png;base64,{{ barcode_data }}" alt="{{ product.name }}条码">');
+                
+                // 添加信息
+                let infoDiv = $('<div class="barcode-info"></div>');
+                
+                if (showName) {
+                    infoDiv.append('<p class="mb-0"><strong>{{ product.name }}</strong></p>');
+                }
+                
+                if (showPrice) {
+                    infoDiv.append('<p class="mb-0">¥{{ price }}</p>');
+                }
+                
+                barcodeDiv.append(infoDiv);
+                $('.barcode-container').append(barcodeDiv);
+            }
+            
+            // 显示打印容器
+            $('.barcode-container').show();
+            
+            // 调用打印
+            setTimeout(function() {
+                window.print();
+                $('.barcode-container').hide();
+            }, 200);
+        });
+    });
+</script>
+{% endblock %} 

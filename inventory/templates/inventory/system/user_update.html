@@ -1,0 +1,271 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}编辑用户{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'user_list' %}">用户管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">编辑用户</li>
+        </ol>
+    </nav>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">编辑用户 - {{ user.username }}</h1>
+        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> 返回用户列表
+        </a>
+    </div>
+    
+    <!-- 编辑用户表单 -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">用户信息</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="userForm">
+                        {% csrf_token %}
+                        
+                        <!-- 基本信息 -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">用户名</label>
+                                <input type="text" class="form-control bg-light" value="{{ user.username }}" readonly disabled>
+                                <div class="form-text">用户名无法修改</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">电子邮箱</label>
+                                <input type="email" name="email" id="email" class="form-control" value="{{ form_data.email|default:user.email }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">名字</label>
+                                <input type="text" name="first_name" id="first_name" class="form-control" value="{{ form_data.first_name|default:user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">姓氏</label>
+                                <input type="text" name="last_name" id="last_name" class="form-control" value="{{ form_data.last_name|default:user.last_name }}">
+                            </div>
+                        </div>
+                        
+                        <!-- 密码设置 -->
+                        <div class="card mb-3 bg-light">
+                            <div class="card-header">
+                                <h6 class="mb-0">密码修改</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-3">如果不需要修改密码，请将以下字段留空</p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="new_password" class="form-label">新密码</label>
+                                        <input type="password" name="new_password" id="new_password" class="form-control">
+                                        <div class="form-text">密码长度至少为8个字符</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="new_password_confirm" class="form-label">确认新密码</label>
+                                        <input type="password" name="new_password_confirm" id="new_password_confirm" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 用户组和权限 -->
+                        <div class="mb-3">
+                            <label class="form-label">用户角色</label>
+                            <div class="row">
+                                {% for group in groups %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="groups" id="group_{{ group.id }}" value="{{ group.id }}" 
+                                               {% if group in user.groups.all %}checked{% endif %}
+                                               {% if form_data.groups and group.id|stringformat:"i" in form_data.groups %}checked{% endif %}>
+                                        <label class="form-check-label" for="group_{{ group.id }}">
+                                            {{ group.name }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- 状态控制 -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="is_active" 
+                                           {% if form_data.is_active|default:user.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        账户可用
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_staff" id="is_staff" 
+                                           {% if form_data.is_staff|default:user.is_staff %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_staff">
+                                        可登录后台
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_superuser" id="is_superuser" 
+                                           {% if form_data.is_superuser|default:user.is_superuser %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_superuser">
+                                        超级管理员
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 提交按钮 -->
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> 保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">用户状态</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            状态
+                            {% if user.is_active %}
+                            <span class="badge bg-success">活跃</span>
+                            {% else %}
+                            <span class="badge bg-danger">禁用</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            最后登录
+                            <span>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            注册时间
+                            <span>{{ user.date_joined|date:"Y-m-d"|default:"-" }}</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">常见用户角色</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2 mb-3">
+                        <button type="button" class="btn btn-outline-primary" id="salesBtn">
+                            <i class="fas fa-user-tag me-1"></i> 设为销售员
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="warehouseBtn">
+                            <i class="fas fa-warehouse me-1"></i> 设为仓库管理员
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="financeBtn">
+                            <i class="fas fa-file-invoice-dollar me-1"></i> 设为财务人员
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" id="adminBtn">
+                            <i class="fas fa-user-shield me-1"></i> 设为管理员
+                        </button>
+                    </div>
+                    <div class="alert alert-warning mb-0">
+                        <i class="fas fa-exclamation-triangle me-1"></i> 点击按钮将修改用户角色，需要保存才能生效
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 密码一致性检查
+        const password = document.getElementById('new_password');
+        const passwordConfirm = document.getElementById('new_password_confirm');
+        const form = document.getElementById('userForm');
+        
+        form.addEventListener('submit', function(e) {
+            if (password.value && password.value !== passwordConfirm.value) {
+                e.preventDefault();
+                alert('两次输入的密码不一致，请重新输入。');
+                passwordConfirm.focus();
+            }
+        });
+        
+        // 快速设置用户角色
+        const salesBtn = document.getElementById('salesBtn');
+        const warehouseBtn = document.getElementById('warehouseBtn');
+        const financeBtn = document.getElementById('financeBtn');
+        const adminBtn = document.getElementById('adminBtn');
+        
+        // 设置为销售员
+        if (salesBtn) {
+            salesBtn.addEventListener('click', function() {
+                setUserRole('销售员');
+            });
+        }
+        
+        // 设置为仓库管理员
+        if (warehouseBtn) {
+            warehouseBtn.addEventListener('click', function() {
+                setUserRole('仓库管理员');
+            });
+        }
+        
+        // 设置为财务人员
+        if (financeBtn) {
+            financeBtn.addEventListener('click', function() {
+                setUserRole('财务人员');
+            });
+        }
+        
+        // 设置为管理员
+        if (adminBtn) {
+            adminBtn.addEventListener('click', function() {
+                setUserRole('管理员');
+            });
+        }
+        
+        // 设置用户角色函数
+        function setUserRole(roleName) {
+            // 清除所有选中的用户组
+            document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            
+            // 选中指定角色组
+            document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
+                const label = checkbox.nextElementSibling;
+                if (label && label.textContent.trim() === roleName) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // 设置基本权限
+            document.getElementById('is_active').checked = true;
+            document.getElementById('is_staff').checked = true;
+            document.getElementById('is_superuser').checked = (roleName === '管理员');
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %} 

@@ -1,540 +1,697 @@
 {% extends 'inventory/base.html' %}
+{% load custom_filters %}
 
-{% block title %}销售管理 - {{ block.super }}{% endblock %}
+{% block title %}添加销售商品 - {{ block.super }}{% endblock %}
 
 {% block extra_js %}
+{{ sale.id|json_script:"sale-id" }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const barcodeInput = document.getElementById('barcode');
-    const saleForm = document.getElementById('sale-form');
-    const searchProduct = document.getElementById('search-product');
-    const memberSearch = document.getElementById('member-search');
-    let lastBarcode = '';
-    let lastScannedTime = 0;
-
-    // 扫码输入处理
-    barcodeInput.addEventListener('input', handleBarcodeInput);
-    barcodeInput.addEventListener('keypress', handleEnterKey);
-
-    // 商品搜索按钮点击事件
-    searchProduct.addEventListener('click', function() {
-        const barcode = barcodeInput.value.trim();
-        if (barcode) {
-            searchProductByBarcode(barcode);
-        }
-    });
-
-    // 会员搜索功能
-    memberSearch.addEventListener('input', function() {
-        const phone = this.value.trim();
-        if (phone.length >= 3) {
-            searchMemberByPhone(phone);
-        }
-    });
-
-    function handleBarcodeInput(e) {
-        const currentTime = new Date().getTime();
-        const barcode = e.target.value.trim();
-
-        if (barcode !== '' && (currentTime - lastScannedTime < 100 || e.inputType === 'insertText')) {
-            lastBarcode = barcode;
-            lastScannedTime = currentTime;
-            searchProductByBarcode(barcode);
-        }
+    const saleId = JSON.parse(document.getElementById('sale-id').textContent); // 安全地获取 saleId
+    // 统一ID命名，避免冲突
+    const barcodeInput = document.getElementById('item-product-barcode-input');
+    const searchProductBtn = document.getElementById('item-search-product-btn');
+    const memberSearchInput = document.getElementById('item-member-search-input');
+    
+    // 条码输入处理 - 支持扫码枪自动提交和手动回车
+    if (barcodeInput) {
+        let lastInputTime = 0;
+        let inputBuffer = '';
+        
+        barcodeInput.addEventListener('keypress', function(event) {
+            const currentTime = new Date().getTime();
+            
+            // 扫码枪快速输入检测（时间间隔<50ms）
+            if (currentTime - lastInputTime < 50) {
+                inputBuffer += event.key;
+            } else {
+                inputBuffer = event.key;
+            }
+            
+            lastInputTime = currentTime;
+            
+            // 当按下回车键时处理条码
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (inputBuffer.length > 0) {
+                    searchProductByBarcode(barcodeInput.value);
+                    barcodeInput.value = '';
+                    inputBuffer = '';
+                }
+            }
+        });
     }
-
-    function handleEnterKey(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const barcode = e.target.value.trim();
-            if (barcode !== '') {
-                searchProductByBarcode(barcode);
+    
+    // 商品搜索按钮点击事件
+    if (searchProductBtn) {
+        searchProductBtn.addEventListener('click', function() {
+            if (barcodeInput && barcodeInput.value.trim()) {
+                searchProductByBarcode(barcodeInput.value.trim());
+            } else {
+                showAlert('warning', '请输入商品条码');
+            }
+        });
+    }
+    
+    // 会员搜索输入事件 - 移除字符数限制
+    if (memberSearchInput) {
+        memberSearchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query) {
+                searchMemberByPhone(query);
+            }
+        });
+    }
+    
+    // 通过条码搜索商品
+    function searchProductByBarcode(barcode) {
+        console.log('搜索商品，条码:', barcode);
+        
+        fetch(`/api/product/search/barcode/${barcode}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络响应错误');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('商品API响应:', data);
+                
+                if (data.success) {
+                    if (data.multiple_matches && data.products && data.products.length > 0) {
+                        // 多个商品匹配，显示选择模态框
+                        showProductSelectionModal(data.products);
+                    } else if (data.product) {
+                        // 单个商品结果，填充表单
+                        fillProductForm(data.product);
+                    }
+                } else {
+                    showAlert('error', data.message || '未找到商品，请检查条码');
+                }
+            })
+            .catch(error => {
+                console.error('搜索商品错误:', error);
+                showAlert('error', '查询商品信息失败，请重试');
+            });
+    }
+    
+    // 填充商品表单
+    function fillProductForm(product) {
+        // 设置商品ID
+        const productSelect = document.querySelector('[name="product"]');
+        if (productSelect) {
+            productSelect.value = product.id;
+        }
+        
+        // 设置实际价格
+        const priceInput = document.querySelector('[name="actual_price"]');
+        if (priceInput) {
+            priceInput.value = parseFloat(product.price).toFixed(2);
+        }
+        
+        // 设置数量为1
+        const quantityInput = document.querySelector('[name="quantity"]');
+        if (quantityInput) {
+            quantityInput.value = 1;
+        }
+        
+        // 显示库存信息
+        if (document.getElementById('current-stock')) {
+            const stock = parseInt(product.stock) || 0;
+            document.getElementById('current-stock').textContent = stock;
+            
+            // 检查库存状态
+            const inventoryAlert = document.getElementById('inventory-alert');
+            if (inventoryAlert) {
+                if (stock <= 0) {
+                    inventoryAlert.textContent = '警告：该商品库存不足！';
+                    inventoryAlert.classList.remove('d-none');
+                } else {
+                    inventoryAlert.classList.add('d-none');
+                }
             }
         }
+        
+        // 聚焦到数量输入框
+        if (quantityInput) {
+            setTimeout(() => {
+                quantityInput.focus();
+                quantityInput.select();
+            }, 100);
+        }
+        
+        showAlert('success', `已选择商品: ${product.name}`);
     }
-
-    function searchProductByBarcode(barcode) {
-        fetch(`/api/product/barcode/${barcode}/`)
-            .then(response => response.json())
+    
+    // 通过手机号搜索会员 - 支持模糊匹配
+    function searchMemberByPhone(query) {
+        console.log('搜索会员，查询:', query);
+        
+        fetch(`/api/member/search/${query}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络响应错误');
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('会员API响应:', data);
+                
                 if (data.success) {
-                    document.querySelector('[name="product"]').value = data.product_id;
-                    document.querySelector('[name="quantity"]').value = '1';
-                    document.getElementById('current-stock').textContent = data.stock || 0;
-                    document.querySelector('[name="actual_price"]').value = data.price || 0;
-                    
-                    // 检查库存
-                    if (data.stock <= 0) {
-                        showAlert('error', '该商品库存不足');
-                        return;
-                    }
-                    
-                    // 自动提交表单
-                    if (validateStock()) {
-                        saleForm.submit();
+                    if (data.multiple_matches && data.members && data.members.length > 0) {
+                        // 多个会员匹配，显示选择模态框
+                        showMemberSelectionModal(data.members);
+                    } else if (data.member_id) {
+                        // 单个会员结果，直接选择
+                        selectMember(data.member_id, data.member_name, data.discount_rate);
                     }
                 } else {
-                    showAlert('error', '未找到对应的商品，请检查条码是否正确');
+                    // 无匹配结果
+                    document.getElementById('member-details').classList.add('d-none');
+                    document.getElementById('no-member-message').classList.remove('d-none');
+                    showAlert('info', data.message || '未找到会员');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', '查询商品信息失败，请重试');
-            });
-
-        barcodeInput.value = '';
-    }
-
-    function searchMemberByPhone(phone) {
-        fetch(`/api/member/search/${phone}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('member-name').textContent = data.member_name;
-                    document.querySelector('[name="member"]').value = data.member_id;
-                    showAlert('success', '已选择会员');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+                console.error('搜索会员错误:', error);
                 showAlert('error', '查询会员信息失败');
             });
     }
+    
+    // 选择会员
+    function selectMember(memberId, memberName, discountRate) {
+        // 发送会员选择请求
+        if (saleId === null || saleId === undefined) {
+             showAlert('error', '销售单ID无效，无法选择会员');
+             return;
+        }
+        // 使用 Django URL tag 或确保 ID 简单可以直接拼接
+        const selectMemberUrl = `/sale/${saleId}/select-member/`;
 
-    // 实时更新操作日志
-    function loadOperationLogs() {
-        fetch(`/sales/${saleId}/logs/`)
-            .then(response => response.json())
-            .then(data => {
-                const logList = document.getElementById('operation-logs-list');
-                if (logList) {
-                    logList.innerHTML = data.logs.map(log => 
-                        `<li class="list-group-item">
-                            ${log.timestamp} - ${log.operation_type}: ${log.details}
-                        </li>`
-                    ).join('');
+        fetch(selectMemberUrl, { // 使用构造好的 URL
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+            },
+            body: `member_id=${memberId}`
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // 更新UI显示
+                document.getElementById('member-name-display').textContent = memberName;
+                document.getElementById('member-details').classList.remove('d-none');
+                document.getElementById('no-member-message').classList.add('d-none');
+                
+                // 显示折扣信息
+                if (document.getElementById('member-discount')) {
+                    const discountText = discountRate < 1 ? 
+                        `${(discountRate * 10).toFixed(1)}折` : '无折扣';
+                    document.getElementById('member-discount').textContent = discountText;
                 }
-            });
+                
+                showAlert('success', '已选择会员');
+                
+                // 刷新页面以更新价格 - 考虑是否真的需要刷新，或者可以通过JS更新
+                if (result.refresh_needed) {
+                    showAlert('info', '会员折扣已应用，正在更新...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            } else {
+                showAlert('error', result.message || '选择会员失败');
+            }
+        })
+        .catch(error => {
+            console.error('选择会员错误:', error);
+            showAlert('error', '选择会员失败，请重试');
+        });
     }
-
-    // 每5秒刷新一次操作日志
-    setInterval(loadOperationLogs, 5000);
-
+    
+    // 显示商品选择模态框
+    function showProductSelectionModal(products) {
+        const modalContent = document.getElementById('productSelectionContent');
+        if (!modalContent) return;
+        
+        modalContent.innerHTML = '';
+        
+        products.forEach(product => {
+            const productDiv = document.createElement('div');
+            productDiv.className = 'card mb-2';
+            productDiv.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">${product.name}</h5>
+                    <p class="card-text">价格: ¥${product.price} | 库存: ${product.stock}</p>
+                    <button type="button" class="btn btn-primary select-product" 
+                        data-id="${product.id}" data-price="${product.price}" 
+                        data-stock="${product.stock}" data-name="${product.name}">
+                        选择此商品
+                    </button>
+                </div>
+            `;
+            modalContent.appendChild(productDiv);
+        });
+        
+        // 给选择按钮添加事件
+        document.querySelectorAll('.select-product').forEach(button => {
+            button.addEventListener('click', function() {
+                const productData = {
+                    id: this.getAttribute('data-id'),
+                    price: this.getAttribute('data-price'),
+                    stock: this.getAttribute('data-stock'),
+                    name: this.getAttribute('data-name')
+                };
+                
+                fillProductForm(productData);
+                
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('productSelectionModal'));
+                if (modal) modal.hide();
+            });
+        });
+        
+        // 显示模态框
+        const productModal = new bootstrap.Modal(document.getElementById('productSelectionModal'));
+        productModal.show();
+    }
+    
+    // 显示会员选择模态框
+    function showMemberSelectionModal(members) {
+        const modalContent = document.getElementById('memberSelectionContent');
+        if (!modalContent) return;
+        
+        modalContent.innerHTML = '';
+        
+        members.forEach(member => {
+            const memberDiv = document.createElement('div');
+            memberDiv.className = 'card mb-2';
+            memberDiv.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">${member.member_name}</h5>
+                    <p class="card-text">电话: ${member.member_phone}</p>
+                    <button type="button" class="btn btn-primary select-member" 
+                        data-id="${member.member_id}" data-name="${member.member_name}"
+                        data-discount="${member.discount_rate || 1}">
+                        选择此会员
+                    </button>
+                </div>
+            `;
+            modalContent.appendChild(memberDiv);
+        });
+        
+        // 给选择按钮添加事件
+        document.querySelectorAll('.select-member').forEach(button => {
+            button.addEventListener('click', function() {
+                const memberId = this.getAttribute('data-id');
+                const memberName = this.getAttribute('data-name');
+                const discountRate = parseFloat(this.getAttribute('data-discount'));
+                
+                selectMember(memberId, memberName, discountRate);
+                
+                // 关闭模态框
+                const modal = bootstrap.Modal.getInstance(document.getElementById('memberSelectionModal'));
+                if (modal) modal.hide();
+            });
+        });
+        
+        // 显示模态框
+        const memberModal = new bootstrap.Modal(document.getElementById('memberSelectionModal'));
+        memberModal.show();
+    }
+    
+    // 显示消息通知
     function showAlert(type, message) {
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 3000
+            timer: 3000,
+            timerProgressBar: true
         });
         Toast.fire({
             icon: type,
             title: message
         });
     }
-
-    function searchProductByBarcode(barcode) {
-        fetch(`/api/product/barcode/${barcode}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.querySelector('[name="product"]').value = data.product_id;
-                    document.querySelector('[name="quantity"]').value = '1';
-                    document.getElementById('current-stock').textContent = data.stock || 0;
-                    document.querySelector('[name="actual_price"]').value = data.price || 0;
-                    
-                    // 检查库存
-                    if (data.stock <= 0) {
-                        showAlert('error', '该商品库存不足');
-                        return;
-                    }
-                    
-                    // 自动提交表单
-                    if (validateStock()) {
-                        saleForm.submit();
-                    }
-                } else {
-                    showAlert('error', '未找到对应的商品，请检查条码是否正确');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', '查询商品信息失败，请重试');
-            });
-
-        barcodeInput.value = '';
+    
+    // 库存验证
+    function validateStock() {
+        const quantityInput = document.querySelector('[name="quantity"]');
+        const stockSpan = document.getElementById('current-stock');
+        
+        if (quantityInput && stockSpan) {
+            const quantity = parseInt(quantityInput.value) || 0;
+            const stock = parseInt(stockSpan.textContent) || 0;
+            
+            // 数量为0或负数
+            if (quantity <= 0) {
+                document.getElementById('inventory-alert').textContent = '错误: 数量必须大于0!';
+                document.getElementById('inventory-alert').classList.remove('d-none');
+                return false;
+            }
+            
+            // 数量超过库存
+            if (quantity > stock) {
+                document.getElementById('inventory-alert').textContent = '错误: 添加数量不能超过库存数量!';
+                document.getElementById('inventory-alert').classList.remove('d-none');
+                return false;
+            } else {
+                document.getElementById('inventory-alert').classList.add('d-none');
+                return true;
+            }
+        }
+        return true;
     }
-
-    function searchMemberByPhone(phone) {
-        fetch(`/api/member/search/${phone}/`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('member-name').textContent = data.member_name;
-                    document.querySelector('[name="member"]').value = data.member_id;
-                    showAlert('success', '已选择会员');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', '查询会员信息失败');
-            });
-    }
-
-    // 实时更新操作日志
-    function loadOperationLogs() {
-        fetch(`/sales/${saleId}/logs/`)
-            .then(response => response.json())
-            .then(data => {
-                const logList = document.getElementById('operation-logs-list');
-                if (logList) {
-                    logList.innerHTML = data.logs.map(log => 
-                        `<li class="list-group-item">
-                            ${log.timestamp} - ${log.operation_type}: ${log.details}
-                        </li>`
-                    ).join('');
-                }
-            });
-    }
-
-    // 每5秒刷新一次操作日志
-    setInterval(loadOperationLogs, 5000);
-
-    function showAlert(type, message) {
-        const Toast = Swal.mixin({
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000
-        });
-        Toast.fire({
-            icon: type,
-            title: message
+    
+    // 绑定表单提交验证
+    const saleForm = document.getElementById('sale-form');
+    if (saleForm) {
+        saleForm.addEventListener('submit', function(event) {
+            if (!validateStock()) {
+                event.preventDefault();
+                return false;
+            }
         });
     }
+    
+    // 快捷键支持
+    document.addEventListener('keydown', function(event) {
+        // F2 - 聚焦会员搜索
+        if (event.key === 'F2') {
+            event.preventDefault();
+            const memberSearchInput = document.getElementById('item-member-search-input');
+            if (memberSearchInput) {
+                memberSearchInput.focus();
+            }
+        }
+        
+        // F3 - 聚焦条码输入
+        if (event.key === 'F3') {
+            event.preventDefault();
+            const barcodeInput = document.getElementById('item-product-barcode-input');
+            if (barcodeInput) {
+                barcodeInput.focus();
+            }
+        }
+        
+        // F10 - 提交表单
+        if (event.key === 'F10') {
+            event.preventDefault();
+            const submitBtn = document.querySelector('#sale-form button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.click();
+            }
+        }
+    });
 
-    // 实时更新操作日志
-    function loadOperationLogs() {
-        fetch(`/sales/${saleId}/logs/`)
-            .then(response => response.json())
-            .then(data => {
-                const logList = document.getElementById('operation-logs-list');
-                if (logList) {
-                    logList.innerHTML = data.logs.map(log => 
-                        `<li class="list-group-item">
-                            ${log.timestamp} - ${log.operation_type}: ${log.details}
-                        </li>`
-                    ).join('');
-                }
-            });
+    // 将取消会员选择的逻辑移到这里
+    const cancelMemberButton = document.getElementById('cancel-member-selection-btn');
+    if (cancelMemberButton && saleId !== null && saleId !== undefined) {
+        cancelMemberButton.addEventListener('click', function(event) {
+             event.preventDefault();
+             const cancelMemberUrl = `/sale/${saleId}/select-member/`;
+             fetch(cancelMemberUrl, {
+                 method: 'POST',
+                 headers: {
+                     'Content-Type': 'application/x-www-form-urlencoded',
+                     'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+                 },
+                 body: 'member_id=' // 发送空的 member_id 来清除
+             })
+             .then(response => response.json())
+             .then(result => {
+                 if (result.success) {
+                      showAlert('success', '已取消会员选择，正在刷新...');
+                      setTimeout(() => window.location.reload(), 1500); // 延迟刷新给用户看提示
+                 } else {
+                      showAlert('error', result.message || '取消选择会员失败');
+                 }
+             })
+             .catch(error => {
+                 console.error('取消选择会员错误:', error);
+                 showAlert('error', '取消选择会员操作失败');
+             });
+        });
     }
 
-    // 每5秒刷新一次操作日志
-    setInterval(loadOperationLogs, 5000);
-});
+}); // End of DOMContentLoaded
 </script>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- 左侧商品录入区域 -->
-    <div class="col-md-8">
-        <div class="card mb-4 shadow-sm">
-            <!-- 现有的左侧内容 -->
-        </div>
-        <!-- 结算区域 -->
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">总计：<span class="text-primary" id="total-amount">{{ sale.total_amount }}</span></h5>
-                    <h5 class="mb-0">折扣：<span class="text-success" id="discount-amount">{{ sale.discount_amount }}</span></h5>
-                    <h5 class="mb-0">实付：<span class="text-danger" id="final-amount">{{ sale.final_amount }}</span></h5>
-                </div>
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-primary" id="complete-sale">完成结算</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- 右侧操作日志区域 -->
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">操作日志</h5>
-            </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush" id="operation-logs-list">
-                    <!-- 操作日志将通过JavaScript动态更新 -->
-                </ul>
-            </div>
-        </div>
-    </div>
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">收银台</h4>
-                <div class="member-info text-white">
-                    <div class="input-group input-group-sm">
-                        <input type="text" class="form-control" id="member-search" placeholder="输入会员手机号搜索">
-                        <span class="input-group-text" id="member-name">未选择会员</span>
-                        <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#memberModal">
-                            <i class="bi bi-person-plus"></i>
-                        </button>
+<div class="container-fluid mt-3">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0">添加销售商品</h4>
+                    <div class="sales-info">
+                        <span class="badge bg-light text-dark">销售单号: #{{ sale.id }}</span>
+                        <span class="badge bg-info text-white ms-1">按F3快速扫码</span>
                     </div>
-                </div>
-            </div>
-            <div class="card-body">
-                <!-- 商品搜索和扫码区域 -->
-                <div class="mb-3">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="barcode" placeholder="输入商品条码或扫描商品">
-                        <button class="btn btn-outline-primary" type="button" id="search-product">
-                            <i class="bi bi-search"></i> 搜索
-                        </button>
-                    </div>
-                </div>
-                <!-- 商品搜索结果区域 -->
-                <div id="search-results" class="mb-3 d-none">
-                    <div class="list-group">
-                        <!-- 搜索结果将通过JavaScript动态添加 -->
-                    </div>
-                </div>
-                <!-- 销售商品列表 -->
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>商品名称</th>
-                                <th>数量</th>
-                                <th>单价</th>
-                                <th>小计</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sale-items">
-                            {% for item in sale_items %}
-                            <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>{{ item.actual_price }}</td>
-                                <td>{{ item.subtotal }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger delete-item" data-item-id="{{ item.id }}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mb-4">
-                    <div class="input-group input-group-lg">
-                        <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-                        <input type="text" class="form-control form-control-lg" id="barcode" name="barcode" 
-                               placeholder="请扫描商品条码或手动输入" autofocus>
-                        <button class="btn btn-outline-secondary" type="button" id="search-product">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </div>
-                <form method="post" id="sale-form" onsubmit="return validateStock()">
-                    {% csrf_token %}
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            {{ form.product.label_tag }}
-                            {{ form.product }}
-                        </div>
-                        <div class="col-md-3">
-                            {{ form.quantity.label_tag }}
-                            {{ form.quantity }}
-                        </div>
-                        <div class="col-md-3">
-                            {{ form.actual_price.label_tag }}
-                            {{ form.actual_price }}
-                        </div>
-                    </div>
-                    <div class="current-stock mb-3">
-                        <label>当前库存：</label>
-                        <span id="current-stock">0</span>
-                    </div>
-                    <div id="inventory-alert" class="alert alert-danger d-none"></div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">添加商品</button>
-                </form>
-
-    <div class="operation-logs mt-5">
-        <h4>操作记录</h4>
-        <ul class="list-group">
-            {% for log in sale.operationlog_set.all|slice:":5" %}
-            <li class="list-group-item">
-                {{ log.timestamp|date:'Y-m-d H:i' }} - 
-                {{ log.get_operation_type_display }}: {{ log.details }}
-            </li>
-            {% endfor %}
-        </ul>
-    </div>
-</form>
-
-<script>
-document.getElementById('scan-barcode').addEventListener('click', function() {
-    // 扫码功能实现
-});
-
-function validateStock() {
-    const stock = parseInt(document.getElementById('current-stock').innerText);
-    const quantity = parseInt(document.querySelector('#id_quantity').value);
-    if (quantity > stock) {
-        document.getElementById('inventory-alert').classList.remove('d-none');
-        document.getElementById('inventory-alert').innerText = '库存不足，当前可用库存：' + stock;
-        return false;
-    }
-    return true;
-}
-
-function loadOperationLogs() {
-    fetch(`/sales/${saleId}/logs/`)
-        .then(response => response.json())
-        .then(data => {
-            const logList = document.getElementById('operation-logs-list');
-            logList.innerHTML = data.logs.map(log => 
-                `<li class="list-group-item">
-                    ${log.timestamp} - ${log.operation_type}: ${log.details}
-                </li>`
-            ).join('');
-        });
-}
-
-// 每5秒刷新一次操作日志
-setInterval(loadOperationLogs, 5000);
-</script>
-            </div>
-        </div>
-
-        <!-- 右侧会员信息和支付区域 -->
-        <div class="col-md-5">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="card-title mb-0">会员信息</h4>
                 </div>
                 <div class="card-body">
+                    <div class="mb-4">
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                            <input type="text" class="form-control form-control-lg" id="item-product-barcode-input" 
+                                placeholder="请扫描商品条码或手动输入" autofocus>
+                            <button class="btn btn-primary" type="button" id="item-search-product-btn">
+                                <i class="bi bi-search"></i> 查找
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>商品名称</th>
+                                    <th>数量</th>
+                                    <th>实际价格</th>
+                                    <th>小计</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sale-items">
+                                {% for item in sale.saleitems.all %}
+                                <tr>
+                                    <td>{{ item.product.name }}</td>
+                                    <td>{{ item.quantity }}</td>
+                                    <td>{{ item.actual_price }}</td>
+                                    <td>{{ item.subtotal }}</td>
+                                    <td>
+                                        <a href="{% url 'sale_item_delete' sale.id item.id %}" class="btn btn-sm btn-outline-danger" title="删除">
+                                            <i class="bi bi-trash"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <form method="post" id="sale-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.product.id_for_label }}" class="form-label">商品</label>
+                                {{ form.product }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.quantity.id_for_label }}" class="form-label">数量</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.actual_price.id_for_label }}" class="form-label">实际价格</label>
+                                {{ form.actual_price }}
+                            </div>
+                        </div>
+                        <div class="current-stock mt-3 mb-3">
+                            <label>当前库存：</label>
+                            <span id="current-stock" class="badge bg-secondary">0</span>
+                        </div>
+                        <div id="inventory-alert" class="alert alert-danger d-none"></div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg mt-3">添加商品</button>
+                        </div>
+                    </form>
+
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">总计：<span class="text-primary">{{ sale.total_amount }}</span></h5>
+                                <h5 class="mb-0">折扣：<span class="text-success">{{ sale.discount_amount }}</span></h5>
+                                <h5 class="mb-0">实付：<span class="text-danger">{{ sale.final_amount }}</span></h5>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'sale_complete' sale.id %}" class="btn btn-success">完成结算</a>
+                                <a href="{% url 'sale_list' %}" class="btn btn-secondary">返回列表</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧会员信息区域 -->
+        <div class="col-md-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">会员信息</h5>
+                </div>
+                <div class="card-body">
+                    <!-- 会员搜索 -->
+                    <div class="mb-3">
+                        <label for="item-member-search-input" class="form-label">会员查找</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="item-member-search-input" 
+                                placeholder="输入手机号或姓名..." autocomplete="off">
+                            <button class="btn btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#memberModal">
+                                <i class="bi bi-plus"></i> 新增
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">输入手机号或姓名即时搜索，支持模糊匹配</small>
+                    </div>
+                    
+                    <!-- 会员详情区域 -->
                     <div id="member-details" class="{% if not sale.member %}d-none{% endif %}">
-                        <div class="mb-3">
-                            <label class="form-label">会员等级</label>
-                            <div class="form-control-plaintext">{{ sale.member.level.name }}</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">当前积分</label>
-                            <div class="form-control-plaintext">{{ sale.member.points }}</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">折扣率</label>
-                            <div class="form-control-plaintext">{{ sale.member.level.discount|floatformat:2 }}</div>
+                        <div class="card bg-light mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold">会员姓名:</span>
+                                    <span id="member-name-display" class="text-primary">{{ sale.member.name|default:'' }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold">折扣率:</span>
+                                    <span id="member-discount" class="text-success">
+                                        {% if sale.member and sale.member.level.discount < 1 %}
+                                            {{ sale.member.level.discount|multiply:10|floatformat:1 }}折
+                                        {% else %}
+                                            无折扣
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-danger w-100" id="cancel-member-selection-btn">
+                                    <i class="bi bi-x-circle"></i> 取消选择
+                                </button>
+                            </div>
                         </div>
                     </div>
+                    
+                    <!-- 无会员提示 -->
                     <div id="no-member-message" class="{% if sale.member %}d-none{% endif %}">
-                        <p class="text-center text-muted my-4">未选择会员</p>
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle me-2"></i> 搜索并选择会员以应用折扣
+                        </div>
                     </div>
-                </div>
-            </div>
-
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="card-title mb-0">支付方式</h4>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-3">
-                        <button class="btn btn-lg btn-outline-primary" onclick="pay('cash')">
-                            <i class="bi bi-cash"></i> 现金支付
-                        </button>
-                        <button class="btn btn-lg btn-outline-success" onclick="pay('wechat')">
-                            <i class="bi bi-wechat"></i> 微信支付
-                        </button>
-                        <button class="btn btn-lg btn-outline-info" onclick="pay('alipay')">
-                            <i class="bi bi-credit-card"></i> 支付宝
-                        </button>
+                    
+                    <!-- 销售汇总信息 -->
+                    <div class="card mt-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0">快捷操作</h6>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="list-group mb-2">
+                                <a href="#" class="list-group-item list-group-item-action" 
+                                   onclick="document.getElementById('item-product-barcode-input').focus(); return false;">
+                                    <i class="bi bi-upc-scan"></i> 继续扫码 (F3)
+                                </a>
+                                <a href="{% url 'sale_complete' sale.id %}" class="list-group-item list-group-item-action bg-success text-white">
+                                    <i class="bi bi-check-circle"></i> 完成结算
+                                </a>
+                            </div>
+                            <div class="list-group">
+                                <a href="{% url 'sale_list' %}" class="list-group-item list-group-item-action">
+                                    <i class="bi bi-arrow-left"></i> 返回销售列表
+                                </a>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 会员选择模态框 -->
-    <div class="modal fade" id="memberModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">选择会员</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="member-search" placeholder="输入会员手机号搜索">
-                        <button class="btn btn-outline-secondary" type="button">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                    <div id="member-search-results">
-                        <!-- 这里将通过AJAX加载会员搜索结果 -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="card-title mb-0">已添加商品</h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>商品名称</th>
-                                <th class="text-center">数量</th>
-                                <th class="text-end">单价</th>
-                                <th class="text-end">小计</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for item in sale_items %}
-                            <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td class="text-center">{{ item.quantity }}</td>
-                                <td class="text-end">¥{{ item.price }}</td>
-                                <td class="text-end">¥{{ item.subtotal }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot class="table-group-divider">
-                            <tr class="fw-bold">
-                                <td colspan="3" class="text-end">总计：</td>
-                                <td class="text-end">¥{{ sale.total_amount }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <div class="text-end mt-4">
-                    <a href="{% url 'sale_list' %}" class="btn btn-success btn-lg">完成</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-    <div class="operation-logs mt-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="card-title mb-0">操作记录</h4>
+<!-- 添加会员模态框 -->
+<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="memberModalLabel">添加新会员</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="card-body">
-                <ul class="list-group" id="operation-logs-list">
-                    {% for log in sale.operationlog_set.all|slice:":5" %}
-                    <li class="list-group-item">
-                        {{ log.timestamp|date:'Y-m-d H:i' }} - 
-                        {{ log.get_operation_type_display }}: {{ log.details }}
-                    </li>
-                    {% endfor %}
-                </ul>
+            <div class="modal-body">
+                <form id="add-member-form" method="post" action="{% url 'member_create' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'sale_item_create' sale.id %}">
+                    <div class="mb-3">
+                        <label for="member-name-input" class="form-label">会员姓名</label>
+                        <input type="text" class="form-control" id="member-name-input" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="member-phone-input" class="form-label">手机号码</label>
+                        <input type="tel" class="form-control" id="member-phone-input" name="phone" required pattern="[0-9]{11}">
+                        <div class="form-text">请输入11位手机号码</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="member-level-input" class="form-label">会员等级</label>
+                        <select class="form-select" id="member-level-input" name="level">
+                            {% for level in member_levels %}
+                            <option value="{{ level.id }}">{{ level.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">添加会员</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
+
+<!-- 商品选择模态框 -->
+<div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="productSelectionModalLabel">选择商品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="productSelectionContent">
+                    <!-- 动态生成的商品列表 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 会员选择模态框 -->
+<div class="modal fade" id="memberSelectionModal" tabindex="-1" aria-labelledby="memberSelectionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="memberSelectionModalLabel">选择会员</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="memberSelectionContent">
+                    <!-- 动态生成的会员列表 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,23 +1,31 @@
 """
 Inventory checking views.
 """
+import json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
-from django.contrib import messages
-from django.db.models import Q, F, Sum
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponse
+from django.db import transaction
+from django.contrib import messages
+from django.utils import timezone
+from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 
-from .models import InventoryCheck, InventoryCheckItem, Product, Inventory
-from .forms import InventoryCheckForm, InventoryCheckItemForm, InventoryCheckApproveForm
-from .services.inventory_check_service import InventoryCheckService
-from .utils.logging import log_view_access
-from .permissions.decorators import permission_required
+# 使用重构后的模型导入
+from inventory.models import (
+    InventoryCheck, InventoryCheckItem, Product, 
+    Inventory, OperationLog
+)
+from inventory.forms import InventoryCheckForm, InventoryCheckItemForm, InventoryCheckApproveForm
+from inventory.services.inventory_check_service import InventoryCheckService
+from inventory.utils.logging import log_view_access
+from inventory.permissions.decorators import permission_required
 
 @login_required
 @log_view_access('INVENTORY_CHECK')
 @permission_required('perform_inventory_check')
 def inventory_check_list(request):
-    """View to list all inventory checks."""
+    """库存盘点列表视图"""
     inventory_checks = InventoryCheck.objects.all().order_by('-created_at')
     
     # Search and filter

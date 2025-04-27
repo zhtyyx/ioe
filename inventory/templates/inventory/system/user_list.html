@@ -1,0 +1,123 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}用户管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item active" aria-current="page">用户管理</li>
+        </ol>
+    </nav>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">用户管理</h1>
+        <a href="{% url 'user_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> 创建新用户
+        </a>
+    </div>
+    
+    <!-- 过滤和搜索 -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="搜索用户名、姓名或邮箱" value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select name="group" class="form-select">
+                        <option value="">所有用户组</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if user_group == group.id|stringformat:"i" %}selected{% endif %}>{{ group.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="is_active" class="form-select">
+                        <option value="">所有状态</option>
+                        <option value="true" {% if is_active == 'true' %}selected{% endif %}>活跃</option>
+                        <option value="false" {% if is_active == 'false' %}selected{% endif %}>禁用</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 用户列表 -->
+    <div class="card">
+        <div class="card-body">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>姓名</th>
+                            <th>邮箱</th>
+                            <th>用户组</th>
+                            <th>最后登录</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.get_full_name|default:"-" }}</td>
+                            <td>{{ user.email|default:"-" }}</td>
+                            <td>
+                                {% for group in user.groups.all %}
+                                <span class="badge bg-secondary">{{ group.name }}</span>
+                                {% empty %}
+                                <span class="text-muted">-</span>
+                                {% endfor %}
+                            </td>
+                            <td>{{ user.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
+                            <td>
+                                {% if user.is_active %}
+                                <span class="badge bg-success">活跃</span>
+                                {% else %}
+                                <span class="badge bg-danger">禁用</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'user_detail' user.id %}" class="btn btn-outline-primary" title="查看详情">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'user_update' user.id %}" class="btn btn-outline-secondary" title="编辑用户">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if user.id != request.user.id %}
+                                    <a href="{% url 'user_delete' user.id %}" class="btn btn-outline-danger" title="删除用户">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i> 没有找到匹配的用户记录
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

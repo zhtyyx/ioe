@@ -1,0 +1,266 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}系统日志 | {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">系统日志</h1>
+    
+    <!-- 面包屑导航 -->
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'index' %}">控制台</a></li>
+        <li class="breadcrumb-item active">系统日志</li>
+    </ol>
+
+    <!-- 过滤选项卡 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter me-1"></i>
+            日志过滤
+        </div>
+        <div class="card-body">
+            <form method="get" class="row">
+                <div class="col-md-3 mb-3">
+                    <label for="action" class="form-label">操作类型</label>
+                    <select name="action" id="action" class="form-select">
+                        <option value="">全部操作</option>
+                        <option value="新增" {% if selected_action == '新增' %}selected{% endif %}>新增</option>
+                        <option value="修改" {% if selected_action == '修改' %}selected{% endif %}>修改</option>
+                        <option value="删除" {% if selected_action == '删除' %}selected{% endif %}>删除</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="start_date" class="form-label">开始日期</label>
+                    <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="end_date" class="form-label">结束日期</label>
+                    <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i> 筛选
+                    </button>
+                    <a href="{% url 'log_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-redo me-1"></i> 重置
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 日志统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-primary text-white mb-4">
+                <div class="card-body">总日志数: {{ total_logs }}</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'log_list' %}">查看所有</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-success text-white mb-4">
+                <div class="card-body">新增操作: {{ add_logs }}</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'log_list' %}?action=新增">查看详情</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-warning text-white mb-4">
+                <div class="card-body">修改操作: {{ change_logs }}</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'log_list' %}?action=修改">查看详情</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card bg-danger text-white mb-4">
+                <div class="card-body">删除操作: {{ delete_logs }}</div>
+                <div class="card-footer d-flex align-items-center justify-content-between">
+                    <a class="small text-white stretched-link" href="{% url 'log_list' %}?action=删除">查看详情</a>
+                    <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作日志表格 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-history me-1"></i>
+                        操作日志记录
+                    </div>
+                    <div>
+                        {% if perms.admin.delete_logentry %}
+                        <a href="{% url 'clear_logs' %}" class="btn btn-sm btn-danger">
+                            <i class="fas fa-trash me-1"></i> 清理日志
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if logs %}
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>用户</th>
+                                        <th>操作</th>
+                                        <th>内容</th>
+                                        <th>对象ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr>
+                                        <td>{{ log.action_time|date:"Y-m-d H:i:s" }}</td>
+                                        <td>{{ log.user }}</td>
+                                        <td>
+                                            {% if log.action_flag == 1 %}
+                                                <span class="badge bg-success">新增</span>
+                                            {% elif log.action_flag == 2 %}
+                                                <span class="badge bg-warning">修改</span>
+                                            {% elif log.action_flag == 3 %}
+                                                <span class="badge bg-danger">删除</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">其他</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ log.object_repr }}</td>
+                                        <td>{{ log.object_id }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页 -->
+                        {% if logs.has_other_pages %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if logs.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if selected_action %}&action={{ selected_action }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ logs.previous_page_number }}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in logs.paginator.page_range %}
+                                    {% if logs.number == num %}
+                                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                                    {% elif num > logs.number|add:'-3' and num < logs.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if logs.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ logs.next_page_number }}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ logs.paginator.num_pages }}{% if selected_action %}&action={{ selected_action }}{% endif %}{% if start_date %}&start_date={{ start_date|date:'Y-m-d' }}{% endif %}{% if end_date %}&end_date={{ end_date|date:'Y-m-d' }}{% endif %}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-1"></i> 没有找到符合条件的日志记录
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日志文件列表 -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-file-alt me-1"></i>
+                    系统日志文件
+                </div>
+                <div class="card-body">
+                    {% if log_files %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>文件名</th>
+                                        <th>大小</th>
+                                        <th>最后修改时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log_file in log_files %}
+                                    <tr>
+                                        <td>{{ log_file.name }}</td>
+                                        <td>{{ log_file.size }}</td>
+                                        <td>{{ log_file.modified|date:"Y-m-d H:i:s" }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-download me-1"></i> 下载
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-1"></i> 没有找到系统日志文件
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

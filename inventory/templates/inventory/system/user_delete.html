@@ -1,0 +1,79 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}删除用户{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'user_list' %}">用户管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">删除用户</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle me-2"></i> 确认删除用户
+                </div>
+                <div class="card-body">
+                    <!-- 警告提示 -->
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading"><i class="fas fa-exclamation-circle me-2"></i> 警告：此操作不可逆！</h5>
+                        <p>您即将删除用户 <strong>{{ user.username }}</strong>。用户删除后将无法恢复，该用户的所有权限将被撤销，且无法再使用此账号登录系统。</p>
+                        <hr>
+                        <p class="mb-0">删除用户不会删除该用户已创建的数据记录，这些记录将保留在系统中。</p>
+                    </div>
+                    
+                    <!-- 用户信息 -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title">用户信息</h6>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">用户名</dt>
+                                <dd class="col-sm-8">{{ user.username }}</dd>
+                                
+                                <dt class="col-sm-4">姓名</dt>
+                                <dd class="col-sm-8">{{ user.get_full_name|default:"-" }}</dd>
+                                
+                                <dt class="col-sm-4">电子邮箱</dt>
+                                <dd class="col-sm-8">{{ user.email|default:"-" }}</dd>
+                                
+                                <dt class="col-sm-4">用户组</dt>
+                                <dd class="col-sm-8">
+                                    {% for group in user.groups.all %}
+                                    <span class="badge bg-secondary">{{ group.name }}</span>
+                                    {% empty %}
+                                    <span class="text-muted">-</span>
+                                    {% endfor %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">创建时间</dt>
+                                <dd class="col-sm-8">{{ user.date_joined|date:"Y-m-d H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <!-- 删除表单 -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-1"></i> 确认删除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

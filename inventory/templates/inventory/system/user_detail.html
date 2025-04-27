@@ -1,0 +1,212 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}用户详情 - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'user_list' %}">用户管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">用户详情</li>
+        </ol>
+    </nav>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">用户详情 - {{ user.username }}</h1>
+        <div>
+            <a href="{% url 'user_update' user.id %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> 编辑用户
+            </a>
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-arrow-left me-1"></i> 返回列表
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- 用户基本信息 -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">基本信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="rounded-circle bg-light d-inline-flex justify-content-center align-items-center mb-3" style="width: 120px; height: 120px;">
+                            <i class="fas fa-user-circle text-primary" style="font-size: 80px;"></i>
+                        </div>
+                        <h4 class="mb-0">{{ user.get_full_name|default:user.username }}</h4>
+                        <p class="text-muted">{{ user.email|default:"未设置邮箱" }}</p>
+                        
+                        <span class="badge {% if user.is_active %}bg-success{% else %}bg-danger{% endif %} me-1">
+                            {{ user.is_active|yesno:"活跃,禁用" }}
+                        </span>
+                        {% if user.is_staff %}
+                        <span class="badge bg-secondary me-1">后台访问</span>
+                        {% endif %}
+                        {% if user.is_superuser %}
+                        <span class="badge bg-warning text-dark">超级管理员</span>
+                        {% endif %}
+                    </div>
+                    
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            用户ID
+                            <span class="text-muted">{{ user.id }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            用户名
+                            <span>{{ user.username }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            姓名
+                            <span>{{ user.get_full_name|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            电子邮箱
+                            <span>{{ user.email|default:"-" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            最后登录
+                            <span>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            注册时间
+                            <span>{{ user.date_joined|date:"Y-m-d H:i"|default:"-" }}</span>
+                        </li>
+                    </ul>
+                </div>
+                {% if user.id != request.user.id %}
+                <div class="card-footer">
+                    <a href="{% url 'user_delete' user.id %}" class="btn btn-danger w-100">
+                        <i class="fas fa-trash me-1"></i> 删除此用户
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 用户角色和权限 -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">用户角色</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.groups.exists %}
+                    <div class="mb-4">
+                        {% for group in user.groups.all %}
+                        <div class="card mb-3 border-0 bg-light">
+                            <div class="card-body">
+                                <h5 class="card-title d-flex align-items-center">
+                                    <i class="fas {% if group.name == '销售员' %}fa-user-tag{% elif group.name == '仓库管理员' %}fa-warehouse{% elif group.name == '财务人员' %}fa-file-invoice-dollar{% elif group.name == '管理员' %}fa-user-shield{% else %}fa-users{% endif %} me-2"></i>
+                                    {{ group.name }}
+                                </h5>
+                                <p class="card-text text-muted small">
+                                    {% if group.name == '销售员' %}
+                                    负责销售和会员管理，可以创建销售记录和管理会员信息。
+                                    {% elif group.name == '仓库管理员' %}
+                                    负责库存和产品管理，可以添加商品和调整库存。
+                                    {% elif group.name == '财务人员' %}
+                                    负责财务数据查看和报表分析，可以查看销售和库存数据。
+                                    {% elif group.name == '管理员' %}
+                                    拥有系统大部分功能的管理权限，可以管理用户和系统设置。
+                                    {% else %}
+                                    拥有该用户组设定的权限。
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i> 该用户未分配任何角色
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'user_update' user.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-cog me-1"></i> 管理用户角色和权限
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 最近操作记录 -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">最近操作记录</h5>
+                </div>
+                <div class="card-body">
+                    {% if logs %}
+                    <div class="timeline">
+                        {% for log in logs %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker 
+                                {% if log.operation_type == 'ADD' %}bg-success{% elif log.operation_type == 'CHANGE' %}bg-primary{% elif log.operation_type == 'DELETE' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                <i class="fas 
+                                    {% if log.operation_type == 'ADD' %}fa-plus{% elif log.operation_type == 'CHANGE' %}fa-edit{% elif log.operation_type == 'DELETE' %}fa-trash{% else %}fa-info{% endif %}">
+                                </i>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="mb-1">
+                                    <strong>{{ log.details }}</strong>
+                                </div>
+                                <div class="text-muted small">
+                                    {{ log.timestamp|date:"Y-m-d H:i:s" }}
+                                    {% if log.ip_address %}
+                                    <span class="ms-2">IP: {{ log.ip_address }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> 没有找到操作记录
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+        border-left: 2px solid #e9ecef;
+        padding-left: 20px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -10px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        text-align: center;
+        line-height: 20px;
+        color: white;
+        font-size: 0.7rem;
+    }
+</style>
+{% endblock %} 

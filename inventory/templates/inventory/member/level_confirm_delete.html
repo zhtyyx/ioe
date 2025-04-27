@@ -1,0 +1,88 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}删除会员等级 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'member_list' %}">会员管理</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'member_level_list' %}">会员等级</a></li>
+            <li class="breadcrumb-item active" aria-current="page">删除会员等级</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> 确认删除会员等级
+                </div>
+                <div class="card-body">
+                    <!-- 警告提示 -->
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading"><i class="bi bi-exclamation-circle me-2"></i> 警告：此操作不可逆！</h5>
+                        <p>您即将删除会员等级 <strong>{{ level.name }}</strong>。删除后将无法恢复。</p>
+                        
+                        {% if member_count > 0 %}
+                        <hr>
+                        <p class="mb-0 text-danger"><strong>注意：</strong> 该等级下有 {{ member_count }} 名会员。删除此等级时，系统将尝试将这些会员移至默认等级。</p>
+                        {% endif %}
+                        
+                        {% if is_default %}
+                        <hr>
+                        <p class="mb-0 text-danger"><strong>注意：</strong> 这是系统的默认等级。删除默认等级可能会影响系统功能。</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 等级信息 -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">等级信息</h5>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">等级名称</dt>
+                                <dd class="col-sm-8">{{ level.name }}</dd>
+                                
+                                <dt class="col-sm-4">折扣率</dt>
+                                <dd class="col-sm-8">{{ level.discount|floatformat:2 }}</dd>
+                                
+                                <dt class="col-sm-4">升级所需积分</dt>
+                                <dd class="col-sm-8">{{ level.points_threshold }}</dd>
+                                
+                                <dt class="col-sm-4">创建时间</dt>
+                                <dd class="col-sm-8">{{ level.created_at|date:"Y-m-d H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <!-- 删除表单 -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if member_count > 0 or is_default %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="force_delete" id="force_delete">
+                            <label class="form-check-label" for="force_delete">
+                                我了解风险，仍然要强制删除
+                            </label>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'member_level_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> 确认删除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

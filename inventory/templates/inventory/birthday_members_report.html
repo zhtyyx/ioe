@@ -1,234 +1,208 @@
 {% extends 'inventory/base.html' %}
+{% load static %}
 
-{% block title %}当月生日会员报表 - {{ block.super }}{% endblock %}
+{% block title %}{{ month_name }}生日会员 - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="card-title mb-0">{{ current_month_name }}生日会员报表</h2>
-                        <p class="text-muted">本月有 {{ members.count }} 位会员生日</p>
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item active" aria-current="page">生日会员报表</li>
+        </ol>
+    </nav>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{{ month_name }}生日会员</h1>
+        <div class="btn-group">
+            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                {{ month_name }} <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item {% if month == 1 %}active{% endif %}" href="?month=1">一月</a></li>
+                <li><a class="dropdown-item {% if month == 2 %}active{% endif %}" href="?month=2">二月</a></li>
+                <li><a class="dropdown-item {% if month == 3 %}active{% endif %}" href="?month=3">三月</a></li>
+                <li><a class="dropdown-item {% if month == 4 %}active{% endif %}" href="?month=4">四月</a></li>
+                <li><a class="dropdown-item {% if month == 5 %}active{% endif %}" href="?month=5">五月</a></li>
+                <li><a class="dropdown-item {% if month == 6 %}active{% endif %}" href="?month=6">六月</a></li>
+                <li><a class="dropdown-item {% if month == 7 %}active{% endif %}" href="?month=7">七月</a></li>
+                <li><a class="dropdown-item {% if month == 8 %}active{% endif %}" href="?month=8">八月</a></li>
+                <li><a class="dropdown-item {% if month == 9 %}active{% endif %}" href="?month=9">九月</a></li>
+                <li><a class="dropdown-item {% if month == 10 %}active{% endif %}" href="?month=10">十月</a></li>
+                <li><a class="dropdown-item {% if month == 11 %}active{% endif %}" href="?month=11">十一月</a></li>
+                <li><a class="dropdown-item {% if month == 12 %}active{% endif %}" href="?month=12">十二月</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- 左侧：会员列表 -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ month_name }}生日会员列表</h5>
+                        <span class="badge bg-light text-dark">共 {{ total_members }} 位会员</span>
                     </div>
-                    <div class="btn-group">
-                        <button class="btn btn-primary" onclick="window.print()">
-                            <i class="bi bi-printer me-1"></i> 打印报表
-                        </button>
-                        <a href="{% url 'reports_index' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i> 返回报表中心
-                        </a>
+                </div>
+                <div class="card-body p-0">
+                    {% if members %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>生日</th>
+                                    <th>联系电话</th>
+                                    <th>会员等级</th>
+                                    <th>积分</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in members %}
+                                <tr>
+                                    <td>{{ member.name }}</td>
+                                    <td>{{ member.birthday|date:"m-d" }}</td>
+                                    <td>{{ member.phone }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if member.level.name == '普通会员' %}bg-secondary
+                                            {% elif member.level.name == '银卡会员' %}bg-light text-dark
+                                            {% elif member.level.name == '金卡会员' %}bg-warning text-dark
+                                            {% elif member.level.name == '钻石会员' %}bg-info
+                                            {% else %}bg-primary{% endif %}">
+                                            {{ member.level.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ member.points }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'member_detail' member.id %}" class="btn btn-outline-primary" title="查看详情">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'member_edit' member.id %}" class="btn btn-outline-secondary" title="编辑会员">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'member_recharge' member.id %}" class="btn btn-outline-success" title="会员充值">
+                                                <i class="fas fa-wallet"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
+                    {% else %}
+                    <div class="alert alert-info m-3 mb-0">
+                        <i class="fas fa-info-circle me-2"></i> {{ month_name }}没有会员生日
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">生日会员列表</h5>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="sortByDaySwitch">
-                    <label class="form-check-label" for="sortByDaySwitch">按日期排序</label>
+        
+        <!-- 右侧：近期生日和统计 -->
+        <div class="col-lg-4">
+            <!-- 即将到来的生日 -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0"><i class="fas fa-birthday-cake me-2"></i> 近期生日会员</h5>
                 </div>
-            </div>
-            <div class="card-body">
-                {% if members %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle" id="birthdayTable">
-                        <thead class="table-light">
-                            <tr>
-                                <th>会员编号</th>
-                                <th>姓名</th>
-                                <th>电话</th>
-                                <th>生日</th>
-                                <th>会员等级</th>
-                                <th>积分</th>
-                                <th>账户余额</th>
-                                <th>累计消费</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for member in members %}
-                            <tr data-birthday-day="{{ member.birthday|date:'d' }}">
-                                <td>#{{ member.id }}</td>
-                                <td>{{ member.name }}</td>
-                                <td>{{ member.phone }}</td>
-                                <td>
-                                    <span class="badge bg-pink">
-                                        <i class="bi bi-gift me-1"></i>
-                                        {{ member.birthday|date:"m-d" }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ member.level.color }}">
-                                        {{ member.level.name }}
-                                    </span>
-                                </td>
-                                <td>{{ member.points }}</td>
-                                <td>¥{{ member.balance }}</td>
-                                <td>¥{{ member.total_spend|default:"0.00" }}</td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{% url 'member_details' member.id %}" class="btn btn-info">
-                                            <i class="bi bi-info-circle"></i>
-                                        </a>
-                                        <a href="{% url 'member_recharge' member.id %}" class="btn btn-success">
-                                            <i class="bi bi-cash-coin"></i>
-                                        </a>
+                <div class="card-body p-0">
+                    {% if upcoming_birthdays %}
+                    <div class="list-group list-group-flush">
+                        {% for item in upcoming_birthdays %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-0">{{ item.member.name }}</h6>
+                                    <div class="text-muted small">{{ item.member.phone }}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="badge bg-primary mb-1">{{ item.birthday_date|date:"m-d" }}</div>
+                                    <div class="small 
+                                        {% if item.days_until_birthday == 0 %}text-danger fw-bold
+                                        {% elif item.days_until_birthday <= 3 %}text-warning fw-bold
+                                        {% else %}text-muted{% endif %}">
+                                        {% if item.days_until_birthday == 0 %}
+                                            今天生日
+                                        {% else %}
+                                            还有 {{ item.days_until_birthday }} 天
+                                        {% endif %}
                                     </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info m-3 mb-0">
+                        <i class="fas fa-info-circle me-2"></i> 近期没有会员生日
+                    </div>
+                    {% endif %}
                 </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="bi bi-calendar-x text-muted" style="font-size: 2.5rem;"></i>
-                    <p class="mt-3 mb-0">本月暂无会员生日</p>
+            </div>
+            
+            <!-- 生日会员营销建议 -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-lightbulb me-2"></i> 营销建议</h5>
                 </div>
-                {% endif %}
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-circle bg-primary text-white me-2">
+                                <i class="fas fa-gift"></i>
+                            </div>
+                            <h6 class="mb-0">生日礼包</h6>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            为生日会员提供专属生日礼包，包含优惠券、积分奖励等生日特权。
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-circle bg-success text-white me-2">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <h6 class="mb-0">生日折扣</h6>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            在会员生日当天或生日周提供特别折扣，鼓励会员在生日期间消费。
+                        </p>
+                    </div>
+                    
+                    <div class="mb-0">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-circle bg-warning text-white me-2">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h6 class="mb-0">生日祝福</h6>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            发送个性化的生日祝福短信或邮件，增强会员归属感和忠诚度。
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-{% if members %}
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">会员等级分布</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="levelChart" height="250"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">生日日期分布</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="dayChart" height="250"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-{% endblock %}
-
-{% block extra_js %}
-{% if members %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 生日日期排序功能
-        const sortByDaySwitch = document.getElementById('sortByDaySwitch');
-        const birthdayTable = document.getElementById('birthdayTable');
-        
-        sortByDaySwitch.addEventListener('change', function() {
-            const tbody = birthdayTable.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            
-            if (this.checked) {
-                // 按生日日期排序
-                rows.sort((a, b) => {
-                    const dayA = parseInt(a.dataset.birthdayDay);
-                    const dayB = parseInt(b.dataset.birthdayDay);
-                    return dayA - dayB;
-                });
-            } else {
-                // 恢复原始排序（按会员ID排序）
-                rows.sort((a, b) => {
-                    const idA = parseInt(a.querySelector('td').textContent.replace('#', ''));
-                    const idB = parseInt(b.querySelector('td').textContent.replace('#', ''));
-                    return idA - idB;
-                });
-            }
-            
-            // 重新添加排序后的行
-            rows.forEach(row => tbody.appendChild(row));
-        });
-        
-        // 会员等级分布图表
-        const levelLabels = [];
-        const levelCounts = [];
-        const levelColors = [];
-        
-        {% for level in levels %}
-        levelLabels.push('{{ level.name }}');
-        levelCounts.push({{ level.count }});
-        levelColors.push('{{ level.color_code }}');
-        {% endfor %}
-        
-        const levelData = {
-            labels: levelLabels,
-            datasets: [{
-                label: '会员数量',
-                data: levelCounts,
-                backgroundColor: levelColors,
-                borderWidth: 1
-            }]
-        };
-        
-        const levelCtx = document.getElementById('levelChart').getContext('2d');
-        new Chart(levelCtx, {
-            type: 'pie',
-            data: levelData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    },
-                    title: {
-                        display: false
-                    }
-                }
-            }
-        });
-        
-        // 生日日期分布图表
-        const dayLabels = Array.from({length: 31}, (_, i) => (i + 1).toString());
-        const daysDistribution = {{ days_distribution|safe }};
-        
-        const dayData = {
-            labels: dayLabels,
-            datasets: [{
-                label: '会员数量',
-                data: daysDistribution,
-                backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
-            }]
-        };
-        
-        const dayCtx = document.getElementById('dayChart').getContext('2d');
-        new Chart(dayCtx, {
-            type: 'bar',
-            data: dayData,
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    }
-                }
-            }
-        });
-    });
-</script>
-{% endif %}
+<style>
+    .icon-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+</style>
 {% endblock %} 

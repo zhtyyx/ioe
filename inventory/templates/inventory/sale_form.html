@@ -1,150 +1,1156 @@
 {% extends 'inventory/base.html' %}
+{% load custom_filters %}
 
-{% block title %}新增销售 - {{ block.super }}{% endblock %}
+{% block title %}收银台 - {{ block.super }}{% endblock %}
+
+{% block head %}
+<!-- 版本更新标记：确认模板加载 -->
+<style>
+    /* 收银台专用样式 */
+    .cashier-container {
+        display: flex;
+        width: 100%;
+        height: calc(100vh - 145px); /* 减去导航栏和页脚高度 */
+        margin: -1.5rem 0;
+        overflow: hidden;
+    }
+    
+    /* 左侧区域 - 占据67%宽度 */
+    .left-area {
+        width: 67%;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        border-right: 1px solid #dee2e6;
+        height: 100%;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* 右侧区域 - 占据33%宽度 */
+    .right-area {
+        width: 33%;
+        display: flex;
+        flex-direction: column;
+        background-color: #f8f9fa;
+        height: 100%;
+        padding: 15px;
+    }
+    
+    /* 收银台标题 */
+    .cashier-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 15px 20px;
+        font-size: 20px;
+        font-weight: bold;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+    }
+    
+    .cashier-header i {
+        margin-right: 10px;
+        font-size: 24px;
+    }
+    
+    /* 商品搜索区域 */
+    .product-search-area {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 15px 20px;
+    }
+    
+    .product-search-area .small {
+        color: var(--primary-color);
+        opacity: 0.7;
+    }
+    
+    /* 商品列表区域 */
+    .product-list-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: #fff;
+    }
+    
+    .product-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .product-table th {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        font-weight: 500;
+    }
+    
+    .product-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #f0f0f0;
+        vertical-align: middle;
+    }
+    
+    .product-table tr:hover {
+        background-color: rgba(52, 152, 219, 0.05);
+    }
+    
+    /* 数量控制器 */
+    .quantity-control {
+        display: flex;
+        align-items: center;
+        width: 120px;
+    }
+    
+    .quantity-control button {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ced4da;
+        background-color: #f8f9fa;
+    }
+    
+    .quantity-control input {
+        width: 50px;
+        text-align: center;
+        border: 1px solid #ced4da;
+        height: 30px;
+        margin: 0 5px;
+    }
+    
+    /* 订单汇总区域 */
+    .order-summary {
+        background-color: #f8f9fa;
+        border-top: 1px solid #dee2e6;
+        padding: 20px;
+        border-bottom-left-radius: var(--border-radius);
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed #e9ecef;
+    }
+    
+    .summary-row:last-child {
+        border-bottom: none;
+        margin-bottom: 15px;
+    }
+    
+    .summary-label {
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .summary-value {
+        font-weight: 700;
+        color: #343a40;
+    }
+    
+    .checkout-btn {
+        width: 100%;
+        padding: 15px;
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: 600;
+        background-color: var(--success-color);
+        border-color: var(--success-color);
+        border-radius: 5px;
+        transition: all 0.3s;
+    }
+    
+    .checkout-btn:hover {
+        background-color: #27ae60;
+        border-color: #27ae60;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+    }
+    
+    /* 收银员信息 */
+    .cashier-info {
+        text-align: right;
+        color: #6c757d;
+        margin-bottom: 15px;
+    }
+    
+    /* 会员区域样式 */
+    .member-section {
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 15px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .member-section-title {
+        color: var(--primary-color);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .member-info {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-top: 15px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .member-field {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 1px dotted #e9ecef;
+    }
+    
+    .member-field:last-of-type {
+        border-bottom: none;
+    }
+    
+    .field-label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .field-value {
+        font-weight: 600;
+        color: #343a40;
+    }
+    
+    /* 支付方式区域 */
+    .payment-section {
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 15px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .payment-title {
+        color: var(--primary-color);
+        font-weight: 600;
+    }
+    
+    .payment-methods {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(3, 1fr);
+        gap: 10px;
+    }
+    
+    .payment-btn {
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        background-color: white;
+        transition: all 0.2s;
+    }
+    
+    .payment-btn i {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+    
+    .payment-btn.active {
+        background-color: var(--success-color);
+        color: white;
+        border-color: var(--success-color);
+    }
+    
+    .payment-btn:hover {
+        background-color: #f0f0f0;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+    
+    .payment-btn.active:hover {
+        background-color: #27ae60;
+    }
+</style>
+{% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const barcodeInput = document.getElementById('barcode');
-    const saleForm = document.getElementById('sale-form');
-    const searchProduct = document.getElementById('search-product');
-    const memberSearch = document.getElementById('member-search');
-    const completeSaleBtn = document.getElementById('complete-sale');
-    const addMemberForm = document.getElementById('add-member-form');
-    let lastBarcode = '';
-    let lastScannedTime = 0;
-    let saleId = document.querySelector('[name="sale_id"]')?.value;
-
-    // 扫码输入处理
-    barcodeInput.addEventListener('input', handleBarcodeInput);
-    barcodeInput.addEventListener('keypress', handleEnterKey);
-
-    // 商品搜索按钮点击事件
-    searchProduct.addEventListener('click', function() {
-        const barcode = barcodeInput.value.trim();
-        if (barcode) {
-            searchProductByBarcode(barcode);
-        }
-    });
-
-    // 会员搜索功能
-    memberSearch.addEventListener('input', function() {
-        const phone = this.value.trim();
-        if (phone.length >= 3) {
-            searchMemberByPhone(phone);
-        }
-    });
+    // 变量初始化
+    const productSearchInput = document.getElementById('product-search-input');
+    const productTableBody = document.getElementById('product-table-body');
+    const memberIdInput = document.getElementById('member-id');
+    const memberInfoBox = document.getElementById('member-info-box');
+    const paymentButtons = document.querySelectorAll('.payment-btn');
+    const paymentMethodInput = document.getElementById('payment-method');
+    const memberSearchInput = document.getElementById('member-search-input');
+    window.updateTotalsTimeout = null; // 用于节流 updateTotals
     
-    // 添加会员表单提交
-    if (addMemberForm) {
-        addMemberForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(addMemberForm);
+    // 商品搜索处理
+    if (productSearchInput) {
+        let lastInputTime = 0;
+        let inputBuffer = '';
+        
+        productSearchInput.addEventListener('keypress', function(event) {
+            const currentTime = new Date().getTime();
             
-            fetch('/members/add-ajax/', {
-                method: 'POST', 
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
+            if (currentTime - lastInputTime < 50) {
+                inputBuffer += event.key;
+            } else {
+                inputBuffer = event.key;
+            }
+            
+            lastInputTime = currentTime;
+            
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                if (inputBuffer.length > 0) {
+                    searchProductByBarcode(productSearchInput.value);
+                    productSearchInput.value = '';
+                    inputBuffer = '';
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('member-name').textContent = data.member_name;
-                    document.querySelector('[name="member"]').value = data.member_id;
-                    showAlert('success', '会员添加成功并已选择');
-                    // 关闭模态框
-                    const memberModal = bootstrap.Modal.getInstance(document.getElementById('memberModal'));
-                    memberModal.hide();
-                    // 重置表单
-                    addMemberForm.reset();
-                } else {
-                    showAlert('error', data.message || '添加会员失败');
+            }
+        });
+    }
+    
+    // 会员搜索
+    if (memberSearchInput) {
+        memberSearchInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const query = this.value.trim();
+                if (query.length > 0) {
+                    searchMember(query);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', '添加会员失败，请重试');
+            }
+        });
+    }
+    
+    // 支付方式选择
+    if (paymentButtons) {
+        paymentButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 移除其他按钮的选中状态
+                paymentButtons.forEach(b => b.classList.remove('active'));
+                // 添加当前按钮的选中状态
+                this.classList.add('active');
+                // 更新隐藏输入字段
+                const paymentMethod = this.getAttribute('data-payment');
+                if (paymentMethodInput) {
+                    paymentMethodInput.value = paymentMethod;
+                }
             });
         });
     }
-
-    function handleBarcodeInput(e) {
-        const currentTime = new Date().getTime();
-        const barcode = e.target.value.trim();
-
-        if (barcode !== '' && (currentTime - lastScannedTime < 100 || e.inputType === 'insertText')) {
-            lastBarcode = barcode;
-            lastScannedTime = currentTime;
-            searchProductByBarcode(barcode);
+    
+    // 根据条码搜索商品
+    window.searchProductByBarcode = function(barcode) {
+        if (!barcode || barcode.trim() === '') {
+            showAlert('warning', '请输入商品条码或名称');
+            return;
         }
-    }
 
-    function handleEnterKey(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const barcode = e.target.value.trim();
-            if (barcode !== '') {
-                searchProductByBarcode(barcode);
-            }
-        }
-    }
-
-    function searchProductByBarcode(barcode) {
-        fetch(`/api/product/barcode/${barcode}/`)
-            .then(response => response.json())
+        console.log(`[API Call] Searching barcode: ${barcode}`);
+        fetch(`/api/product/search/barcode/${barcode}/`)
+            .then(response => {
+                if (!response.ok) {
+                    console.error(`[API Error] Network response was not ok for barcode ${barcode}:`, response.status, response.statusText);
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log(`[API Response] Barcode search for ${barcode}:`, data);
                 if (data.success) {
-                    document.querySelector('[name="product"]').value = data.product_id;
-                    document.querySelector('[name="quantity"]').value = '1';
-                    document.getElementById('current-stock').textContent = data.stock || 0;
-                    document.querySelector('[name="actual_price"]').value = data.price || 0;
-                    
-                    // 检查库存
-                    if (data.stock <= 0) {
-                        showAlert('error', '该商品库存不足');
-                        return;
-                    }
-                    
-                    // 自动提交表单
-                    if (validateStock()) {
-                        saleForm.submit();
+                    if (data.multiple_matches && data.products && Array.isArray(data.products) && data.products.length > 0) {
+                        console.log(`[API Response] Multiple products found for ${barcode}. Showing selection modal.`);
+                        // **确保传递给模态框的数据结构统一**
+                        const standardizedProducts = data.products.map(p => ({
+                            id: p.product_id || p.id, // 适配两种可能的 key
+                            name: p.name,
+                            price: parseFloat(p.price) || 0,
+                            stock: parseInt(p.stock) || 0,
+                            spec: p.specification || p.spec || '' // 适配多种可能的 key
+                        }));
+                        showProductSelectionModal(standardizedProducts);
+                    } else if (data.product_id || (data.product && data.product.id)) {
+                        // **处理单结果，强制统一结构**
+                        const productSource = data.product || data; // API 可能直接返回顶级字段
+                        console.log(`[API Response] Single product found for ${barcode}:`, productSource);
+                        const productData = {
+                            id: productSource.product_id || productSource.id,
+                            name: productSource.name,
+                            price: parseFloat(productSource.price) || 0,
+                            stock: parseInt(productSource.stock) || 0,
+                            spec: productSource.specification || productSource.spec || ''
+                        };
+                         // **再次校验构建的对象**
+                        if (!productData.id || !productData.name) {
+                            console.error("[API Error] Failed to standardize single product data:", productData, "Original data:", data);
+                            showAlert('error', '获取商品信息格式错误');
+                        } else {
+                            addProductToList(productData);
+                        }
+                    } else {
+                        // 即使 success 为 true，也可能没有有效商品数据
+                        console.warn(`[API Warning] Barcode search success=true but no valid single product data for ${barcode}. Response:`, data);
+                        showAlert('warning', data.message || '未找到匹配的商品信息');
+                         // 尝试名称搜索作为后备
+                         searchProductByName(barcode);
                     }
                 } else {
-                    showAlert('error', '未找到对应的商品，请检查条码是否正确');
+                    console.log(`[API Info] Barcode search failed for ${barcode}. Trying name search...`);
+                    // 条码搜索失败，尝试名称搜索
+                    searchProductByName(barcode);
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
-                showAlert('error', '查询商品信息失败，请重试');
+                console.error('条码搜索商品错误:', error);
+                showAlert('error', '通过条码查询商品时出错');
+                // 即使出错，也尝试名称搜索作为后备
+                searchProductByName(barcode);
             });
-
-        barcodeInput.value = '';
     }
-
-    function searchMemberByPhone(phone) {
-        fetch(`/api/member/search/${phone}/`)
-            .then(response => response.json())
+    
+    // 通过名称搜索商品
+    window.searchProductByName = function(name) {
+        console.log(`[API Call] Searching name: ${name}`);
+        // 使用正确的API端点搜索商品
+        fetch(`/api/product/search/?query=${encodeURIComponent(name)}`)
+            .then(response => {
+                if (!response.ok) {
+                     console.error(`[API Error] Network response was not ok for name ${name}:`, response.status, response.statusText);
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log(`[API Response] Name search for ${name}:`, data);
+                if (data.success && data.products && Array.isArray(data.products) && data.products.length > 0) {
+                    console.log(`[API Response] Products found for name ${name}. Showing selection modal.`);
+                    // **确保传递给模态框的数据结构统一**
+                    const standardizedProducts = data.products.map(p => ({
+                        id: p.id, // 名称搜索 API 返回的是 id
+                        name: p.name,
+                        price: parseFloat(p.price) || 0,
+                        stock: parseInt(p.stock) || 0,
+                        spec: p.specification || p.spec || ''
+                    }));
+                    showProductSelectionModal(standardizedProducts);
+                } else {
+                    console.warn(`[API Warning] Name search did not find valid products for ${name}. Response:`, data);
+                    showAlert('warning', data.message || '未找到匹配的商品');
+                }
+            })
+            .catch(error => {
+                console.error('名称搜索商品错误:', error);
+                showAlert('error', '通过名称查询商品时出错');
+            });
+    }
+    
+    // 会员搜索
+    window.searchMember = function(query) {
+        if (!query || query.trim() === '') {
+            showAlert('warning', '请输入会员手机号或姓名');
+            return;
+        }
+        
+        fetch(`/api/member/search/${query}/`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    document.getElementById('member-name').textContent = data.member_name;
-                    document.querySelector('[name="member"]').value = data.member_id;
-                    showAlert('success', '已选择会员');
+                    if (data.multiple_matches && data.members && data.members.length > 0) {
+                        showMemberSelectionModal(data.members);
+                    } else if (data.member_id) {
+                        selectMember(data.member_id, data.member_name, data.discount_rate, data.phone);
+                    }
+                } else {
+                    showAlert('info', data.message || '未找到会员');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('搜索会员错误:', error);
                 showAlert('error', '查询会员信息失败');
             });
     }
 
-    function showAlert(type, message) {
+    // 选择会员
+    window.selectMember = function(memberId, memberName, discountRate, phone) {
+        // 设置会员ID
+        if (memberIdInput) {
+            memberIdInput.value = memberId;
+        }
+        
+        // 显示会员信息
+        document.getElementById('member-name-value').textContent = memberName || '未知';
+        document.getElementById('member-phone-value').textContent = phone || '未知';
+        
+        // 计算并显示折扣
+        const discountText = discountRate < 1 ? `${(discountRate * 10).toFixed(1)}折` : '无折扣';
+        document.getElementById('member-discount-value').textContent = discountText;
+        
+        // 显示会员信息区域
+        if (memberInfoBox) memberInfoBox.style.display = 'block';
+        
+        // 更新总计
+        updateTotals();
+        showAlert('success', '已选择会员');
+        
+        // 清空搜索框
+        if (memberSearchInput) {
+            memberSearchInput.value = '';
+        }
+    }
+    
+    // 编辑会员
+    window.editMember = function() {
+        const memberId = memberIdInput ? memberIdInput.value : '';
+        if (!memberId) {
+            showAlert('warning', '请先选择会员');
+            return;
+        }
+        
+        // 跳转到会员编辑页面
+        window.open(`/members/${memberId}/edit/`, '_blank');
+    }
+    
+    // 清除会员
+    window.clearMember = function() {
+        // 清除会员ID
+        if (memberIdInput) {
+            memberIdInput.value = '';
+        }
+        
+        // 隐藏会员信息区域
+        if (memberInfoBox) {
+            memberInfoBox.style.display = 'none';
+        }
+        
+        // 更新总计
+        updateTotals();
+        showAlert('info', '已清除会员信息');
+    }
+    
+    // 商品选择模态框 (确保添加事件监听时使用标准化的数据)
+    function showProductSelectionModal(products) {
+        const modalBody = document.getElementById('product-selection-content');
+        if (!modalBody) return;
+
+        modalBody.innerHTML = '';
+
+        products.forEach(product => {
+            const productItem = document.createElement('div');
+            productItem.className = 'card mb-2';
+            // **使用标准化后的 product 对象的属性**
+            productItem.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">${product.name}</h5>
+                    <p class="card-text">价格: ¥${product.price.toFixed(2)} | 库存: ${product.stock}</p>
+                    <button class="btn btn-primary select-product-btn">
+                        选择此商品
+                    </button>
+                </div>
+            `;
+            // **将标准化数据直接附加到按钮上**
+            const selectButton = productItem.querySelector('.select-product-btn');
+            if (selectButton) {
+                // 移除旧的 data-* 属性方式，直接存储对象引用
+                selectButton._productData = product; 
+                selectButton.addEventListener('click', function() {
+                     // 直接使用存储的对象
+                     addProductToList(this._productData); 
+                     // 关闭模态框
+                     const modal = bootstrap.Modal.getInstance(document.getElementById('product-selection-modal'));
+                     if (modal) modal.hide();
+                });
+            }
+            modalBody.appendChild(productItem);
+        });
+
+        // 移除旧的选择器和事件绑定逻辑
+        // document.querySelectorAll('.select-product-btn').forEach(btn => { ... });
+
+        // 显示模态框
+        const modalElement = document.getElementById('product-selection-modal');
+        if (!modalElement) return;
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    }
+    
+    // 会员选择模态框
+    function showMemberSelectionModal(members) {
+        const modalBody = document.getElementById('member-selection-content');
+        if (!modalBody) return;
+        
+        modalBody.innerHTML = '';
+        
+        members.forEach(member => {
+            const memberItem = document.createElement('div');
+            memberItem.className = 'card mb-2';
+            memberItem.innerHTML = `
+                <div class="card-body">
+                    <h5 class="card-title">${member.member_name}</h5>
+                    <p class="card-text">电话: ${member.member_phone}</p>
+                    <button class="btn btn-primary select-member-btn" 
+                        data-id="${member.member_id}" 
+                        data-name="${member.member_name}" 
+                        data-phone="${member.member_phone}" 
+                        data-discount="${member.discount_rate || 1}">
+                        选择此会员
+                    </button>
+                </div>
+            `;
+            modalBody.appendChild(memberItem);
+        });
+        
+        // 添加选择事件
+        document.querySelectorAll('.select-member-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const memberId = this.dataset.id;
+                const memberName = this.dataset.name;
+                const phone = this.dataset.phone;
+                const discountRate = parseFloat(this.dataset.discount);
+                
+                selectMember(memberId, memberName, discountRate, phone);
+                
+                // 关闭模态框
+                const modalElement = document.getElementById('member-selection-modal');
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                         modal.hide();
+                         // **在模态框隐藏后，将焦点移回会员搜索框**
+                         modalElement.addEventListener('hidden.bs.modal', () => {
+                              const memberSearchInputElement = document.getElementById('member-search-input');
+                              if (memberSearchInputElement) {
+                                   memberSearchInputElement.focus();
+                              }
+                         }, { once: true }); // 确保事件只触发一次
+                    }
+                }
+            });
+        });
+        
+        // 显示模态框
+        const modalElementToShow = document.getElementById('member-selection-modal');
+        if (!modalElementToShow) return;
+        const modal = new bootstrap.Modal(modalElementToShow);
+        modal.show();
+    }
+    
+    // 将商品添加到列表
+    window.addProductToList = function(product) {
+        // **增加参数校验**
+        if (!product || typeof product !== 'object' || !product.id) {
+            console.error("[addProductToList] Invalid product data received:", product);
+            showAlert('error', '无法添加商品：商品数据无效');
+            return;
+        }
+
+        console.log("[addProductToList] Called for product:", product);
+        const productTableBody = document.getElementById('product-table-body'); // 在函数内部获取，确保最新
+        if (!productTableBody) {
+            console.error("[addProductToList] Error: productTableBody element not found!");
+            showAlert('error', '发生内部错误：无法找到商品列表区域');
+            return;
+        }
+
+        // 检查商品是否已存在
+        const existingRow = productTableBody.querySelector(`tr[data-product-id="${product.id}"]`);
+        if (existingRow) {
+            // 增加数量
+            const quantityInput = existingRow.querySelector('.quantity-input');
+            if (quantityInput) {
+                const currentQty = parseInt(quantityInput.value) || 0;
+                const newQty = currentQty + 1;
+                
+                // 检查库存限制
+                const maxStock = parseInt(existingRow.dataset.maxStock) || 0;
+                if (maxStock > 0 && newQty > maxStock) {
+                    showAlert('warning', `库存不足，当前库存: ${maxStock}`);
+                    return;
+                }
+                
+                quantityInput.value = newQty;
+                
+                // 更新小计和总计
+                updateRowSubtotal(existingRow);
+                updateTotals();
+                showAlert('info', `商品 ${product.name} 数量已增加到 ${newQty}`);
+            }
+            return;
+        }
+        
+        // --- 开始添加新行 ---
+        console.log(`[addProductToList] Creating new row for product ${product.id}`);
+        const newRow = document.createElement('tr');
+        newRow.dataset.productId = product.id;
+        newRow.dataset.maxStock = product.stock;
+        newRow.dataset.productName = product.name; // 添加额外数据属性
+        const price = parseFloat(product.price) || 0; // 确保 price 已定义
+
+        // **构建 row HTML**
+        const rowHTML = `
+            <td>${product.name}
+                <input type="hidden" class="product-id-input" name="temp_product_id" value="${product.id}">
+                <span class="d-none product-id-display">${product.id}</span>
+            </td>
+            <td>
+                <div class="quantity-control">
+                    <button type="button" class="btn btn-sm btn-outline-secondary decrease-btn">-</button>
+                    <input type="number" class="form-control form-control-sm quantity-input" value="1" min="1" max="${product.stock || 9999}" style="width: 60px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary increase-btn">+</button>
+                </div>
+            </td>
+            <td>¥<input type="number" step="0.01" class="form-control form-control-sm price-input" value="${price.toFixed(2)}" style="width: 90px;"></td>
+            <td>${product.spec || '无规格'}</td>
+            <td class="text-end subtotal">¥${price.toFixed(2)}</td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm delete-btn">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        `;
+        newRow.innerHTML = rowHTML;
+
+        // **在追加前进行状态检查**
+        console.log("[addProductToList] Before appendChild: Checks starting...");
+        console.log("[addProductToList] newRow.innerHTML:", newRow.innerHTML); // 检查即将添加的 HTML
+        if (productTableBody) {
+             console.log("[addProductToList] productTableBody.isConnected:", productTableBody.isConnected);
+             console.log("[addProductToList] productTableBody current children count:", productTableBody.children.length);
+        } else {
+             console.error("[addProductToList] Before appendChild: productTableBody is null or undefined!");
+             showAlert('error', '内部错误：无法定位商品列表。');
+             return; // 如果 tbody 没了，就不能继续了
+        }
+
+        // **执行追加操作**
+        console.log("[addProductToList] Attempting appendChild...");
+        try {
+            productTableBody.appendChild(newRow);
+            const newChildCount = productTableBody.children.length;
+            console.log(`[addProductToList] appendChild completed. New children count: ${newChildCount}`);
+
+            // **在追加后进行验证**
+            const addedRowCheck = productTableBody.querySelector(`tr[data-product-id="${product.id}"]`);
+            if (addedRowCheck && addedRowCheck.parentElement === productTableBody) {
+                 console.log(`[addProductToList] Verification SUCCESS: Row for product ${product.id} found in DOM and attached to productTableBody.`);
+            } else {
+                 console.error(`[addProductToList] Verification FAILED: Row for product ${product.id} NOT found or not attached correctly after appendChild!`);
+                 console.error(`[addProductToList] Checking last child:`, productTableBody.lastChild);
+                 showAlert('error', `无法将商品 ${product.name} 正确添加到列表！请检查控制台。`);
+                 // 考虑是否需要移除可能错误添加的行？ newRow.remove();
+                 return; // 如果验证失败，停止后续操作
+            }
+        } catch (error) {
+            console.error("[addProductToList] Error during appendChild:", error);
+            showAlert('error', `添加商品时发生错误: ${error.message}`);
+            return;
+        }
+
+        // --- 绑定事件 ---
+        const decreaseBtn = newRow.querySelector('.decrease-btn');
+        const increaseBtn = newRow.querySelector('.increase-btn');
+        const quantityInput = newRow.querySelector('.quantity-input');
+        const priceInput = newRow.querySelector('.price-input');
+        const deleteBtn = newRow.querySelector('.delete-btn');
+        
+        // 减少数量
+        if (decreaseBtn && quantityInput) {
+            decreaseBtn.addEventListener('click', function() {
+                let qty = parseInt(quantityInput.value) || 0;
+                if (qty > 1) {
+                    quantityInput.value = qty - 1;
+                    updateRowSubtotal(newRow);
+                    updateTotals();
+                }
+            });
+        }
+        
+        // 增加数量
+        if (increaseBtn && quantityInput) {
+            increaseBtn.addEventListener('click', function() {
+                let qty = parseInt(quantityInput.value) || 0;
+                const maxStock = parseInt(newRow.dataset.maxStock) || 0;
+                
+                if (maxStock <= 0 || qty < maxStock) {
+                    quantityInput.value = qty + 1;
+                    updateRowSubtotal(newRow);
+                    updateTotals();
+                } else {
+                    showAlert('warning', `库存不足，最大可用: ${maxStock}`);
+                }
+            });
+        }
+        
+        // 数量变更 (使用 input 事件实时响应)
+        if (quantityInput) {
+            quantityInput.addEventListener('input', function() {
+                let qty = parseInt(this.value) || 0;
+                const maxStock = parseInt(newRow.dataset.maxStock) || 0;
+                
+                if (qty < 0) qty = 0; // 允许临时输入负数，但计算按0
+                // 不在此处强制限制最大值，让用户输入，但在 updateRowSubtotal 中处理
+                
+                updateRowSubtotal(newRow); // 更新小计
+                // 延迟更新总计，避免过于频繁的计算
+                clearTimeout(window.updateTotalsTimeout);
+                window.updateTotalsTimeout = setTimeout(updateTotals, 300);
+            });
+            // 保留 change 事件用于最终验证和格式化
+            quantityInput.addEventListener('change', function() {
+                 let qty = parseInt(this.value) || 0;
+                 const maxStock = parseInt(newRow.dataset.maxStock) || 0;
+                 if (qty < 1) {
+                     this.value = 1;
+                 } else if (maxStock > 0 && qty > maxStock) {
+                     this.value = maxStock;
+                     showAlert('warning', `库存不足，已设为最大可用: ${maxStock}`);
+                 }
+                 updateRowSubtotal(newRow); // 确保最终值被计算
+                 updateTotals();
+            });
+        }
+        
+        // 价格变更 (使用 input 事件实时响应)
+        if (priceInput) {
+            priceInput.addEventListener('input', function() {
+                let price = parseFloat(this.value) || 0;
+                if (price < 0) price = 0;
+                
+                updateRowSubtotal(newRow); // 更新小计
+                // 延迟更新总计
+                clearTimeout(window.updateTotalsTimeout);
+                window.updateTotalsTimeout = setTimeout(updateTotals, 300);
+            });
+             // 保留 change 事件用于最终验证和格式化
+            priceInput.addEventListener('change', function() {
+                 let price = parseFloat(this.value) || 0;
+                 if (price < 0) {
+                     this.value = '0.00';
+                 } else {
+                     this.value = price.toFixed(2); // 格式化
+                 }
+                 updateRowSubtotal(newRow); // 确保最终值被计算
+                 updateTotals();
+            });
+        }
+        
+        // 删除行
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function() {
+                const productName = product.name || '未知商品';
+                newRow.remove();
+                console.log("[Delete Action] Skipping updateProductIndices for now.");
+                updateTotals();
+                showAlert('info', `已移除商品: ${productName}`);
+            });
+        }
+        
+        // 更新总计
+        updateTotals();
+        showAlert('success', `已添加商品: ${product.name}`);
+        if (productSearchInput) {
+            requestAnimationFrame(() => productSearchInput.focus());
+        }
+    }
+    
+    // 更新行小计 (保持不变)
+    function updateRowSubtotal(row) {
+        const quantityInput = row.querySelector('.quantity-input');
+        const priceInput = row.querySelector('.price-input');
+        const subtotalCell = row.querySelector('.subtotal');
+        
+        if (!quantityInput || !priceInput || !subtotalCell) {
+             console.error('Could not find elements for subtotal calculation in row:', row);
+             return;
+        }
+        
+        let quantity = parseInt(quantityInput.value) || 0;
+        let price = parseFloat(priceInput.value) || 0;
+        const maxStock = parseInt(row.dataset.maxStock) || 0;
+        
+        // 再次校验数量 (基于最终值)
+        if (quantity < 1) quantity = 1;
+        if (maxStock > 0 && quantity > maxStock) quantity = maxStock; // 按库存计算
+        if (price < 0) price = 0;
+        
+        const subtotal = quantity * price;
+        subtotalCell.textContent = `¥${subtotal.toFixed(2)}`;
+    }
+    
+    // 更新总计 (增加健壮性)
+    window.updateTotals = function() {
+        let totalAmount = 0;
+        const subtotalCells = productTableBody.querySelectorAll('tr[data-product-id] .subtotal'); // 更精确的选择器
+        
+        subtotalCells.forEach(cell => {
+            const subtotal = parseFloat(cell.textContent.replace('¥', '')) || 0;
+            totalAmount += subtotal;
+        });
+        
+        // 更新商品总额
+        const totalAmountElement = document.getElementById('total-amount');
+        if (totalAmountElement) {
+            totalAmountElement.textContent = totalAmount.toFixed(2);
+        } else {
+             console.error("Element '#total-amount' not found.");
+        }
+        
+        // 计算折扣
+        let discountRate = 1;
+        let discountAmount = 0;
+        const memberIdInputElement = document.getElementById('member-id');
+        const memberId = memberIdInputElement ? memberIdInputElement.value : '';
+        const discountTextElement = document.getElementById('member-discount-value');
+        const discountText = discountTextElement ? discountTextElement.textContent : '';
+        
+        if (memberId && discountText && discountText !== '无折扣') {
+            const match = discountText.match(/(\d+\.?\d*)折/);
+            if (match && match[1]) {
+                discountRate = parseFloat(match[1]) / 10;
+                if (isNaN(discountRate) || discountRate < 0 || discountRate > 1) {
+                    discountRate = 1; // 防御无效折扣率
+                    console.warn("Invalid discount rate parsed:", match[1]);
+                }
+            } else {
+                console.warn("Could not parse discount rate from:", discountText);
+            }
+        }
+        discountAmount = totalAmount * (1 - discountRate);
+        
+        // 计算最终金额
+        const finalAmount = totalAmount - discountAmount;
+        
+        // 更新折扣金额
+        const discountAmountElement = document.getElementById('discount-amount');
+        if (discountAmountElement) {
+            discountAmountElement.textContent = discountAmount.toFixed(2);
+        } else {
+            console.error("Element '#discount-amount' not found.");
+        }
+        
+        // 更新最终金额
+        const finalAmountElement = document.getElementById('final-amount');
+        if (finalAmountElement) {
+            finalAmountElement.textContent = finalAmount.toFixed(2);
+        } else {
+            console.error("Element '#final-amount' not found.");
+        }
+        
+        // 更新隐藏表单字段
+        updateHiddenFields(totalAmount, discountAmount, finalAmount);
+        console.log(`Totals updated: Total=${totalAmount.toFixed(2)}, Discount=${discountAmount.toFixed(2)}, Final=${finalAmount.toFixed(2)}`); // 调试信息
+    }
+    
+    // 更新隐藏字段
+    function updateHiddenFields(totalAmount, discountAmount, finalAmount) {
+        const form = document.getElementById('sale-form');
+        if (!form) return;
+        
+        function updateField(id, name, value) {
+            let field = document.getElementById(id);
+            if (!field) {
+                field = document.createElement('input');
+                field.type = 'hidden';
+                field.id = id;
+                field.name = name;
+                form.appendChild(field);
+            }
+            field.value = value;
+        }
+        
+        updateField('total-amount-input', 'total_amount', totalAmount.toFixed(2));
+        updateField('discount-amount-input', 'discount_amount', discountAmount.toFixed(2));
+        updateField('final-amount-input', 'final_amount', finalAmount.toFixed(2));
+    }
+    
+    // 表单提交验证
+    const saleForm = document.getElementById('sale-form');
+    if (saleForm) {
+        saleForm.addEventListener('submit', function(event) {
+            // 先阻止默认提交，等验证完成后手动提交
+            event.preventDefault();
+            
+            console.log("--- [Form Submit] Validation START ---");
+            
+            const currentProductTableBody = document.getElementById('product-table-body');
+            if (!currentProductTableBody) {
+                console.error("[Form Submit] CRITICAL ERROR: productTableBody element not found!");
+                showAlert('error', '内部错误：无法验证购物车');
+                return; 
+            }
+            
+            // 严格检查商品行
+            const products = currentProductTableBody.querySelectorAll('tr[data-product-id]');
+            console.log(`[Form Submit] Found ${products.length} products in cart`);
+            
+            // 没有商品时显示错误
+            if (products.length === 0) {
+                console.log("[Form Submit] Validation Failed: No products in cart");
+                showAlert('error', '请至少添加一个商品');
+                return; 
+            } 
+            
+            // 支付方式检查
+            const paymentMethodInput = document.getElementById('payment-method');
+            const paymentMethod = paymentMethodInput ? paymentMethodInput.value : '';
+            if (!paymentMethod) {
+                console.log("[Form Submit] Validation Failed: No payment method selected");
+                showAlert('error', '请选择支付方式');
+                return; 
+            }
+            
+            // 执行产品索引更新 - 创建隐藏字段
+            console.log("[Form Submit] Calling updateProductIndices to prepare form data...");
+            updateProductIndices();
+            
+            // 检查表单数据是否包含商品
+            const formData = new FormData(saleForm);
+            let hasProductData = false;
+            let productCount = 0;
+            
+            for (let [key, value] of formData.entries()) {
+                console.log(`[Form Data] ${key}: ${value}`);
+                if (key.includes('products[') && key.includes('][id]')) {
+                    hasProductData = true;
+                    productCount++;
+                }
+            }
+            
+            if (!hasProductData) {
+                console.error("[Form Submit] CRITICAL ERROR: No product data in form after updateProductIndices!");
+                showAlert('error', '系统错误：表单数据准备失败，请联系管理员');
+                
+                // 在控制台显示表单状态，帮助调试
+                console.log("[Debug] Form Elements:", saleForm.elements);
+                console.log("[Debug] Product Table HTML:", currentProductTableBody.innerHTML);
+                return;
+            }
+            
+            console.log(`[Form Submit] Form validation PASSED. Submitting form with ${productCount} products...`);
+            
+            // 显示加载提示
+            showAlert('info', '正在提交...');
+            
+            // 提交表单
+            saleForm.submit();
+        });
+    }
+
+    // **恢复 updateProductIndices 函数，并确保其逻辑正确**
+    function updateProductIndices() {
+       console.log("[updateProductIndices] Running...");
+       // 在函数内部重新获取 tbody，确保最新
+       const currentTbody = document.getElementById('product-table-body');
+       if (!currentTbody) {
+            console.error("[updateProductIndices] Error: Cannot find product-table-body.");
+            return;
+       }
+       const rows = currentTbody.querySelectorAll('tr[data-product-id]');
+       console.log(`[updateProductIndices] Found ${rows.length} rows to update.`);
+       
+       // 先清除表单中已有的products字段，避免累积
+       const form = document.getElementById('sale-form');
+       if (form) {
+           const existingInputs = form.querySelectorAll('input[name^="products["]');
+           existingInputs.forEach(input => input.remove());
+           console.log(`[updateProductIndices] Removed ${existingInputs.length} existing product inputs`);
+       }
+       
+       rows.forEach((row, index) => {
+           if (!form) return;
+           
+           // 获取数据
+           const productId = row.dataset.productId;
+           const quantityInput = row.querySelector('input.quantity-input');
+           const priceInput = row.querySelector('input.price-input');
+           
+           const quantity = quantityInput ? quantityInput.value : "1";
+           const price = priceInput ? priceInput.value : "0.00";
+           
+           // 创建隐藏字段并直接添加到表单
+           const idField = document.createElement('input');
+           idField.type = 'hidden';
+           idField.name = `products[${index}][id]`;
+           idField.value = productId;
+           form.appendChild(idField);
+           
+           const qtyField = document.createElement('input');
+           qtyField.type = 'hidden';
+           qtyField.name = `products[${index}][quantity]`;
+           qtyField.value = quantity;
+           form.appendChild(qtyField);
+           
+           const priceField = document.createElement('input');
+           priceField.type = 'hidden';
+           priceField.name = `products[${index}][price]`;
+           priceField.value = price;
+           form.appendChild(priceField);
+           
+           console.log(`[updateProductIndices] Added product ${index}: id=${productId}, qty=${quantity}, price=${price}`);
+       });
+       
+       // 更新商品数量计数和调试信息
+       const productCountField = document.getElementById('product-count');
+       if (productCountField) {
+           productCountField.value = rows.length;
+       }
+       
+       const debugInfoField = document.getElementById('debug-info');
+       if (debugInfoField) {
+           debugInfoField.value = JSON.stringify({
+               timestamp: new Date().toISOString(),
+               productCount: rows.length,
+               productIds: Array.from(rows).map(row => row.dataset.productId)
+           });
+       }
+       
+       console.log("[updateProductIndices] Finished. Total products:", rows.length);
+    }
+    
+    // 快捷键支持
+    document.addEventListener('keydown', function(event) {
+        // F2 - 会员搜索
+        if (event.key === 'F2') {
+            event.preventDefault();
+            if (memberSearchInput) {
+                memberSearchInput.focus();
+            }
+        }
+        
+        // F3 - 商品搜索
+        if (event.key === 'F3') {
+            event.preventDefault();
+            if (productSearchInput) {
+                productSearchInput.focus();
+            }
+        }
+    });
+    
+    // 消息提示
+    window.showAlert = function(type, message) {
         const Toast = Swal.mixin({
             toast: true,
             position: 'top-end',
             showConfirmButton: false,
-            timer: 3000
+            timer: 3000,
+            timerProgressBar: true
         });
         Toast.fire({
             icon: type,
@@ -152,215 +1158,212 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    function validateStock() {
-        const stock = parseInt(document.getElementById('current-stock').innerText);
-        const quantity = parseInt(document.querySelector('#id_quantity').value);
-        if (quantity > stock) {
-            document.getElementById('inventory-alert').classList.remove('d-none');
-            document.getElementById('inventory-alert').innerText = '库存不足，当前可用库存：' + stock;
-            return false;
-        }
-        return true;
+    // 初始化 - 聚焦商品搜索框
+    if (productSearchInput) {
+        productSearchInput.focus();
     }
-
-    // 实时更新操作日志
-    function loadOperationLogs() {
-        if (!saleId) return;
-        fetch(`/sales/${saleId}/logs/`)
-            .then(response => response.json())
-            .then(data => {
-                const logList = document.querySelector('.list-group-flush');
-                if (logList) {
-                    logList.innerHTML = data.logs.map(log => 
-                        `<li class="list-group-item">
-                            ${log.timestamp} - ${log.operation_type}: ${log.details}
-                        </li>`
-                    ).join('');
-                }
-            });
-    }
-
-    // 每5秒刷新一次操作日志
-    setInterval(loadOperationLogs, 5000);
-
-    // 完成结算
-    completeSaleBtn.addEventListener('click', function() {
-        if (!saleId) return;
-        fetch(`/sales/${saleId}/complete/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('success', '结算完成');
-                setTimeout(() => window.location.href = '/sales/', 1500);
-            } else {
-                showAlert('error', data.message || '结算失败，请重试');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showAlert('error', '结算失败，请重试');
-        });
-    });
+    
+    // 初始化时不再调用 updateProductIndices
+    // updateProductIndices(); 
+    updateTotals();
+    console.log("[DOMContentLoaded] Initial setup complete.");
 });
 </script>
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">收银台</h4>
-                <div class="member-info text-white">
-                    <div class="input-group input-group-sm">
-                        <input type="text" class="form-control" id="member-search" placeholder="输入会员手机号搜索">
-                        <span class="input-group-text" id="member-name">未选择会员</span>
-                        <button class="btn btn-outline-light btn-sm" data-bs-toggle="modal" data-bs-target="#memberModal">
-                            <i class="bi bi-person-plus"></i>
+<!-- 重置主容器的样式 -->
+<div class="container-fluid px-0" style="max-width: 100%; width: 100%; padding: 0; margin: 0;">
+    <div class="cashier-container">
+        <!-- 左侧区域 - 商品列表和结算 -->
+        <div class="left-area">
+            <!-- 收银台标题 -->
+            <div class="cashier-header">
+                <i class="bi bi-cart3"></i> 收银台
+            </div>
+            
+            <!-- 商品搜索区域 -->
+            <div class="product-search-area p-3 border-bottom">
+                <div class="input-group">
+                    <input type="text" id="product-search-input" class="form-control" placeholder="扫描商品条码或输入商品名称">
+                    <button type="button" class="btn btn-primary" onclick="searchProductByBarcode(document.getElementById('product-search-input').value)">
+                        <i class="bi bi-search"></i> 查找
                         </button>
                     </div>
-                </div>
+                <div class="text-muted small mt-1">按F3快捷键聚焦 / 按Enter键搜索</div>
             </div>
-            <div class="card-body">
-                <div class="mb-4">
-                    <div class="input-group input-group-lg">
-                        <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
-                        <input type="text" class="form-control form-control-lg" id="barcode" name="barcode" 
-                               placeholder="请扫描商品条码或手动输入" autofocus>
-                        <button class="btn btn-outline-secondary" type="button" id="search-product">
+            
+            <!-- 商品列表 -->
+            <div class="product-list-container">
+                <table class="product-table">
+                    <thead>
+                        <tr>
+                            <th width="30%">商品名称</th>
+                            <th width="20%">数量</th>
+                            <th width="15%">单价</th>
+                            <th width="15%">规格</th>
+                            <th width="15%">小计</th>
+                            <th width="5%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body">
+                        <!-- 动态添加的商品行 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- 订单汇总 -->
+            <div class="order-summary">
+                <div class="summary-row">
+                    <div class="summary-label">商品总额：</div>
+                    <div class="summary-value">¥<span id="total-amount">0.00</span></div>
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">折扣金额：</div>
+                    <div class="summary-value">¥<span id="discount-amount">0.00</span></div>
+                </div>
+                <div class="summary-row">
+                    <div class="summary-label">应付金额：</div>
+                    <div class="summary-value">¥<span id="final-amount">0.00</span></div>
+                </div>
+                
+                <form id="sale-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" id="member-id" name="member" value="{{ form.member.value|default:'' }}">
+                    <input type="hidden" id="payment-method" name="payment_method" value="{{ form.payment_method.value|default:'cash' }}">
+                    <input type="hidden" id="debug-info" name="debug_info" value="">
+                    <input type="hidden" id="product-count" name="product_count" value="0">
+                    <input type="hidden" id="total-amount-input" name="total_amount" value="0.00">
+                    <input type="hidden" id="discount-amount-input" name="discount_amount" value="0.00">
+                    <input type="hidden" id="final-amount-input" name="final_amount" value="0.00">
+                    
+                    <!-- 添加备注字段 -->
+                    <div class="form-group mb-3">
+                        <label for="remark" class="text-muted small">备注信息 (可选):</label>
+                        <textarea id="remark" name="remark" class="form-control form-control-sm" rows="2"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success checkout-btn">完成结账</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 右侧区域 - 收银员信息、会员信息、支付方式 -->
+        <div class="right-area">
+            <!-- 收银员信息 -->
+            <div class="cashier-info">
+                收银员：{{ request.user.username }}
+            </div>
+            
+            <!-- 会员搜索和信息区域 -->
+            <div class="member-section mb-4">
+                <!-- 会员搜索 -->
+                <div class="member-search mb-3">
+                    <h5 class="member-section-title mb-2">会员查找</h5>
+                    <div class="input-group">
+                        <input type="text" id="member-search-input" class="form-control" placeholder="输入会员手机号或姓名">
+                        <button class="btn btn-primary" type="button" onclick="searchMember(document.getElementById('member-search-input').value)">
                             <i class="bi bi-search"></i>
                         </button>
                     </div>
+                    <div class="text-muted small mt-1">按F2快捷键聚焦 / 按Enter键搜索</div>
                 </div>
 
-                <div class="table-responsive mb-4">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>商品名称</th>
-                                <th>数量</th>
-                                <th>单价</th>
-                                <th>小计</th>
-                                <th>操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sale-items">
-                            {% for item in sale_items %}
-                            <tr>
-                                <td>{{ item.product.name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>{{ item.actual_price }}</td>
-                                <td>{{ item.subtotal }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger delete-item" data-item-id="{{ item.id }}">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <!-- 会员信息显示 -->
+                <div class="member-info" id="member-info-box" style="display: {% if form.member.value %}block{% else %}none{% endif %}">
+                    <h5 class="mb-3">会员信息</h5>
+                    
+                    <div class="member-field">
+                        <div class="field-label">姓名：</div>
+                        <div class="field-value" id="member-name-value">{{ member_name|default:'未知' }}</div>
                 </div>
 
-                <form method="post" id="sale-form" onsubmit="return validateStock()">
-                    {% csrf_token %}
-                    <input type="hidden" name="member" value="">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            {{ form.product.label_tag }}
-                            {{ form.product }}
+                    <div class="member-field">
+                        <div class="field-label">电话：</div>
+                        <div class="field-value" id="member-phone-value">{{ member_phone|default:'未知' }}</div>
                         </div>
-                        <div class="col-md-3">
-                            {{ form.quantity.label_tag }}
-                            {{ form.quantity }}
-                        </div>
-                        <div class="col-md-3">
-                            {{ form.actual_price.label_tag }}
-                            {{ form.actual_price }}
+                    
+                    <div class="member-field">
+                        <div class="field-label">折扣率：</div>
+                        <div class="field-value" id="member-discount-value">
+                            {% if discount_rate and discount_rate < 1 %}
+                                {{ discount_rate|multiply:10|floatformat:1 }}折
+                            {% else %}
+                                无折扣
+                            {% endif %}
                         </div>
                     </div>
-                    <div class="current-stock mb-3">
-                        <label>当前库存：</label>
-                        <span id="current-stock">0</span>
+                    
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="editMember()">
+                            <i class="bi bi-pencil"></i> 编辑会员
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm ms-2" onclick="clearMember()">
+                            <i class="bi bi-x-circle"></i> 清除
+                        </button>
                     </div>
-                    <div id="inventory-alert" class="alert alert-danger d-none"></div>
-                    <button type="submit" class="btn btn-primary btn-lg w-100 mt-3">添加商品</button>
-                </form>
-
-                <div class="card mt-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">总计：<span class="text-primary" id="total-amount">{{ sale.total_amount }}</span></h5>
-                            <h5 class="mb-0">折扣：<span class="text-success" id="discount-amount">{{ sale.discount_amount }}</span></h5>
-                            <h5 class="mb-0">实付：<span class="text-danger" id="final-amount">{{ sale.final_amount }}</span></h5>
                         </div>
-                        <div class="d-grid gap-2">
-                            <button type="button" class="btn btn-primary" id="complete-sale">完成结算</button>
-                        </div>
-                    </div>
+            </div>
+            
+            <!-- 支付方式 -->
+            <div class="payment-section mt-4">
+                <h5 class="payment-title mb-3">支付方式</h5>
+                
+                <div class="payment-methods">
+                    <button type="button" class="payment-btn active" data-payment="cash">
+                        <i class="bi bi-cash-coin"></i>
+                        现金
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="wechat">
+                        <i class="bi bi-wechat"></i>
+                        微信
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="alipay">
+                        <i class="bi bi-credit-card-2-front"></i>
+                        支付宝
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="card">
+                        <i class="bi bi-credit-card"></i>
+                        POS机
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="account">
+                        <i class="bi bi-wallet2"></i>
+                        余额
+                    </button>
+                    <button type="button" class="payment-btn" data-payment="credit">
+                        <i class="bi bi-journal-text"></i>
+                        挂账
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-info text-white">
-                <h5 class="card-title mb-0">操作日志</h5>
+<!-- 商品选择模态框 -->
+<div class="modal fade" id="product-selection-modal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">选择商品</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="card-body">
-                <ul class="list-group list-group-flush">
-                    {% for log in sale.operationlog_set.all|slice:":5" %}
-                    <li class="list-group-item">
-                        {{ log.timestamp|date:'Y-m-d H:i' }} - 
-                        {{ log.get_operation_type_display }}: {{ log.details }}
-                    </li>
-                    {% endfor %}
-                </ul>
+            <div class="modal-body" id="product-selection-content">
+                <!-- 动态生成的商品列表 -->
             </div>
         </div>
     </div>
 </div>
 
-<!-- 添加会员模态框 -->
-<div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+<!-- 会员选择模态框 -->
+<div class="modal fade" id="member-selection-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="memberModalLabel">添加新会员</h5>
+            <div class="modal-header">
+                <h5 class="modal-title">选择会员</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form id="add-member-form">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="member-name-input" class="form-label">会员姓名</label>
-                        <input type="text" class="form-control" id="member-name-input" name="name" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="member-phone-input" class="form-label">手机号码</label>
-                        <input type="tel" class="form-control" id="member-phone-input" name="phone" required pattern="[0-9]{11}">
-                        <div class="form-text">请输入11位手机号码</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="member-level-input" class="form-label">会员等级</label>
-                        <select class="form-select" id="member-level-input" name="level">
-                            {% for level in member_levels %}
-                            <option value="{{ level.id }}">{{ level.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="text-end">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-primary">添加会员</button>
-                    </div>
-                </form>
+            <div class="modal-body" id="member-selection-content">
+                <!-- 动态生成的会员列表 -->
             </div>
         </div>
     </div>

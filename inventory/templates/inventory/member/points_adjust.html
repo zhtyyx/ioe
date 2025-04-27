@@ -1,0 +1,67 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}调整会员积分 - {{ member.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">调整会员积分</h1>
+                <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> 返回会员详情
+                </a>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">会员信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>会员姓名:</strong> {{ member.name }}</p>
+                            <p><strong>会员级别:</strong> {{ member.level.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>当前积分:</strong> <span class="badge bg-success">{{ member.points }}</span></p>
+                            <p><strong>会员卡号:</strong> {{ member.member_id }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">积分调整</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="points_change" class="form-label">积分变更量</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="points_change" name="points_change" required>
+                                <span class="input-group-text">点</span>
+                            </div>
+                            <div class="form-text">输入正数增加积分，输入负数减少积分</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">调整原因</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            <span>积分调整将影响会员等级。如果因积分增加而达到更高等级的门槛，系统将自动升级会员等级。</span>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">保存调整</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

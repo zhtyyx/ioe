@@ -6,6 +6,25 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
+# 导入装饰器
+from .decorators import (
+    permission_required, 
+    group_required, 
+    superuser_required, 
+    owner_or_permission_required,
+    system_admin_required
+)
+
+# 导出装饰器
+__all__ = [
+    'permission_required', 
+    'group_required', 
+    'superuser_required', 
+    'owner_or_permission_required',
+    'system_admin_required',
+    'setup_permissions',
+]
+
 # Define common permission codenames
 PERMISSIONS = {
     # Inventory permissions

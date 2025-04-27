@@ -1,0 +1,166 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.id %}编辑商品{% else %}添加新商品{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">{% if form.instance.id %}编辑商品: {{ form.instance.name }}{% else %}添加新商品{% endif %}</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="product-form" class="needs-validation" novalidate>
+                {% csrf_token %}
+
+                <div class="row">
+                    <!-- 基本信息 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">基本信息</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ form.name|as_crispy_field }}
+                                {{ form.barcode|as_crispy_field }}
+                                {{ form.category|as_crispy_field }}
+                                {{ form.specification|as_crispy_field }}
+                                {{ form.manufacturer|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 价格和库存信息 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">价格和库存</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ form.cost|as_crispy_field }}
+                                {{ form.price|as_crispy_field }}
+                                {% if 'warning_level' in form.fields %}
+                                    {{ form.warning_level|as_crispy_field }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 颜色和尺码 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">颜色和尺码</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ form.color|as_crispy_field }}
+                                {{ form.size|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图片上传 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">商品图片</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ form.image|as_crispy_field }}
+                                {% if form.instance.image %}
+                                <div class="mt-3">
+                                    <p>当前图片:</p>
+                                    <img src="{{ form.instance.image.url }}" alt="{{ form.instance.name }}" class="img-thumbnail" style="max-height: 150px">
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 描述信息 -->
+                    <div class="col-12">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">描述</h6>
+                            </div>
+                            <div class="card-body">
+                                {{ form.description|as_crispy_field }}
+                                {% if 'is_active' in form.fields %}
+                                    {{ form.is_active|as_crispy_field }}
+                                {% endif %}
+                                {% if 'is_featured' in form.fields %}
+                                    {{ form.is_featured|as_crispy_field }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回列表
+                            </a>
+                            <div>
+                                {% if form.instance.id %}
+                                <a href="{% url 'product_detail' form.instance.id %}" class="btn btn-info">
+                                    <i class="fas fa-eye"></i> 查看详情
+                                </a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> 保存商品
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 自动生成条码
+        $('#id_barcode').closest('.form-group').append(
+            '<div class="mt-2"><button type="button" id="generate-barcode" class="btn btn-sm btn-outline-primary">自动生成条码</button></div>'
+        );
+        
+        $('#generate-barcode').click(function() {
+            // 生成随机13位EAN条码
+            let barcode = '69' + Math.floor(Math.random() * 10000000000).toString().padStart(11, '0');
+            $('#id_barcode').val(barcode);
+        });
+        
+        // 分类下拉框增强
+        $('#id_category').select2({
+            placeholder: '选择商品分类',
+            allowClear: true
+        });
+        
+        // 颜色和尺码下拉框增强
+        $('#id_color, #id_size').select2({
+            placeholder: '请选择',
+            allowClear: true
+        });
+        
+        // 表单验证
+        $('#product-form').submit(function(event) {
+            if (this.checkValidity() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+        });
+    });
+</script>
+{% endblock %}

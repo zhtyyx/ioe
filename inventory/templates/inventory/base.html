@@ -2,12 +2,13 @@
 <html lang="zh-hans">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
     <title>{% block title %}库存管理系统{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    {% block head %}{% endblock %}
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -184,21 +185,51 @@
             padding: 1.5rem 0;
         }
         
+        /* 内容容器优化 */
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
         /* 响应式调整 */
         @media (max-width: 768px) {
+            /* 基础元素调整 */
+            body {
+                padding-top: 0;
+                font-size: var(--mobile-font-size);
+            }
+            
+            .container {
+                padding-left: var(--mobile-padding);
+                padding-right: var(--mobile-padding);
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .main-content {
+                padding: 1rem 0;
+            }
+            
+            /* 导航栏优化 */
             .navbar-brand {
                 font-size: 1.2rem;
             }
             
+            /* 卡片优化 */
             .card {
                 margin-bottom: 1rem;
+                border-radius: calc(var(--border-radius) * 0.75);
             }
             
+            /* 表格响应式优化 */
             .table-responsive {
                 border-radius: var(--border-radius);
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
                 width: 100%;
+                margin-bottom: 0.5rem;
             }
             
             /* 改善表格在移动设备上的显示 */
@@ -206,11 +237,30 @@
                 white-space: nowrap;
                 padding: 0.5rem 0.75rem;
                 font-size: var(--mobile-font-size);
+                vertical-align: middle;
+                max-width: 200px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                position: relative;
+            }
+            
+            /* 增强表格单元格触摸反馈 */
+            .table td:active {
+                background-color: rgba(52, 152, 219, 0.1);
+            }
+            
+            /* 优化表格内容显示 */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                margin-bottom: 1rem;
             }
             
             /* 改善表单在移动设备上的布局 */
             .input-group {
                 flex-wrap: nowrap;
+                width: 100%;
             }
             
             /* 确保下拉菜单不会溢出屏幕 */
@@ -218,6 +268,31 @@
                 position: absolute;
                 left: auto;
                 right: 0;
+                font-size: var(--mobile-font-size);
+                width: auto;
+                min-width: 10rem;
+                max-width: 90vw;
+                box-shadow: var(--box-shadow);
+                border-radius: calc(var(--border-radius) * 0.75);
+                transform-origin: top right;
+                animation: dropdown-animation 0.2s ease-out;
+            }
+            
+            @keyframes dropdown-animation {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+            
+            .dropdown-item {
+                padding: 0.75rem 1rem;
+                white-space: normal;
+                transition: background-color 0.15s ease-in-out;
             }
             
             /* 优化按钮组在移动设备上的显示 */
@@ -225,23 +300,33 @@
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.25rem;
+                width: 100%;
+                justify-content: center;
             }
             
             /* 确保表单元素在小屏幕上正确显示 */
             .form-control, .form-select {
+                width: 100%;
                 max-width: 100%;
                 font-size: var(--mobile-font-size);
+                height: auto;
             }
             
             /* 优化导航栏在移动设备上的显示 */
             .navbar-collapse {
                 max-height: 80vh;
                 overflow-y: auto;
+                background-color: var(--primary-color);
+                border-radius: 0 0 var(--border-radius) var(--border-radius);
+                padding: 0.5rem;
+                margin: 0 -0.5rem;
+                box-shadow: var(--box-shadow);
             }
             
             .nav-link {
                 padding: 0.75rem 1rem;
                 margin: 0.1rem 0;
+                border-radius: var(--border-radius);
             }
             
             /* 优化表单布局 */
@@ -253,6 +338,17 @@
             .d-flex.flex-wrap.gap-2 {
                 justify-content: center;
                 margin-top: 0.5rem;
+                width: 100%;
+            }
+            
+            /* 优化表单提交按钮区域 */
+            .form-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                justify-content: center;
+                margin-top: 1rem;
+                width: 100%;
             }
             
             /* 确保搜索框和筛选器在移动设备上正确显示 */
@@ -264,6 +360,11 @@
             .table-container {
                 padding: 0;
                 margin-bottom: 1rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                border-radius: var(--border-radius);
+                box-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.05);
             }
             
             /* 优化移动端按钮大小 */
@@ -281,18 +382,134 @@
             .form-label {
                 font-size: var(--mobile-font-size);
                 margin-bottom: 0.25rem;
+                display: block;
+                width: 100%;
+            }
+            
+            /* 优化移动端表单布局 */
+            .row {
+                margin-left: -0.25rem;
+                margin-right: -0.25rem;
+            }
+            
+            .row > [class*="col-"] {
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
             }
             
             /* 优化移动端搜索和筛选区域 */
             .d-flex.flex-wrap {
                 flex-direction: column;
                 align-items: stretch;
+                width: 100%;
+                gap: 0.5rem;
             }
             
             /* 确保下拉选择框在移动端正确显示 */
             select.form-select[style="width: auto;"] {
                 width: 100% !important;
                 margin-bottom: 0.5rem;
+                max-height: 38px;
+                appearance: auto;
+            }
+            
+            /* 优化移动端表单组 */
+            .form-group {
+                margin-bottom: 0.75rem;
+                width: 100%;
+                position: relative;
+            }
+            
+            /* 优化表单验证反馈 */
+            .invalid-feedback {
+                display: block;
+                font-size: 0.8rem;
+                color: var(--accent-color);
+                margin-top: 0.25rem;
+            }
+            
+            /* 增强表单控件触摸区域 */
+            .form-control, .form-select, .btn {
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-appearance: none;
+                appearance: none;
+                transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, transform 0.1s ease;
+            }
+            
+            /* 增强表单控件触摸反馈 */
+            .form-control:focus, .form-select:focus {
+                transform: translateY(-1px);
+            }
+            
+            /* 优化表单验证状态显示 */
+            .was-validated .form-control:invalid,
+            .form-control.is-invalid {
+                border-color: var(--accent-color);
+                padding-right: calc(1.5em + 0.75rem);
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+                background-repeat: no-repeat;
+                background-position: right calc(0.375em + 0.1875rem) center;
+                background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+            }
+            
+            /* 优化移动端搜索框 */
+            .input-group.mb-3 {
+                width: 100%;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            /* 增强搜索框交互体验 */
+            .input-group .form-control:focus + .input-group-text,
+            .input-group .form-control:focus ~ .btn {
+                border-color: var(--secondary-color);
+                background-color: rgba(52, 152, 219, 0.1);
+            }
+            
+            /* 优化筛选按钮组交互 */
+            .btn-group .btn {
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .btn-group .btn::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                transform: scale(0) translate(-50%, -50%);
+                opacity: 0;
+                pointer-events: none;
+                transition: transform 0.3s, opacity 0.3s;
+            }
+            
+            .btn-group .btn:active::after {
+                transform: scale(2.5) translate(-50%, -50%);
+                opacity: 1;
+                transition: transform 0s, opacity 0.3s;
+            }
+            
+            /* 优化移动端分页 */
+            .pagination {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.25rem;
+            }
+            
+            .page-link {
+                padding: 0.25rem 0.5rem;
+                font-size: var(--mobile-font-size);
+            }
+            
+            /* 优化移动端警告框 */
+            .alert {
+                padding: 0.75rem 1rem;
+                margin-bottom: 1rem;
+                font-size: var(--mobile-font-size);
             }
         }
         
@@ -305,6 +522,50 @@
         
         .list-group-item:hover {
             background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        /* 触摸反馈效果 */
+        .active-touch {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+            transform: scale(0.98);
+            transition: all 0.1s ease-in-out;
+        }
+        
+        /* 表单验证增强 */
+        .was-validated .form-control:invalid:focus,
+        .was-validated .form-select:invalid:focus {
+            box-shadow: 0 0 0 0.25rem rgba(231, 76, 60, 0.25);
+        }
+        
+        .was-validated .form-control:valid:focus,
+        .was-validated .form-select:valid:focus {
+            box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.25);
+        }
+        
+        /* 改进移动端导航栏交互 */
+        @media (max-width: 768px) {
+            .navbar-collapse {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-in-out;
+            }
+            
+            .navbar-collapse.show {
+                max-height: 80vh;
+            }
+            
+            /* 增强移动端表单元素可访问性 */
+            .form-label {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* 改进移动端按钮触摸区域 */
+            .btn, .nav-link, .dropdown-item {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
         }
     </style>
 </head>
@@ -340,14 +601,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/sale/' %}active{% endif %}" href="{% url 'sale_list' %}">
+                        <a class="nav-link {% if '/sales/' in request.path %}active{% endif %}" href="{% url 'sale_list' %}">
                             <i class="bi bi-cart me-1"></i>销售管理
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.path == '/member/' %}active{% endif %}" href="{% url 'member_list' %}">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if '/members/' in request.path or '/member-levels/' in request.path %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-people me-1"></i>会员管理
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'member_list' %}"><i class="bi bi-person-vcard me-2"></i>会员列表</a></li>
+                            <li><a class="dropdown-item" href="{% url 'member_level_list' %}"><i class="bi bi-list-stars me-2"></i>会员等级</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {% if '/reports/' in request.path %}active{% endif %}" href="{% url 'reports_index' %}">
@@ -397,28 +662,55 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+    {% block extra_js %}{% endblock %}
     <script>
-    // 通用JavaScript功能
+    // 页面加载完成后执行增强功能
     document.addEventListener('DOMContentLoaded', function() {
-        // 为表单元素添加Bootstrap样式
-        document.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select').forEach(function(element) {
-            if (!element.classList.contains('form-control') && !element.classList.contains('form-select')) {
-                if (element.tagName === 'SELECT') {
-                    element.classList.add('form-select');
-                } else {
-                    element.classList.add('form-control');
+         // 为表单元素添加Bootstrap样式
+         document.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select').forEach(function(element) {
+             if (!element.classList.contains('form-control') && !element.classList.contains('form-select')) {
+                 if (element.tagName === 'SELECT') {
+                     element.classList.add('form-select');
+                 } else {
+                     element.classList.add('form-control');
+                 }
+             }
+         });
+         
+         // 自动隐藏警告消息
+         setTimeout(function() {
+             document.querySelectorAll('.alert').forEach(function(alert) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                 const bsAlert = new bootstrap.Alert(alert);
+                 bsAlert.close();
                 }
-            }
-        });
-        
-        // 自动隐藏警告消息
-        setTimeout(function() {
-            document.querySelectorAll('.alert').forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+             });
+         }, 5000);
+         
+         // 优化移动端导航栏交互
+         const navbarToggler = document.querySelector('.navbar-toggler');
+         if (navbarToggler) {
+             navbarToggler.addEventListener('click', function() {
+                 // 添加过渡效果
+                const navbarCollapse = document.querySelector('.navbar-collapse');
+                if (navbarCollapse) {
+                    navbarCollapse.style.transition = 'all 0.3s ease-in-out';
+                }
             });
-        }, 5000);
-    });
-    </script>
+        }
+        
+        // 添加表单验证
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            form.classList.add('was-validated');
+            });
+         });
+     });
+     </script>
 </body>
 </html>

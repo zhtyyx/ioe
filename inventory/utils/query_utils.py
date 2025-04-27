@@ -1,122 +1,157 @@
-"""数据库查询优化工具"""
-from django.db.models import QuerySet
+from django.db.models import Prefetch, Q, Count, Sum, Avg, F, ExpressionWrapper, DecimalField
+from django.utils import timezone
+from datetime import timedelta
+from functools import wraps
+import time
 
-def optimize_product_query(queryset):
+def optimize_query(queryset, select_fields=None, prefetch_fields=None):
     """
-    优化商品查询，预加载分类信息
+    优化查询，减少数据库访问次数
     
     Args:
-        queryset: 商品查询集
-        
+        queryset: 要优化的查询集
+        select_fields: 要使用select_related的字段列表
+        prefetch_fields: 要使用prefetch_related的字段列表或Prefetch对象列表
+    
     Returns:
-        QuerySet: 优化后的查询集
+        优化后的查询集
     """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('category')
+    if select_fields:
+        queryset = queryset.select_related(*select_fields)
+    
+    if prefetch_fields:
+        queryset = queryset.prefetch_related(*prefetch_fields)
+    
+    return queryset
 
-def optimize_inventory_query(queryset):
+def query_performance_logger(func):
     """
-    优化库存查询，预加载商品和分类信息
+    装饰器：记录查询执行时间，用于性能分析
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        execution_time = time.time() - start_time
+        print(f"查询 {func.__name__} 执行时间: {execution_time:.4f}秒")
+        return result
+    return wrapper
+
+def paginate_queryset(queryset, page_number, items_per_page=20):
+    """
+    对查询集进行分页处理
     
     Args:
-        queryset: 库存查询集
+        queryset: 要分页的查询集
+        page_number: 当前页码
+        items_per_page: 每页显示的项目数
         
     Returns:
-        QuerySet: 优化后的查询集
+        分页后的查询集
     """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('product', 'product__category')
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    
+    paginator = Paginator(queryset, items_per_page)
+    
+    try:
+        paginated_queryset = paginator.page(page_number)
+    except PageNotAnInteger:
+        # 如果页码不是整数，返回第一页
+        paginated_queryset = paginator.page(1)
+    except EmptyPage:
+        # 如果页码超出范围，返回最后一页
+        paginated_queryset = paginator.page(paginator.num_pages)
+    
+    return paginated_queryset
 
-def optimize_sale_query(queryset):
+def get_filtered_queryset(queryset, filter_params):
     """
-    优化销售查询，预加载会员信息
+    根据过滤参数过滤查询集
     
     Args:
-        queryset: 销售查询集
+        queryset: 要过滤的查询集
+        filter_params: 过滤参数字典
         
     Returns:
-        QuerySet: 优化后的查询集
+        过滤后的查询集
     """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('member', 'member__level')
+    # 移除空值
+    valid_filters = {k: v for k, v in filter_params.items() if v}
+    
+    if valid_filters:
+        queryset = queryset.filter(**valid_filters)
+    
+    return queryset
 
-def optimize_sale_item_query(queryset):
+def get_date_range_filter(start_date, end_date, date_field='created_at'):
     """
-    优化销售项查询，预加载销售单和商品信息
+    获取日期范围过滤条件
     
     Args:
-        queryset: 销售项查询集
+        start_date: 开始日期
+        end_date: 结束日期
+        date_field: 日期字段名
         
     Returns:
-        QuerySet: 优化后的查询集
+        日期范围过滤条件字典
     """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('sale', 'product')
+    filter_kwargs = {}
+    
+    if start_date:
+        filter_kwargs[f"{date_field}__gte"] = start_date
+    
+    if end_date:
+        # 将结束日期调整为当天的最后一刻
+        end_date = timezone.datetime.combine(
+            end_date, 
+            timezone.datetime.max.time()
+        ).replace(tzinfo=timezone.get_current_timezone())
+        filter_kwargs[f"{date_field}__lte"] = end_date
+    
+    return filter_kwargs
 
-def optimize_member_query(queryset):
+# 添加别名函数，保持向后兼容性
+def get_paginated_queryset(queryset, page_number, items_per_page=20):
     """
-    优化会员查询，预加载会员等级信息
+    paginate_queryset的别名函数，保持向后兼容性
     
     Args:
-        queryset: 会员查询集
+        queryset: 要分页的查询集
+        page_number: 当前页码
+        items_per_page: 每页显示的项目数
         
     Returns:
-        QuerySet: 优化后的查询集
+        分页后的查询集
     """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('level')
+    return paginate_queryset(queryset, page_number, items_per_page)
 
-def optimize_inventory_check_query(queryset):
+def build_filter_query(filter_dict):
     """
-    优化库存盘点查询，预加载创建者信息
+    构建过滤查询条件
+    
+    此函数从过滤字典创建Django ORM查询对象(Q)的组合
     
     Args:
-        queryset: 库存盘点查询集
+        filter_dict: 包含字段和值的过滤字典，格式为 {field_name: value}
         
     Returns:
-        QuerySet: 优化后的查询集
+        Django Q对象的组合，可用于queryset.filter()
     """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('created_by')
-
-def optimize_inventory_check_item_query(queryset):
-    """
-    优化库存盘点项查询，预加载盘点单和商品信息
+    from django.db.models import Q
     
-    Args:
-        queryset: 库存盘点项查询集
-        
-    Returns:
-        QuerySet: 优化后的查询集
-    """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('inventory_check', 'product', 'checked_by')
-
-def optimize_recharge_record_query(queryset):
-    """
-    优化充值记录查询，预加载会员信息
+    # 移除空值
+    valid_filters = {k: v for k, v in filter_dict.items() if v is not None and v != ''}
     
-    Args:
-        queryset: 充值记录查询集
-        
-    Returns:
-        QuerySet: 优化后的查询集
-    """
-    if not isinstance(queryset, QuerySet):
-        return queryset
-        
-    return queryset.select_related('member', 'member__level', 'operator')
+    # 初始化查询对象
+    query = Q()
+    
+    # 为每个过滤条件创建查询子句并组合
+    for field, value in valid_filters.items():
+        # 支持列表值（用于in查询）
+        if isinstance(value, list):
+            if value:  # 只有当列表非空时才添加查询
+                query &= Q(**{f"{field}__in": value})
+        else:
+            query &= Q(**{field: value})
+    
+    return query

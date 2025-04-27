@@ -1,0 +1,220 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}创建新用户{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'user_list' %}">用户管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">创建新用户</li>
+        </ol>
+    </nav>
+    
+    <!-- 页面标题 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">创建新用户</h1>
+        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> 返回用户列表
+        </a>
+    </div>
+    
+    <!-- 创建用户表单 -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">用户信息</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="userForm">
+                        {% csrf_token %}
+                        
+                        <!-- 基本信息 -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">用户名 <span class="text-danger">*</span></label>
+                                <input type="text" name="username" id="username" class="form-control" required value="{{ form_data.username|default:'' }}">
+                                <div class="form-text">登录系统时使用的唯一标识符</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">电子邮箱</label>
+                                <input type="email" name="email" id="email" class="form-control" value="{{ form_data.email|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">名字</label>
+                                <input type="text" name="first_name" id="first_name" class="form-control" value="{{ form_data.first_name|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">姓氏</label>
+                                <input type="text" name="last_name" id="last_name" class="form-control" value="{{ form_data.last_name|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <!-- 密码设置 -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">密码 <span class="text-danger">*</span></label>
+                                <input type="password" name="password" id="password" class="form-control" required>
+                                <div class="form-text">密码长度至少为8个字符</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password_confirm" class="form-label">确认密码 <span class="text-danger">*</span></label>
+                                <input type="password" name="password_confirm" id="password_confirm" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <!-- 用户组和权限 -->
+                        <div class="mb-3">
+                            <label class="form-label">用户角色</label>
+                            <div class="row">
+                                {% for group in groups %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="groups" id="group_{{ group.id }}" value="{{ group.id }}" 
+                                               {% if form_data.groups and group.id|stringformat:"i" in form_data.groups %}checked{% endif %}>
+                                        <label class="form-check-label" for="group_{{ group.id }}">
+                                            {{ group.name }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- 状态控制 -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        账户可用
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_staff" id="is_staff" checked>
+                                    <label class="form-check-label" for="is_staff">
+                                        可登录后台
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_superuser" id="is_superuser">
+                                    <label class="form-check-label" for="is_superuser">
+                                        超级管理员
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 提交按钮 -->
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> 创建用户
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">快速创建销售员</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        创建一个只能访问销售相关功能的销售员账号，适合前台收银和客户服务人员使用。
+                    </p>
+                    <button type="button" class="btn btn-success w-100" id="createSalesBtn">
+                        <i class="fas fa-user-tag me-1"></i> 快速创建销售员账号
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">帮助信息</h5>
+                </div>
+                <div class="card-body">
+                    <h6>用户角色说明</h6>
+                    <ul>
+                        <li><strong>销售员</strong>：只能访问销售和会员管理功能</li>
+                        <li><strong>仓库管理员</strong>：可以管理库存和产品</li>
+                        <li><strong>财务人员</strong>：可以查看销售和财务数据</li>
+                        <li><strong>管理员</strong>：可以管理系统的大部分功能</li>
+                    </ul>
+                    <p>超级管理员可以访问所有功能，请谨慎分配此权限。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 密码一致性检查
+        const password = document.getElementById('password');
+        const passwordConfirm = document.getElementById('password_confirm');
+        const form = document.getElementById('userForm');
+        
+        form.addEventListener('submit', function(e) {
+            if (password.value !== passwordConfirm.value) {
+                e.preventDefault();
+                alert('两次输入的密码不一致，请重新输入。');
+                passwordConfirm.focus();
+            }
+        });
+        
+        // 快速创建销售员按钮
+        const createSalesBtn = document.getElementById('createSalesBtn');
+        if (createSalesBtn) {
+            createSalesBtn.addEventListener('click', function() {
+                // 清除所有选中的用户组
+                document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                // 选中销售员组
+                const salesGroupCheckbox = document.querySelector('input[name="groups"][id$="group_' + findSalesGroupId() + '"]');
+                if (salesGroupCheckbox) {
+                    salesGroupCheckbox.checked = true;
+                }
+                
+                // 设置基本权限
+                document.getElementById('is_active').checked = true;
+                document.getElementById('is_staff').checked = true;
+                document.getElementById('is_superuser').checked = false;
+                
+                // 设置焦点到用户名字段
+                document.getElementById('username').focus();
+            });
+        }
+        
+        // 查找销售员组ID
+        function findSalesGroupId() {
+            const groups = document.querySelectorAll('input[name="groups"]');
+            for (let i = 0; i < groups.length; i++) {
+                const label = groups[i].nextElementSibling;
+                if (label && label.textContent.trim() === '销售员') {
+                    return groups[i].value;
+                }
+            }
+            return '';
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %} 

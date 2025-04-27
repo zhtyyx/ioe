@@ -1,0 +1,143 @@
+{% extends "inventory/base.html" %}
+{% load static %}
+
+{% block title %}条码模板设置{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">条码模板设置</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">条码尺寸与样式</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="barcode_width" class="form-label">条码宽度 (像素)</label>
+                                    <input type="number" class="form-control" id="barcode_width" name="barcode_width" value="{{ config.barcode_width }}" min="100" max="500">
+                                    <div class="form-text">建议值: 300</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="barcode_height" class="form-label">条码高度 (像素)</label>
+                                    <input type="number" class="form-control" id="barcode_height" name="barcode_height" value="{{ config.barcode_height }}" min="50" max="300">
+                                    <div class="form-text">建议值: 100</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="barcode_font_size" class="form-label">字体大小 (像素)</label>
+                                    <input type="number" class="form-control" id="barcode_font_size" name="barcode_font_size" value="{{ config.barcode_font_size }}" min="8" max="24">
+                                    <div class="form-text">建议值: 12</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">显示选项</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="barcode_show_price" name="barcode_show_price" {% if config.barcode_show_price %}checked{% endif %}>
+                                    <label class="form-check-label" for="barcode_show_price">显示价格</label>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="barcode_show_name" name="barcode_show_name" {% if config.barcode_show_name %}checked{% endif %}>
+                                    <label class="form-check-label" for="barcode_show_name">显示商品名称</label>
+                                </div>
+                                
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="barcode_show_company" name="barcode_show_company" {% if config.barcode_show_company %}checked{% endif %}>
+                                    <label class="form-check-label" for="barcode_show_company">显示公司名称</label>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="barcode_company_name" class="form-label">公司名称</label>
+                                    <input type="text" class="form-control" id="barcode_company_name" name="barcode_company_name" value="{{ config.barcode_company_name|default:'' }}" maxlength="50">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">预览</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 offset-md-3">
+                                        <div class="barcode-preview text-center p-3" style="border: 1px dashed #ccc;">
+                                            <div class="mb-2">
+                                                <img src="{% static 'img/barcode_sample.png' %}" alt="条码样例" style="max-width: 100%; height: auto;">
+                                            </div>
+                                            <div id="preview-name" style="font-weight: bold;">示例商品名称</div>
+                                            <div id="preview-price">¥99.99</div>
+                                            <div id="preview-company" style="font-size: 0.8rem; color: #666;">示例公司名称</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'generate_barcode' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回条码生成
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // 更新预览
+        function updatePreview() {
+            let showName = $('#barcode_show_name').is(':checked');
+            let showPrice = $('#barcode_show_price').is(':checked');
+            let showCompany = $('#barcode_show_company').is(':checked');
+            let companyName = $('#barcode_company_name').val();
+            let fontSize = $('#barcode_font_size').val() + 'px';
+            
+            $('#preview-name').toggle(showName);
+            $('#preview-price').toggle(showPrice);
+            $('#preview-company').toggle(showCompany);
+            
+            if (companyName) {
+                $('#preview-company').text(companyName);
+            }
+            
+            // 更新字体大小
+            $('#preview-name, #preview-price').css('font-size', fontSize);
+            $('#preview-company').css('font-size', (parseInt(fontSize) * 0.8) + 'px');
+        }
+        
+        // 绑定事件
+        $('#barcode_show_name, #barcode_show_price, #barcode_show_company, #barcode_company_name, #barcode_font_size').on('change input', updatePreview);
+        
+        // 初始化预览
+        updatePreview();
+    });
+</script>
+{% endblock %} 
