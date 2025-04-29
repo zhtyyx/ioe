@@ -9,3 +9,6 @@ requests>=2.31.0
 django-widget-tweaks>=1.4.12
 urllib3>=2.0.0
 openpyxl>=3.1.2
+Faker>=37.1.0
+psutil>=7.0.0
+qrcode>=8.1

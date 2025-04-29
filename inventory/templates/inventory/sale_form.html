@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.multiple_matches && data.members && data.members.length > 0) {
                         showMemberSelectionModal(data.members);
                     } else if (data.member_id) {
-                        selectMember(data.member_id, data.member_name, data.discount_rate, data.phone);
+                        selectMember(data.member_id, data.member_name, data.discount_rate, data.member_phone);
                     }
                 } else {
                     showAlert('info', data.message || '未找到会员');
