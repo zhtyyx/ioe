@@ -115,7 +115,7 @@ def sale_create(request):
         products_data = []
         for key, value in request.POST.items():
             if key.startswith('products[') and key.endswith('][id]'):
-                index = key[9:-4]
+                index = key[9:-5]
                 product_id = value
                 quantity = request.POST.get(f'products[{index}][quantity]', 1)
                 price = request.POST.get(f'products[{index}][price]', 0)
@@ -250,14 +250,20 @@ def sale_create(request):
                 # 如果后端计算有效，优先使用后端计算的金额
                 total_amount = total_amount_calculated
                 
-                # 重新计算折扣和最终金额
-                discount_rate = Decimal('0.85')  # 默认85折
-                if discount_amount_frontend > 0 and total_amount_frontend > 0:
-                    # 尝试从前端数据中推导折扣率
+                # 重新计算折扣和最终金额，只有当有会员时才应用折扣
+                member_id = request.POST.get('member')
+                discount_rate = Decimal('1.0')  # 默认无折扣
+                
+                if member_id:
                     try:
-                        discount_rate = Decimal('1.0') - (discount_amount_frontend / total_amount_frontend)
-                    except:
-                        pass
+                        member = Member.objects.get(id=member_id)
+                        if member.level and member.level.discount is not None:
+                            discount_rate = Decimal(str(member.level.discount))
+                        print(f"会员折扣: 会员ID={member_id}, 折扣率={discount_rate}")
+                    except Member.DoesNotExist:
+                        print(f"找不到ID为{member_id}的会员，不应用折扣")
+                else:
+                    print("无会员信息，不应用折扣")
                 
                 discount_amount = total_amount * (Decimal('1.0') - discount_rate)
                 final_amount = total_amount - discount_amount
