@@ -97,55 +97,6 @@
                     <canvas id="salesChart" height="200"></canvas>
                 </div>
             </div>
-            
-            <div class="row">
-                <!-- 热销商品 -->
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header bg-success text-white">
-                            <h5 class="card-title mb-0">热销商品</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if top_products %}
-                            <div class="list-group list-group-flush">
-                                {% for product in top_products %}
-                                <div class="list-group-item px-0">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">{{ product.product__name }}</h6>
-                                        <span class="badge bg-primary rounded-pill">{{ product.total_qty }}</span>
-                                    </div>
-                                    <small class="text-muted">销售额: ¥{{ product.total_amount|floatformat:2 }}</small>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% else %}
-                            <p class="text-muted">暂无销售数据</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 库存预警 -->
-                <div class="col-md-6">
-                    <div class="card mb-4">
-                        <div class="card-header bg-danger text-white">
-                            <h5 class="card-title mb-0">库存预警</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if low_stock_products > 0 %}
-                            <div class="alert alert-warning mb-3">
-                                <strong>注意：</strong> 有 {{ low_stock_products }} 个商品库存不足，其中 {{ out_of_stock_products }} 个商品已无库存！
-                            </div>
-                            <a href="#" class="btn btn-danger btn-sm">查看库存不足商品</a>
-                            {% else %}
-                            <div class="alert alert-success mb-0">
-                                <i class="fas fa-check-circle me-2"></i> 所有商品库存充足
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
         
         <!-- 右侧区域 -->
@@ -158,7 +109,7 @@
                         <a href="{% url 'birthday_members_report' %}" class="btn btn-light btn-sm">查看全部</a>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body card-scrollable p-0">
                     {% if birthday_members %}
                     <div class="list-group list-group-flush">
                         {% for member in birthday_members %}
@@ -190,13 +141,65 @@
                     {% endif %}
                 </div>
             </div>
-            
-            <!-- 最近操作日志 -->
-            <div class="card">
+        </div>
+    </div>
+    
+    <!-- 底部三个卡片区域 -->
+    <div class="row">
+        <!-- 热销商品 -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">热销商品</h5>
+                </div>
+                <div class="card-body card-scrollable">
+                    {% if top_products %}
+                    <div class="list-group list-group-flush">
+                        {% for product in top_products %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">{{ product.product__name }}</h6>
+                                <span class="badge bg-primary rounded-pill">{{ product.total_qty }}</span>
+                            </div>
+                            <small class="text-muted">销售额: ¥{{ product.total_amount|floatformat:2 }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">暂无销售数据</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 库存预警 -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">库存预警</h5>
+                </div>
+                <div class="card-body card-scrollable">
+                    {% if low_stock_products > 0 %}
+                    <div class="alert alert-warning mb-3">
+                        <strong>注意：</strong> 有 {{ low_stock_products }} 个商品库存不足，其中 {{ out_of_stock_products }} 个商品已无库存！
+                    </div>
+                    <a href="#" class="btn btn-danger btn-sm">查看库存不足商品</a>
+                    {% else %}
+                    <div class="alert alert-success mb-0">
+                        <i class="fas fa-check-circle me-2"></i> 所有商品库存充足
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- 最近操作日志 -->
+        <div class="col-md-4">
+            <div class="card mb-4">
                 <div class="card-header bg-secondary text-white">
                     <h5 class="card-title mb-0">最近操作</h5>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body card-scrollable p-0">
                     {% if recent_logs %}
                     <div class="list-group list-group-flush">
                         {% for log in recent_logs %}
@@ -237,6 +240,40 @@
         align-items: center;
         justify-content: center;
         font-size: 14px;
+    }
+    
+    /* 添加固定高度和滚动样式 */
+    .card-scrollable {
+        height: 250px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    
+    /* 美化滚动条 */
+    .card-scrollable::-webkit-scrollbar {
+        width: 5px;
+    }
+    
+    .card-scrollable::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .card-scrollable::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 5px;
+    }
+    
+    .card-scrollable::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    /* 确保卡片有统一的高度 */
+    .col-md-4 .card {
+        height: 100%;
+    }
+    
+    .col-md-4 .card-body {
+        padding: 0.75rem;
     }
 </style>
 

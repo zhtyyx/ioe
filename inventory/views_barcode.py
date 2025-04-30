@@ -41,7 +41,8 @@ def barcode_product_create(request):
                     'manufacturer': barcode_data.get('manufacturer', ''),
                     'price': barcode_data.get('suggested_price', 0),
                     'cost': barcode_data.get('suggested_price', 0) * 0.8 if barcode_data.get('suggested_price') else 0,  # 默认成本价为建议售价的80%
-                    'description': barcode_data.get('description', '')
+                    'description': barcode_data.get('description', ''),
+                    'is_active': True  # 确保初始化时is_active为True
                 }
                 
                 # 尝试从数据库中查找匹配的商品类别
@@ -57,14 +58,16 @@ def barcode_product_create(request):
                 messages.success(request, '成功获取商品信息，请确认并完善商品详情')
             else:
                 messages.info(request, f'未找到条码 {barcode} 的商品信息，请手动填写')
-                initial_data = {'barcode': barcode}
+                initial_data = {'barcode': barcode, 'is_active': True}  # 确保初始化时is_active为True
     
     # 处理表单提交
     if request.method == 'POST':
         form = forms.ProductForm(request.POST, request.FILES)
         if form.is_valid():
-            # 保存商品信息
-            product = form.save()
+            # 确保is_active为True
+            product = form.save(commit=False)
+            product.is_active = True
+            product.save()
             
             # 创建初始库存记录
             initial_stock = request.POST.get('initial_stock', 0)
