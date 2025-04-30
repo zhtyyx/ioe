@@ -30,6 +30,10 @@ class Sale(models.Model):
     operator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='操作员')
     remark = models.TextField(blank=True, verbose_name='备注')
 
+    @property
+    def total_quantity(self):
+        return sum(item.quantity for item in self.items.all())
+
     def update_total_amount(self):
         self.total_amount = sum(item.subtotal for item in self.items.all())
         return self.total_amount
