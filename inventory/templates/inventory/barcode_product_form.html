@@ -270,6 +270,16 @@
                     </div>
                     
                     <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="is_active" id="id_is_active" class="form-check-input" {% if form.is_active.value %}checked{% else %}checked{% endif %}>
+                            <label for="id_is_active" class="form-check-label">启用商品</label>
+                            {% if form.is_active.errors %}
+                                <div class="alert alert-danger mt-1">{{ form.is_active.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
                         <label for="id_description" class="form-label">商品描述</label>
                         {% if form.description.errors %}
                             <div class="alert alert-danger">{{ form.description.errors }}</div>

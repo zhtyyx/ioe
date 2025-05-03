@@ -913,26 +913,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 计算折扣
-        let discountRate = 1;
+        let discountRate = 1; // 默认无折扣
         let discountAmount = 0;
         const memberIdInputElement = document.getElementById('member-id');
         const memberId = memberIdInputElement ? memberIdInputElement.value : '';
-        const discountTextElement = document.getElementById('member-discount-value');
-        const discountText = discountTextElement ? discountTextElement.textContent : '';
         
-        if (memberId && discountText && discountText !== '无折扣') {
-            const match = discountText.match(/(\d+\.?\d*)折/);
-            if (match && match[1]) {
-                discountRate = parseFloat(match[1]) / 10;
-                if (isNaN(discountRate) || discountRate < 0 || discountRate > 1) {
-                    discountRate = 1; // 防御无效折扣率
-                    console.warn("Invalid discount rate parsed:", match[1]);
+        // 只有在有会员ID的情况下才考虑折扣
+        if (memberId) {
+            const discountTextElement = document.getElementById('member-discount-value');
+            const discountText = discountTextElement ? discountTextElement.textContent : '';
+            
+            if (discountText && discountText !== '无折扣') {
+                const match = discountText.match(/(\d+\.?\d*)折/);
+                if (match && match[1]) {
+                    discountRate = parseFloat(match[1]) / 10;
+                    if (isNaN(discountRate) || discountRate < 0 || discountRate > 1) {
+                        discountRate = 1; // 防御无效折扣率
+                        console.warn("Invalid discount rate parsed:", match[1]);
+                    }
+                } else {
+                    console.warn("Could not parse discount rate from:", discountText);
                 }
             } else {
-                console.warn("Could not parse discount rate from:", discountText);
+                console.log("会员没有折扣或折扣信息不可用");
             }
+        } else {
+            console.log("没有会员信息，不应用折扣");
         }
-        discountAmount = totalAmount * (1 - discountRate);
+        
+        // 只有当折扣率<1时，才计算折扣金额
+        if (discountRate < 1) {
+            discountAmount = totalAmount * (1 - discountRate);
+            console.log(`应用折扣: ${discountRate}, 折扣金额: ${discountAmount.toFixed(2)}`);
+        } else {
+            discountAmount = 0;
+            console.log("不应用折扣，折扣金额为0");
+        }
         
         // 计算最终金额
         const finalAmount = totalAmount - discountAmount;
