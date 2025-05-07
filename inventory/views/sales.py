@@ -21,6 +21,14 @@ from inventory.utils.query_utils import paginate_queryset
 @login_required
 def sale_list(request):
     """销售单列表视图"""
+    today = timezone.now().date()
+    today_sales = Sale.objects.filter(created_at__date=today).aggregate(
+        total=Sum('total_amount')
+    )['total'] or 0
+    month_sales = Sale.objects.filter(created_at__month=today.month).aggregate(
+        total=Sum('total_amount')
+    )['total'] or 0
+
     # 从GET参数获取搜索和筛选条件
     search_query = request.GET.get('q', '')
     date_from = request.GET.get('date_from', '')
@@ -28,7 +36,7 @@ def sale_list(request):
     
     # 获取所有销售单
     sales = Sale.objects.all().order_by('-created_at')
-    
+    total_sales = sales.count()
     # 应用筛选条件
     if search_query:
         # 可以搜索销售单号、会员姓名、手机号等
@@ -57,9 +65,12 @@ def sale_list(request):
         'sales': paginated_sales,
         'search_query': search_query,
         'date_from': date_from,
-        'date_to': date_to
+        'date_to': date_to,
+        'today_sales': today_sales,
+        'month_sales': month_sales,
+        'total_sales': total_sales
     }
-    
+
     return render(request, 'inventory/sale_list.html', context)
 
 @login_required
@@ -845,5 +856,5 @@ def birthday_members_report(request):
         }[month],
         'upcoming_birthdays': upcoming_birthdays
     }
-    
-    return render(request, 'inventory/birthday_members_report.html', context) 
+
+    return render(request, 'inventory/birthday_members_report.html', context)
