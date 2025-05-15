@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="zh-hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>添加新商品</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --info-color: #1abc9c;
+            --background-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #2c3e50;
+            --border-radius: 0.75rem;
+            --box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --transition-speed: 0.3s;
+            --mobile-padding: 0.5rem;
+            --mobile-font-size: 0.9rem;
+        }
+        
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: 'Noto Sans SC', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* 导航栏样式优化 */
+        .navbar {
+            box-shadow: var(--box-shadow);
+            background-color: var(--primary-color) !important;
+            padding: 0.75rem 1rem;
+        }
+        
+        .navbar-brand {
+            color: white !important;
+            font-weight: 700;
+            font-size: 1.4rem;
+            padding: 0.5rem 0;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            transition: all var(--transition-speed) ease;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            margin: 0 0.2rem;
+        }
+        
+        .nav-link:hover, .nav-link.active {
+            color: white !important;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 卡片样式优化 */
+        .card {
+            border: none;
+            border-radius: var(--border-radius);
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+            transition: all var(--transition-speed) ease;
+            overflow: hidden;
+            height: 100%;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--box-shadow);
+        }
+        
+        .card-header {
+            font-weight: 600;
+            border-bottom: none;
+            padding: 1rem 1.25rem;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+        
+        /* 按钮样式优化 */
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: all var(--transition-speed) ease;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: #2980b9;
+            border-color: #2980b9;
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-success:hover, .btn-success:focus {
+            background-color: #27ae60;
+            border-color: #27ae60;
+            box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.25);
+        }
+        
+        /* 表单样式优化 */
+        .form-control, .form-select {
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #ced4da;
+            transition: all var(--transition-speed) ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* 表格样式优化 */
+        .table-container {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+        
+        .table {
+            margin-bottom: 0;
+        }
+        
+        .table thead th {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom: none;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+        }
+        
+        .table tbody td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+        }
+        
+        /* 警告框样式优化 */
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* 徽章样式优化 */
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+            border-radius: 0.5rem;
+        }
+        
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 1.5rem 0;
+        }
+        
+        /* 内容容器优化 */
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            /* 基础元素调整 */
+            body {
+                padding-top: 0;
+                font-size: var(--mobile-font-size);
+            }
+            
+            .container {
+                padding-left: var(--mobile-padding);
+                padding-right: var(--mobile-padding);
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .main-content {
+                padding: 1rem 0;
+            }
+            
+            /* 导航栏优化 */
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            /* 卡片优化 */
+            .card {
+                margin-bottom: 1rem;
+                border-radius: calc(var(--border-radius) * 0.75);
+            }
+            
+            /* 表格响应式优化 */
+            .table-responsive {
+                border-radius: var(--border-radius);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* 改善表格在移动设备上的显示 */
+            .table th, .table td {
+                white-space: nowrap;
+                padding: 0.5rem 0.75rem;
+                font-size: var(--mobile-font-size);
+                vertical-align: middle;
+                max-width: 200px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                position: relative;
+            }
+            
+            /* 增强表格单元格触摸反馈 */
+            .table td:active {
+                background-color: rgba(52, 152, 219, 0.1);
+            }
+            
+            /* 优化表格内容显示 */
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                max-width: 100%;
+                margin-bottom: 1rem;
+            }
+            
+            /* 改善表单在移动设备上的布局 */
+            .input-group {
+                flex-wrap: nowrap;
+                width: 100%;
+            }
+            
+            /* 确保下拉菜单不会溢出屏幕 */
+            .dropdown-menu {
+                position: absolute;
+                left: auto;
+                right: 0;
+                font-size: var(--mobile-font-size);
+                width: auto;
+                min-width: 10rem;
+                max-width: 90vw;
+                box-shadow: var(--box-shadow);
+                border-radius: calc(var(--border-radius) * 0.75);
+                transform-origin: top right;
+                animation: dropdown-animation 0.2s ease-out;
+            }
+            
+            @keyframes dropdown-animation {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+            
+            .dropdown-item {
+                padding: 0.75rem 1rem;
+                white-space: normal;
+                transition: background-color 0.15s ease-in-out;
+            }
+            
+            /* 优化按钮组在移动设备上的显示 */
+            .btn-group {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+                width: 100%;
+                justify-content: center;
+            }
+            
+            /* 确保表单元素在小屏幕上正确显示 */
+            .form-control, .form-select {
+                width: 100%;
+                max-width: 100%;
+                font-size: var(--mobile-font-size);
+                height: auto;
+            }
+            
+            /* 优化导航栏在移动设备上的显示 */
+            .navbar-collapse {
+                max-height: 80vh;
+                overflow-y: auto;
+                background-color: var(--primary-color);
+                border-radius: 0 0 var(--border-radius) var(--border-radius);
+                padding: 0.5rem;
+                margin: 0 -0.5rem;
+                box-shadow: var(--box-shadow);
+            }
+            
+            .nav-link {
+                padding: 0.75rem 1rem;
+                margin: 0.1rem 0;
+                border-radius: var(--border-radius);
+            }
+            
+            /* 优化表单布局 */
+            .row > [class*="col-"] {
+                margin-bottom: 0.75rem;
+            }
+            
+            /* 优化按钮在移动设备上的显示 */
+            .d-flex.flex-wrap.gap-2 {
+                justify-content: center;
+                margin-top: 0.5rem;
+                width: 100%;
+            }
+            
+            /* 优化表单提交按钮区域 */
+            .form-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                justify-content: center;
+                margin-top: 1rem;
+                width: 100%;
+            }
+            
+            /* 确保搜索框和筛选器在移动设备上正确显示 */
+            .d-flex.flex-column.flex-md-row {
+                gap: 0.5rem;
+            }
+            
+            /* 优化移动端表格内容显示 */
+            .table-container {
+                padding: 0;
+                margin-bottom: 1rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                border-radius: var(--border-radius);
+                box-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.05);
+            }
+            
+            /* 优化移动端按钮大小 */
+            .btn {
+                padding: 0.4rem 0.75rem;
+                font-size: var(--mobile-font-size);
+            }
+            
+            /* 优化移动端卡片内容 */
+            .card-body {
+                padding: var(--mobile-padding);
+            }
+            
+            /* 确保表单在移动端正确对齐 */
+            .form-label {
+                font-size: var(--mobile-font-size);
+                margin-bottom: 0.25rem;
+                display: block;
+                width: 100%;
+            }
+            
+            /* 优化移动端表单布局 */
+            .row {
+                margin-left: -0.25rem;
+                margin-right: -0.25rem;
+            }
+            
+            .row > [class*="col-"] {
+                padding-left: 0.25rem;
+                padding-right: 0.25rem;
+            }
+            
+            /* 优化移动端搜索和筛选区域 */
+            .d-flex.flex-wrap {
+                flex-direction: column;
+                align-items: stretch;
+                width: 100%;
+                gap: 0.5rem;
+            }
+            
+            /* 确保下拉选择框在移动端正确显示 */
+            select.form-select[style="width: auto;"] {
+                width: 100% !important;
+                margin-bottom: 0.5rem;
+                max-height: 38px;
+                appearance: auto;
+            }
+            
+            /* 优化移动端表单组 */
+            .form-group {
+                margin-bottom: 0.75rem;
+                width: 100%;
+                position: relative;
+            }
+            
+            /* 优化表单验证反馈 */
+            .invalid-feedback {
+                display: block;
+                font-size: 0.8rem;
+                color: var(--accent-color);
+                margin-top: 0.25rem;
+            }
+            
+            /* 增强表单控件触摸区域 */
+            .form-control, .form-select, .btn {
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-appearance: none;
+                appearance: none;
+                transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, transform 0.1s ease;
+            }
+            
+            /* 增强表单控件触摸反馈 */
+            .form-control:focus, .form-select:focus {
+                transform: translateY(-1px);
+            }
+            
+            /* 优化表单验证状态显示 */
+            .was-validated .form-control:invalid,
+            .form-control.is-invalid {
+                border-color: var(--accent-color);
+                padding-right: calc(1.5em + 0.75rem);
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+                background-repeat: no-repeat;
+                background-position: right calc(0.375em + 0.1875rem) center;
+                background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+            }
+            
+            /* 优化移动端搜索框 */
+            .input-group.mb-3 {
+                width: 100%;
+                margin-bottom: 0.5rem !important;
+            }
+            
+            /* 增强搜索框交互体验 */
+            .input-group .form-control:focus + .input-group-text,
+            .input-group .form-control:focus ~ .btn {
+                border-color: var(--secondary-color);
+                background-color: rgba(52, 152, 219, 0.1);
+            }
+            
+            /* 优化筛选按钮组交互 */
+            .btn-group .btn {
+                position: relative;
+                overflow: hidden;
+            }
+            
+            .btn-group .btn::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(255, 255, 255, 0.3);
+                border-radius: 50%;
+                transform: scale(0) translate(-50%, -50%);
+                opacity: 0;
+                pointer-events: none;
+                transition: transform 0.3s, opacity 0.3s;
+            }
+            
+            .btn-group .btn:active::after {
+                transform: scale(2.5) translate(-50%, -50%);
+                opacity: 1;
+                transition: transform 0s, opacity 0.3s;
+            }
+            
+            /* 优化移动端分页 */
+            .pagination {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.25rem;
+            }
+            
+            .page-link {
+                padding: 0.25rem 0.5rem;
+                font-size: var(--mobile-font-size);
+            }
+            
+            /* 优化移动端警告框 */
+            .alert {
+                padding: 0.75rem 1rem;
+                margin-bottom: 1rem;
+                font-size: var(--mobile-font-size);
+            }
+        }
+        
+        /* 列表组样式优化 */
+        .list-group-item {
+            border: none;
+            padding: 0.75rem 1.25rem;
+            transition: background-color var(--transition-speed) ease;
+        }
+        
+        .list-group-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        
+        /* 触摸反馈效果 */
+        .active-touch {
+            background-color: rgba(0, 0, 0, 0.05) !important;
+            transform: scale(0.98);
+            transition: all 0.1s ease-in-out;
+        }
+        
+        /* 表单验证增强 */
+        .was-validated .form-control:invalid:focus,
+        .was-validated .form-select:invalid:focus {
+            box-shadow: 0 0 0 0.25rem rgba(231, 76, 60, 0.25);
+        }
+        
+        .was-validated .form-control:valid:focus,
+        .was-validated .form-select:valid:focus {
+            box-shadow: 0 0 0 0.25rem rgba(46, 204, 113, 0.25);
+        }
+        
+        /* 改进移动端导航栏交互 */
+        @media (max-width: 768px) {
+            .navbar-collapse {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease-in-out;
+            }
+            
+            .navbar-collapse.show {
+                max-height: 80vh;
+            }
+            
+            /* 增强移动端表单元素可访问性 */
+            .form-label {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            /* 改进移动端按钮触摸区域 */
+            .btn, .nav-link, .dropdown-item {
+                min-height: 44px;
+                display: flex;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class="bi bi-box-seam me-2"></i>库存管理系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link " href="/products/">
+                            <i class="bi bi-box me-1"></i>商品管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="/categories/">
+                            <i class="bi bi-tag"></i> 分类管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="/inventory/">
+                            <i class="bi bi-clipboard-data me-1"></i>库存管理
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="/inventory-checks/">
+                            <i class="bi bi-clipboard-check"></i> 库存盘点
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="/sales/">
+                            <i class="bi bi-cart me-1"></i>销售管理
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle " href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-people me-1"></i>会员管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/members/"><i class="bi bi-person-vcard me-2"></i>会员列表</a></li>
+                            <li><a class="dropdown-item" href="/member-levels/"><i class="bi bi-list-stars me-2"></i>会员等级</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link " href="/reports/">
+                            <i class="bi bi-graph-up"></i> 报表中心
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex">
+                    <div class="dropdown">
+                        <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i>
+                            admin
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>设置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/accounts/logout/"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="container">
+            
+
+            
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">添加新商品</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" id="product-form" class="needs-validation" novalidate>
+                <input type="hidden" name="csrfmiddlewaretoken" value="B90QLm39d2LV7acDrRhvJzGCUWWjwgz3e23AL4afCaPZqspxVtJIQOQK9rOk1fgJ">
+
+                <div class="row">
+                    <!-- 基本信息 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">基本信息</h6>
+                            </div>
+                            <div class="card-body">
+                                
+
+
+    
+    <div id="div_id_name" class="mb-3">
+        
+            
+            <label
+                for="id_name" class="form-label requiredField">
+                商品名称<span class="asteriskField">*</span>
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="text" name="name" class="form-control textinput" placeholder="请输入商品名称" aria-label="商品名称" maxlength="200" required id="id_name">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+
+
+    
+    <div id="div_id_barcode" class="mb-3">
+        
+            
+            <label
+                for="id_barcode" class="form-label requiredField">
+                商品条码<span class="asteriskField">*</span>
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="text" name="barcode" class="form-control textinput" placeholder="请输入商品条码" autocomplete="off" inputmode="numeric" pattern="[A-Za-z0-9-]+" aria-label="商品条码" maxlength="100" required aria-describedby="id_barcode_helptext" id="id_barcode">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+    
+        <div id="id_barcode_helptext" class="form-text">支持EAN-13、UPC、ISBN等标准条码格式</div>
+    
+
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+
+
+    
+    <div id="div_id_category" class="mb-3">
+        
+            
+            <label
+                for="id_category" class="form-label requiredField">
+                商品分类<span class="asteriskField">*</span>
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        
+                            <select name="category" class="form-control form-select" aria-label="商品分类" required id="id_category">
+  <option value="" selected>---------</option>
+
+  <option value="23">手机数码</option>
+
+  <option value="24">电脑办公</option>
+
+  <option value="25">家用电器</option>
+
+  <option value="26">食品饮料</option>
+
+  <option value="27">服装鞋帽</option>
+
+  <option value="28">美妆护肤</option>
+
+  <option value="29">母婴用品</option>
+
+  <option value="30">家居家装</option>
+
+  <option value="31">玩具乐器</option>
+
+  <option value="32">运动户外</option>
+
+</select>
+                        
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+
+
+    
+    <div id="div_id_specification" class="mb-3">
+        
+            
+            <label
+                for="id_specification" class="form-label">
+                规格
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="text" name="specification" class="form-control textinput" placeholder="规格" aria-label="规格" maxlength="200" id="id_specification">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+
+
+    
+    <div id="div_id_manufacturer" class="mb-3">
+        
+            
+            <label
+                for="id_manufacturer" class="form-label">
+                制造商
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="text" name="manufacturer" class="form-control textinput" placeholder="制造商" aria-label="制造商" maxlength="200" id="id_manufacturer">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 价格和库存信息 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">价格和库存</h6>
+                            </div>
+                            <div class="card-body">
+                                
+
+
+    
+    <div id="div_id_cost" class="mb-3">
+        
+            
+            <label
+                for="id_cost" class="form-label requiredField">
+                成本价<span class="asteriskField">*</span>
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="number" name="cost" class="form-control numberinput" step="0.01" placeholder="成本价" inputmode="decimal" aria-label="成本价" required id="id_cost">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+
+
+    
+    <div id="div_id_price" class="mb-3">
+        
+            
+            <label
+                for="id_price" class="form-label requiredField">
+                售价<span class="asteriskField">*</span>
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="number" name="price" class="form-control numberinput" step="0.01" placeholder="售价" inputmode="decimal" aria-label="售价" required id="id_price">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+                                    
+
+
+    
+    <div id="div_id_warning_level" class="mb-3">
+        
+            
+            <label
+                for="id_warning_level" class="form-label">
+                预警库存
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <input type="number" name="warning_level" class="form-control numberinput" min="0" step="1" placeholder="预警数量" aria-label="预警库存" aria-describedby="id_warning_level_helptext" id="id_warning_level">
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+    
+        <div id="id_warning_level_helptext" class="form-text">库存低于此数量时将发出预警</div>
+    
+
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 颜色和尺码 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">颜色和尺码</h6>
+                            </div>
+                            <div class="card-body">
+                                
+
+
+    
+    <div id="div_id_color" class="mb-3">
+        
+            
+            <label
+                for="id_color" class="form-label">
+                颜色
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        
+                            <select name="color" class="form-control form-select" aria-label="颜色" id="id_color">
+  <option value="" selected>无颜色</option>
+
+  <option value="black">黑色</option>
+
+  <option value="white">白色</option>
+
+  <option value="red">红色</option>
+
+  <option value="blue">蓝色</option>
+
+  <option value="green">绿色</option>
+
+  <option value="yellow">黄色</option>
+
+  <option value="purple">紫色</option>
+
+  <option value="grey">灰色</option>
+
+  <option value="pink">粉色</option>
+
+  <option value="orange">橙色</option>
+
+  <option value="brown">棕色</option>
+
+  <option value="other">其他</option>
+
+</select>
+                        
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+
+
+    
+    <div id="div_id_size" class="mb-3">
+        
+            
+            <label
+                for="id_size" class="form-label">
+                尺码
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        
+                            <select name="size" class="form-control form-select" aria-label="尺码" id="id_size">
+  <option value="" selected>无尺码</option>
+
+  <option value="XS">XS</option>
+
+  <option value="S">S</option>
+
+  <option value="M">M</option>
+
+  <option value="L">L</option>
+
+  <option value="XL">XL</option>
+
+  <option value="XXL">XXL</option>
+
+  <option value="XXXL">XXXL</option>
+
+  <option value="35">35</option>
+
+  <option value="36">36</option>
+
+  <option value="37">37</option>
+
+  <option value="38">38</option>
+
+  <option value="39">39</option>
+
+  <option value="40">40</option>
+
+  <option value="41">41</option>
+
+  <option value="42">42</option>
+
+  <option value="43">43</option>
+
+  <option value="44">44</option>
+
+  <option value="45">45</option>
+
+  <option value="other">其他</option>
+
+</select>
+                        
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图片上传 -->
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">商品图片</h6>
+                            </div>
+                            <div class="card-body">
+                                
+
+
+    
+    <div id="div_id_image" class="mb-3">
+        
+            
+            <label
+                for="id_image" class="form-label">
+                商品图片
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        
+
+
+
+<div>
+    <input type="file" name="image" class="form-control form-control" accept="image/*" aria-label="商品图片" id="id_image">
+    
+
+
+    
+
+
+
+
+    
+
+
+
+</div>
+
+
+                    
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 描述信息 -->
+                    <div class="col-12">
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0">描述</h6>
+                            </div>
+                            <div class="card-body">
+                                
+
+
+    
+    <div id="div_id_description" class="mb-3">
+        
+            
+            <label
+                for="id_description" class="form-label">
+                商品描述
+            </label>
+        
+
+        
+
+        
+            
+                
+                    
+                        <textarea name="description" cols="40" rows="3" class="form-control textarea" id="id_description">
+</textarea>
+                    
+                    
+                        
+
+
+    
+
+
+
+
+    
+
+
+
+                    
+                
+            
+        
+        
+    </div>
+    
+
+
+                                
+                                    
+
+
+    
+        <div class="mb-3">
+        
+    
+    <div id="div_id_is_active" class="form-check">
+        
+
+        
+
+        
+            
+                    
+                        <input type="checkbox" name="is_active" class="form-check-input checkboxinput" aria-label="是否启用" id="id_is_active" checked>
+                    
+                <label for="id_is_active" class="form-check-label">
+                    是否启用
+                </label>
+                
+
+
+    
+
+
+
+
+    
+
+
+
+            
+        
+        
+    </div>
+    
+        
+        </div>
+    
+
+
+                                
+                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <a href="/products/" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 返回列表
+                            </a>
+                            <div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> 保存商品
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+        </div>
+    </div>
+
+    <footer class="bg-light py-3 mt-auto border-top">
+        <div class="container text-center text-muted">
+            <small>&copy; 2025 库存管理系统 | 版本 1.0</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+    
+<script>
+    $(document).ready(function() {
+        // 自动生成条码
+        $('#id_barcode').closest('.form-group').append(
+            '<div class="mt-2"><button type="button" id="generate-barcode" class="btn btn-sm btn-outline-primary">自动生成条码</button></div>'
+        );
+        
+        $('#generate-barcode').click(function() {
+            // 生成随机13位EAN条码
+            let barcode = '69' + Math.floor(Math.random() * 10000000000).toString().padStart(11, '0');
+            $('#id_barcode').val(barcode);
+        });
+        
+        // 分类下拉框增强
+        $('#id_category').select2({
+            placeholder: '选择商品分类',
+            allowClear: true
+        });
+        
+        // 颜色和尺码下拉框增强
+        $('#id_color, #id_size').select2({
+            placeholder: '请选择',
+            allowClear: true
+        });
+        
+        // 表单验证
+        $('#product-form').submit(function(event) {
+            if (this.checkValidity() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            $(this).addClass('was-validated');
+        });
+    });
+</script>
+
+    <script>
+    // 页面加载完成后执行增强功能
+    document.addEventListener('DOMContentLoaded', function() {
+         // 为表单元素添加Bootstrap样式
+         document.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], input[type="password"], textarea, select').forEach(function(element) {
+             if (!element.classList.contains('form-control') && !element.classList.contains('form-select')) {
+                 if (element.tagName === 'SELECT') {
+                     element.classList.add('form-select');
+                 } else {
+                     element.classList.add('form-control');
+                 }
+             }
+         });
+         
+         // 自动隐藏警告消息
+         setTimeout(function() {
+             document.querySelectorAll('.alert').forEach(function(alert) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                 const bsAlert = new bootstrap.Alert(alert);
+                 bsAlert.close();
+                }
+             });
+         }, 5000);
+         
+         // 优化移动端导航栏交互
+         const navbarToggler = document.querySelector('.navbar-toggler');
+         if (navbarToggler) {
+             navbarToggler.addEventListener('click', function() {
+                 // 添加过渡效果
+                const navbarCollapse = document.querySelector('.navbar-collapse');
+                if (navbarCollapse) {
+                    navbarCollapse.style.transition = 'all 0.3s ease-in-out';
+                }
+            });
+        }
+        
+        // 添加表单验证
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            form.classList.add('was-validated');
+            });
+         });
+     });
+     </script>
+</body>
+</html>

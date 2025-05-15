@@ -90,10 +90,13 @@ def product_list(request):
     search_query = request.GET.get('search', '')
     category_id = request.GET.get('category', '')
     status = request.GET.get('status', 'active')  # 默认显示活跃商品
-    sort_by = request.GET.get('sort', 'name')
+    sort_by = request.GET.get('sort', 'updated')  # 修改默认排序为更新时间
+    
+    print(f"DEBUG: 列表筛选参数 - 搜索: {search_query}, 分类: {category_id}, 状态: {status}, 排序: {sort_by}")
     
     # 基本查询集
     products = Product.objects.select_related('category').all()
+    print(f"DEBUG: 初始查询集数量: {products.count()}")
     
     # 应用筛选
     if search_query:
@@ -109,6 +112,7 @@ def product_list(request):
     # 状态筛选
     if status == 'active':
         products = products.filter(is_active=True)
+        print(f"DEBUG: 应用活跃状态筛选后的数量: {products.count()}")
     elif status == 'inactive':
         products = products.filter(is_active=False)
     
@@ -121,6 +125,10 @@ def product_list(request):
         products = products.order_by('category__name', 'name')
     elif sort_by == 'created':
         products = products.order_by('-created_at')
+    elif sort_by == 'updated':  # 添加按更新时间排序
+        products = products.order_by('-updated_at')
+    else:  # 默认按更新时间降序
+        products = products.order_by('-updated_at')
     
     # 分页
     paginator = Paginator(products, 15)  # 每页15个商品
@@ -133,6 +141,8 @@ def product_list(request):
     # 计算统计数据
     total_products = Product.objects.count()
     active_products = Product.objects.filter(is_active=True).count()
+    
+    print(f"DEBUG: 总商品数: {total_products}, 活跃商品数: {active_products}, 当前页面商品数: {len(page_obj)}")
     
     context = {
         'page_obj': page_obj,
@@ -188,40 +198,47 @@ def product_create(request):
         form = ProductForm(request.POST)
         image_formset = ProductImageFormSet(request.POST, request.FILES, prefix='images')
         
-        if form.is_valid() and image_formset.is_valid():
+        # 修改验证逻辑，只检查表单是否有效，不强制检查图片表单集
+        if form.is_valid():
             # 保存商品数据
             product = form.save(commit=False)
             product.created_by = request.user
             product.is_active = True  # 确保商品默认为活跃状态
             product.save()
             
-            # 保存商品图片
-            for image_form in image_formset:
-                if image_form.cleaned_data and not image_form.cleaned_data.get('DELETE'):
-                    image = image_form.save(commit=False)
-                    image.product = product
-                    
-                    # 处理图片文件
-                    if image.image:
-                        # 生成缩略图
-                        thumbnail = generate_thumbnail(image.image, (300, 300))
+            # 只有当图片表单集有效时才处理图片
+            if image_formset.is_valid():
+                # 保存商品图片
+                for image_form in image_formset:
+                    if image_form.cleaned_data and not image_form.cleaned_data.get('DELETE'):
+                        image = image_form.save(commit=False)
+                        image.product = product
                         
-                        # 保存缩略图
-                        thumb_name = f'thumb_{uuid.uuid4()}.jpg'
-                        thumb_path = f'products/thumbnails/{thumb_name}'
-                        thumb_file = io.BytesIO()
-                        thumbnail.save(thumb_file, format='JPEG')
+                        # 处理图片文件
+                        if image.image:
+                            # 生成缩略图
+                            thumbnail = generate_thumbnail(image.image, (300, 300))
+                            
+                            # 保存缩略图
+                            thumb_name = f'thumb_{uuid.uuid4()}.jpg'
+                            thumb_path = f'products/thumbnails/{thumb_name}'
+                            thumb_file = io.BytesIO()
+                            thumbnail.save(thumb_file, format='JPEG')
+                            
+                            # 设置缩略图路径
+                            image.thumbnail = thumb_path
                         
-                        # 设置缩略图路径
-                        image.thumbnail = thumb_path
-                    
-                    image.save()
+                        image.save()
             
             # 创建初始库存记录
+            warning_level = 10  # 设置一个默认的预警值
+            if 'warning_level' in form.cleaned_data and form.cleaned_data['warning_level'] is not None:
+                warning_level = form.cleaned_data['warning_level']
+                
             Inventory.objects.create(
                 product=product,
                 quantity=0,
-                warning_level=form.cleaned_data.get('warning_level', 5)
+                warning_level=warning_level
             )
             
             messages.success(request, f'商品 {product.name} 创建成功')
@@ -230,7 +247,8 @@ def product_create(request):
             if 'next' in request.POST and request.POST['next'] == 'bulk':
                 return redirect('product_bulk_create')
             
-            return redirect('product_detail', pk=product.id)
+            # 修改重定向，解决模板不存在的问题
+            return redirect('product_list')
     else:
         form = ProductForm()
         image_formset = ProductImageFormSet(prefix='images')
@@ -263,53 +281,61 @@ def product_update(request, pk):
         form = ProductForm(request.POST, instance=product)
         image_formset = ProductImageFormSet(request.POST, request.FILES, prefix='images', instance=product)
         
-        if form.is_valid() and image_formset.is_valid():
+        # 修改验证逻辑，只检查表单是否有效，不强制检查图片表单集
+        if form.is_valid():
             # 保存商品数据
             product = form.save(commit=False)
             product.updated_at = timezone.now()
             product.updated_by = request.user
             product.save()
             
-            # 保存商品图片
-            for image_form in image_formset:
-                if image_form.cleaned_data:
-                    if image_form.cleaned_data.get('DELETE'):
-                        if image_form.instance.pk:
-                            image_form.instance.delete()
-                    else:
-                        image = image_form.save(commit=False)
-                        image.product = product
-                        
-                        # 处理图片文件
-                        if image.image and not image.thumbnail:
-                            # 生成缩略图
-                            thumbnail = generate_thumbnail(image.image, (300, 300))
+            # 只有当图片表单集有效时才处理图片
+            if image_formset.is_valid():
+                # 保存商品图片
+                for image_form in image_formset:
+                    if image_form.cleaned_data:
+                        if image_form.cleaned_data.get('DELETE'):
+                            if image_form.instance.pk:
+                                image_form.instance.delete()
+                        else:
+                            image = image_form.save(commit=False)
+                            image.product = product
                             
-                            # 保存缩略图
-                            thumb_name = f'thumb_{uuid.uuid4()}.jpg'
-                            thumb_path = f'products/thumbnails/{thumb_name}'
-                            thumb_file = io.BytesIO()
-                            thumbnail.save(thumb_file, format='JPEG')
+                            # 处理图片文件
+                            if image.image and not image.thumbnail:
+                                # 生成缩略图
+                                thumbnail = generate_thumbnail(image.image, (300, 300))
+                                
+                                # 保存缩略图
+                                thumb_name = f'thumb_{uuid.uuid4()}.jpg'
+                                thumb_path = f'products/thumbnails/{thumb_name}'
+                                thumb_file = io.BytesIO()
+                                thumbnail.save(thumb_file, format='JPEG')
+                                
+                                # 设置缩略图路径
+                                image.thumbnail = thumb_path
                             
-                            # 设置缩略图路径
-                            image.thumbnail = thumb_path
-                        
-                        image.save()
+                            image.save()
             
             # 更新库存预警级别
+            warning_level = 10  # 设置一个默认的预警值
+            if 'warning_level' in form.cleaned_data and form.cleaned_data['warning_level'] is not None:
+                warning_level = form.cleaned_data['warning_level']
+                
             try:
                 inventory = Inventory.objects.get(product=product)
-                inventory.warning_level = form.cleaned_data.get('warning_level', inventory.warning_level)
+                inventory.warning_level = warning_level
                 inventory.save()
             except Inventory.DoesNotExist:
                 Inventory.objects.create(
                     product=product,
                     quantity=0,
-                    warning_level=form.cleaned_data.get('warning_level', 5)
+                    warning_level=warning_level
                 )
             
             messages.success(request, f'商品 {product.name} 更新成功')
-            return redirect('product_detail', pk=product.id)
+            # 修改重定向，解决模板不存在的问题
+            return redirect('product_list')
     else:
         form = ProductForm(instance=product)
         # 设置库存预警级别

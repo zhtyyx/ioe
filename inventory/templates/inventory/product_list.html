@@ -32,18 +32,44 @@
             <div class="card-body">
                 <div class="row g-3 mb-4 align-items-center">
                     <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" id="searchInput" placeholder="搜索商品名称或条码...">
-                        </div>
+                        <form method="get" action="{% url 'product_list' %}" class="mb-0">
+                            <div class="input-group">
+                                <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+                                <input type="text" class="form-control" id="searchInput" name="search" 
+                                       placeholder="搜索商品名称或条码..." value="{{ search_query }}">
+                                <input type="hidden" name="sort" value="{{ sort_by }}">
+                                <input type="hidden" name="category" value="{{ selected_category }}">
+                                <input type="hidden" name="status" value="{{ selected_status }}">
+                                <button type="submit" class="btn btn-primary">搜索</button>
+                            </div>
+                        </form>
                     </div>
                     <div class="col-md-6">
                         <div class="d-flex justify-content-md-end">
-                            <div class="btn-group" id="categoryFilter">
-                                <button type="button" class="btn btn-outline-primary active" data-category="">全部</button>
-                                {% for category in categories %}
-                                <button type="button" class="btn btn-outline-primary" data-category="{{ category.id }}">{{ category.name }}</button>
-                                {% endfor %}
+                            <div class="btn-group me-2">
+                                <a href="{% url 'product_list' %}?sort=updated{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" 
+                                   class="btn btn-outline-secondary {% if sort_by == 'updated' %}active{% endif %}">
+                                   <i class="bi bi-clock-history"></i> 最近更新
+                                </a>
+                                <a href="{% url 'product_list' %}?sort=name{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" 
+                                   class="btn btn-outline-secondary {% if sort_by == 'name' %}active{% endif %}">
+                                   <i class="bi bi-sort-alpha-down"></i> 名称
+                                </a>
+                                <a href="{% url 'product_list' %}?sort=created{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" 
+                                   class="btn btn-outline-secondary {% if sort_by == 'created' %}active{% endif %}">
+                                   <i class="bi bi-calendar-plus"></i> 创建时间
+                                </a>
+                            </div>
+                            <div class="form-group ms-2" style="min-width: 150px;">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="bi bi-tag"></i></span>
+                                    <select id="categoryDropdown" class="form-select" aria-label="分类筛选">
+                                        <option value="" {% if not selected_category %}selected{% endif %}>全部分类</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:'s' %}selected{% endif %}>{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -128,6 +154,56 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- 添加分页控件 -->
+                {% if page_obj.has_other_pages %}
+                <div class="d-flex justify-content-center mt-4">
+                    <nav aria-label="商品列表分页">
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" aria-label="上一页">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="上一页">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for i in page_obj.paginator.page_range %}
+                                {% if page_obj.number == i %}
+                                <li class="page-item active">
+                                    <a class="page-link" href="#">{{ i }}</a>
+                                </li>
+                                {% elif i > page_obj.number|add:"-4" and i < page_obj.number|add:"4" %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}">{{ i }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}" aria-label="下一页">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#" aria-label="下一页">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                
             </div>
         </div>
     </div>
@@ -135,49 +211,46 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 搜索功能
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', filterProducts);
+        // 删除前端搜索过滤逻辑，由后端处理搜索和筛选
         
-        // 分类筛选功能
-        const categoryButtons = document.querySelectorAll('#categoryFilter button');
-        categoryButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // 移除所有按钮的active类
-                categoryButtons.forEach(btn => btn.classList.remove('active'));
-                // 给当前点击的按钮添加active类
-                this.classList.add('active');
-                
-                filterProducts();
+        // 添加分页导航
+        document.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.getAttribute('href') === '#') {
+                    e.preventDefault();
+                }
             });
         });
         
-        function filterProducts() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const activeCategory = document.querySelector('#categoryFilter button.active').dataset.category;
-            
-            const rows = document.querySelectorAll('tbody tr');
-            
-            rows.forEach(row => {
-                // 忽略空行
-                if (!row.querySelector('td:first-child')) return;
+        // 分类下拉列表变化处理
+        const categoryDropdown = document.getElementById('categoryDropdown');
+        if (categoryDropdown) {
+            categoryDropdown.addEventListener('change', function() {
+                // 构建URL
+                let url = '{% url 'product_list' %}?';
                 
-                const productName = row.querySelector('h6')?.textContent.toLowerCase() || '';
-                const barcode = row.querySelector('small')?.textContent.toLowerCase() || '';
-                const rowCategory = row.dataset.category;
-                
-                // 检查搜索条件
-                const matchesSearch = productName.includes(searchTerm) || barcode.includes(searchTerm);
-                
-                // 检查分类条件
-                const matchesCategory = !activeCategory || rowCategory === activeCategory;
-                
-                // 同时满足搜索和分类条件才显示
-                if (matchesSearch && matchesCategory) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+                // 添加分类参数 (如果有选择分类)
+                if (this.value) {
+                    url += 'category=' + this.value;
                 }
+                
+                // 添加排序参数 (如果存在)
+                {% if sort_by %}
+                url += (url.endsWith('?') ? '' : '&') + 'sort={{ sort_by }}';
+                {% endif %}
+                
+                // 添加搜索参数 (如果存在)
+                {% if search_query %}
+                url += (url.endsWith('?') ? '' : '&') + 'search={{ search_query }}';
+                {% endif %}
+                
+                // 添加状态参数 (如果存在)
+                {% if selected_status %}
+                url += (url.endsWith('?') ? '' : '&') + 'status={{ selected_status }}';
+                {% endif %}
+                
+                // 导航到构建的URL
+                window.location.href = url;
             });
         }
     });
