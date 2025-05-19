@@ -164,7 +164,7 @@ python manage.py runserver
 ## ☕ 支持项目
 
 如果您觉得这个项目对您有帮助，可以通过以下方式支持我们继续开发和维护：
-
+感谢：“挨踢大哥”对本项目的支持。
 <div align="center">
   <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
 </div>
