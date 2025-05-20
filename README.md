@@ -169,7 +169,13 @@ python manage.py runserver
   <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
 </div>
 
-感谢："挨踢大哥", "桂教助考网"对本项目的支持。
+<div align="center">
+  <h3>🙏 特别鸣谢</h3>
+  <p>感谢以下用户对本项目的支持：</p>
+  <p>
+    "挨踢大哥" &nbsp;|&nbsp; "桂教助考网"
+  </p>
+</div>
 
 ## 📞 联系方式
 
