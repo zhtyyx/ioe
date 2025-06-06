@@ -629,7 +629,15 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>设置</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>退出登录</a></li>
+                            <li>
+                                <!-- 使用表单代替链接 -->
+                                <form action="{% url 'logout' %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item" style="background: none; border: none; cursor: pointer; width: 100%; text-align: left;">
+                                        <i class="bi bi-box-arrow-right me-2"></i>退出登录
+                                    </button>
+                                </form>
+                            </li>
                         </ul>
                     </div>
                 </div>

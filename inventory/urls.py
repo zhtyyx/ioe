@@ -64,7 +64,7 @@ urlpatterns = [
     path('sales/create/', sales_views.sale_create, name='sale_create'),
     path('sales/<int:sale_id>/items/create/', sales_views.sale_item_create, name='sale_item_create'),
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
-    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='/'), name='logout'),
+    path('accounts/logout/', auth_views.LogoutView.as_view(next_page='accounts/login/'), name='logout'),
     
     # 会员管理URL - 使用新的会员视图模块
     path('members/', member_views.member_list, name='member_list'),
