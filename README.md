@@ -193,5 +193,5 @@ python manage.py runserver
 
 <div align="center">
   软件著作权已登记，如有疑问请联系我们。<br/>
-  Copyright © 2023-2024 IOE Team. All Rights Reserved.
+  Copyright © 2025-2026 IOE Team. All Rights Reserved.
 </div>
