@@ -179,7 +179,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/@zxing/library@latest"></script>
+
+<script src="{% static 'js/zxing.min.js' %}"></script>
 <script>
     $(document).ready(function() {
         let codeReader = new ZXing.BrowserMultiFormatReader();
