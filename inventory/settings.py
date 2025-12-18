@@ -21,7 +21,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'p5k!d@$v_z@6i*+j$9x7b!n=o(h&w#q)s@l^m
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 allowed_hosts_str = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()]
+ALLOWED_HOSTS = [host.strip() for host in allowed_hosts_str.split(',') if host.strip()] + ["ioe.xianist.com"]
 
 # 第三方条码API配置
 BARCODE_API_KEY = ''  # 替换为实际的API密钥
