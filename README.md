@@ -17,7 +17,7 @@ _一站式零售库存解决方案，为您的商店量身定制_
 IOE是一个基于Django开发的**综合性库存管理系统**，专为零售商店、小型仓库和商品销售场所设计。系统提供了完整的商品管理、库存跟踪、销售记录、会员管理和数据分析功能，帮助企业高效管理库存和销售流程。
 
 <div align="center">
-  <b>📱 扫描下方二维码加入交流群，获取技术支持与分享经验</b><br/><br/>
+  <b>📱 扫描二维码添加我的微信，加入分享群，获取技术支持与分享经验</b><br/><br/>
   <img src="./asset/wxqun.png" width="30%" />
 </div>
 
@@ -169,6 +169,14 @@ python manage.py runserver
   <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
 </div>
 
+<div align="center">
+  <h3>🙏 特别鸣谢</h3>
+  <p>感谢以下用户对本项目的支持：</p>
+  <p>
+    "挨踢大哥" &nbsp;|&nbsp; "桂教助考网"
+  </p>
+</div>
+
 ## 📞 联系方式
 
 <div align="center">
@@ -185,5 +193,5 @@ python manage.py runserver
 
 <div align="center">
   软件著作权已登记，如有疑问请联系我们。<br/>
-  Copyright © 2023-2024 IOE Team. All Rights Reserved.
+  Copyright © 2025-2026 IOE Team. All Rights Reserved.
 </div>
