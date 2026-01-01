@@ -585,13 +585,16 @@ def member_recharge(request, pk):
         )
         
         # 创建余额交易记录
+        description_text = f'会员充值 - {dict(RechargeRecord.PAYMENT_METHODS).get(payment_method, "未知")}'
+        if remark:
+            description_text += f' ({remark})'
+        
         transaction = MemberTransaction.objects.create(
             member=member,
             transaction_type='RECHARGE',
             balance_change=amount,
             points_change=0,  # 充值暂不增加积分
-            description=f'会员充值 - {dict(RechargeRecord.PAYMENT_CHOICES).get(payment_method, "未知")}',
-            remark=remark,
+            description=description_text,
             created_by=request.user
         )
         
