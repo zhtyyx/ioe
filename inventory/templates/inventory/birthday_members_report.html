@@ -80,7 +80,7 @@
                                     <td>{{ member.points }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'member_detail' member.id %}" class="btn btn-outline-primary" title="查看详情">
+                                            <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-outline-primary" title="查看详情">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                             <a href="{% url 'member_edit' member.id %}" class="btn btn-outline-secondary" title="编辑会员">

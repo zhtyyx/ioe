@@ -148,7 +148,7 @@
                                     <td class="text-end">¥{{ member.total_recharge|div:member.recharge_count|floatformat:2 }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'member_details' member.id %}" class="btn btn-outline-primary">
+                                            <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-outline-primary">
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             <a href="{% url 'member_recharge_records' member.id %}" class="btn btn-outline-info">

@@ -1,0 +1,78 @@
+{% extends 'inventory/base.html' %}
+{% load static %}
+
+{% block title %}删除分类 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 面包屑导航 -->
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'category_list' %}">分类管理</a></li>
+            <li class="breadcrumb-item active" aria-current="page">删除分类</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <div class="col-md-8 col-lg-6 mx-auto">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> 确认删除分类
+                </div>
+                <div class="card-body">
+                    <!-- 警告提示 -->
+                    <div class="alert alert-danger" role="alert">
+                        <h5 class="alert-heading"><i class="bi bi-exclamation-circle me-2"></i> 警告：此操作不可逆！</h5>
+                        <p>您即将删除分类 <strong>{{ category.name }}</strong>。删除后将无法恢复。</p>
+                    </div>
+                    
+                    <!-- 分类信息 -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">分类信息</h5>
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">分类名称</dt>
+                                <dd class="col-sm-8">{{ category.name }}</dd>
+                                
+                                {% if category.description %}
+                                <dt class="col-sm-4">分类描述</dt>
+                                <dd class="col-sm-8">{{ category.description }}</dd>
+                                {% endif %}
+                                
+                                <dt class="col-sm-4">是否启用</dt>
+                                <dd class="col-sm-8">
+                                    {% if category.is_active %}
+                                        <span class="badge bg-success">启用</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">禁用</span>
+                                    {% endif %}
+                                </dd>
+                                
+                                <dt class="col-sm-4">创建时间</dt>
+                                <dd class="col-sm-8">{{ category.created_at|date:"Y-m-d H:i" }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                </div>
+                <!-- 删除表单 -->
+                <div class="card-footer bg-white border-top">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'category_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-1"></i> 确认删除
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
