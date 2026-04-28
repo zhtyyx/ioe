@@ -165,6 +165,34 @@ class InventoryViewTest(ViewTestCase):
         self.inventory.refresh_from_db()
         self.assertEqual(self.inventory.quantity, 150)  # 100 + 50
 
+
+class MemberApiViewTest(ViewTestCase):
+    """测试会员相关 API 视图"""
+
+    def test_member_search_requires_login(self):
+        """未登录用户不能通过手机号查询会员隐私信息"""
+        url = reverse('member_search_by_phone', args=[self.member.phone])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/accounts/login/', response['Location'])
+        self.assertIn('next=', response['Location'])
+
+    def test_member_search_returns_data_for_authenticated_user(self):
+        """登录用户仍可使用会员搜索 API"""
+        self.client.login(username='testuser', password='12345')
+        url = reverse('member_search_by_phone', args=[self.member.phone])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['member_id'], self.member.id)
+        self.assertEqual(data['member_phone'], self.member.phone)
+
+
 class SaleViewTest(ViewTestCase):
     """测试销售相关视图"""
     
