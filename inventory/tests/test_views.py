@@ -10,9 +10,12 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    RechargeRecord,
     Sale,
-    SaleItem
+    SaleItem,
+    MemberTransaction
 )
+from inventory.views.member import _create_member_recharge
 
 class ViewTestCase(TestCase):
     """视图测试的基类"""
@@ -75,6 +78,29 @@ class ViewTestCase(TestCase):
             balance=Decimal('100.00'),
             points=0
         )
+
+class MemberRechargeViewTest(ViewTestCase):
+    """测试会员充值视图"""
+
+    def test_recharge_uses_database_balance_for_increment(self):
+        """充值应基于数据库当前余额递增，避免陈旧对象覆盖并发写入。"""
+        stale_member = Member.objects.get(pk=self.member.pk)
+        Member.objects.filter(pk=self.member.pk).update(balance=Decimal('125.00'))
+
+        _create_member_recharge(
+            member=stale_member,
+            amount=Decimal('10.00'),
+            actual_amount=Decimal('10.00'),
+            payment_method='cash',
+            operator=self.user,
+            remark='测试充值',
+        )
+
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('135.00'))
+        self.assertTrue(self.member.is_recharged)
+        self.assertEqual(RechargeRecord.objects.filter(member=self.member).count(), 1)
+        self.assertEqual(MemberTransaction.objects.filter(member=self.member, transaction_type='RECHARGE').count(), 1)
 
 class ProductViewTest(ViewTestCase):
     """测试商品相关视图"""
