@@ -76,6 +76,17 @@ class ViewTestCase(TestCase):
             points=0
         )
 
+class AuthViewTest(ViewTestCase):
+    """测试认证相关视图"""
+
+    def test_logout_redirects_to_login_page(self):
+        """退出登录后应跳转到登录页，而不是当前路径下的相对地址"""
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(reverse('logout'))
+
+        self.assertRedirects(response, reverse('login'))
+
 class ProductViewTest(ViewTestCase):
     """测试商品相关视图"""
     
