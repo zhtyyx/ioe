@@ -64,7 +64,7 @@ class ViewTestCase(TestCase):
         # 创建会员等级
         self.member_level = MemberLevel.objects.create(
             name='普通会员',
-            discount=95,  # 95%
+            discount=Decimal('0.95'),  # 95%
             points_threshold=0,
             color='#FF5733'
         )
