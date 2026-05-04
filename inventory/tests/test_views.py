@@ -10,6 +10,8 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    MemberTransaction,
+    RechargeRecord,
     Sale,
     SaleItem
 )
@@ -75,6 +77,35 @@ class ViewTestCase(TestCase):
             balance=Decimal('100.00'),
             points=0
         )
+
+class MemberRechargeViewTest(ViewTestCase):
+    """测试会员充值视图"""
+
+    def test_member_recharge_updates_balance_and_records(self):
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(reverse('member_recharge', args=[self.member.id]), {
+            'amount': '50.00',
+            'actual_amount': '50.00',
+            'payment_method': 'cash',
+            'remark': '测试充值'
+        })
+
+        self.assertRedirects(response, reverse('member_detail', args=[self.member.id]))
+
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('150.00'))
+        self.assertTrue(self.member.is_recharged)
+
+        recharge = RechargeRecord.objects.get(member=self.member)
+        self.assertEqual(recharge.amount, Decimal('50.00'))
+        self.assertEqual(recharge.actual_amount, Decimal('50.00'))
+        self.assertEqual(recharge.payment_method, 'cash')
+
+        transaction = MemberTransaction.objects.get(member=self.member)
+        self.assertEqual(transaction.transaction_type, 'RECHARGE')
+        self.assertEqual(transaction.balance_change, Decimal('50.00'))
+        self.assertIn('测试充值', transaction.description)
 
 class ProductViewTest(ViewTestCase):
     """测试商品相关视图"""
