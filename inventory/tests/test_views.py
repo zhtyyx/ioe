@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission, Group
@@ -204,3 +207,35 @@ class SaleViewTest(ViewTestCase):
         
         # 验证重定向到销售项创建页面
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+
+
+class BackupViewSecurityTest(TestCase):
+    """备份管理视图的安全回归测试"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(
+            username='backup-admin',
+            password='backup-pass',
+            email='backup@example.com'
+        )
+        self.client.force_login(self.user)
+
+        self.temp_parent = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_parent.cleanup)
+        self.backup_root = os.path.join(self.temp_parent.name, 'backups')
+        self.temp_dir = os.path.join(self.temp_parent.name, 'temp')
+        os.makedirs(self.backup_root, exist_ok=True)
+        os.makedirs(self.temp_dir, exist_ok=True)
+
+    def test_delete_backup_rejects_parent_directory_traversal(self):
+        sentinel_path = os.path.join(self.temp_parent.name, 'keep.txt')
+        with open(sentinel_path, 'w', encoding='utf-8') as sentinel:
+            sentinel.write('do not delete')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.post('/system/backup/delete/../', {'confirm': 'on'})
+
+        self.assertRedirects(response, reverse('backup_list'))
+        self.assertTrue(os.path.exists(sentinel_path))
+        self.assertTrue(os.path.isdir(self.backup_root))

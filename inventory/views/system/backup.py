@@ -27,6 +27,21 @@ from inventory.services.backup_service import BackupService
 # 获取logger
 logger = logging.getLogger(__name__)
 
+BACKUP_NAME_RE = re.compile(r'^[a-zA-Z0-9_\-]+$')
+
+
+def get_safe_backup_dir(backup_name):
+    """Return a backup path guaranteed to stay within BACKUP_ROOT."""
+    if not BACKUP_NAME_RE.fullmatch(backup_name or ''):
+        raise ValueError("无效的备份名称")
+
+    backup_root = os.path.realpath(settings.BACKUP_ROOT)
+    backup_dir = os.path.realpath(os.path.join(backup_root, backup_name))
+    if os.path.commonpath([backup_root, backup_dir]) != backup_root:
+        raise ValueError("无效的备份路径")
+    return backup_dir
+
+
 def get_dir_size_display(dir_path):
     """获取目录大小的友好显示"""
     total_size = 0
@@ -96,12 +111,12 @@ def create_backup(request):
             backup_name = suggested_name
         
         # 验证备份名称
-        if not re.match(r'^[a-zA-Z0-9_\-]+$', backup_name):
+        if not BACKUP_NAME_RE.fullmatch(backup_name):
             messages.error(request, "备份名称只能包含字母、数字、下划线和连字符")
             return render(request, 'inventory/system/create_backup.html', {'suggested_name': suggested_name})
         
         # 检查备份是否已存在
-        backup_dir = os.path.join(settings.BACKUP_ROOT, backup_name)
+        backup_dir = get_safe_backup_dir(backup_name)
         if os.path.exists(backup_dir):
             messages.error(request, f"备份 {backup_name} 已存在")
             return render(request, 'inventory/system/create_backup.html', {'suggested_name': suggested_name})
@@ -176,7 +191,12 @@ def create_backup(request):
 def restore_backup(request, backup_name):
     """恢复备份视图"""
     # 检查备份是否存在
-    backup_dir = os.path.join(settings.BACKUP_ROOT, backup_name)
+    try:
+        backup_dir = get_safe_backup_dir(backup_name)
+    except ValueError:
+        messages.error(request, "无效的备份名称")
+        return redirect('backup_list')
+
     if not os.path.exists(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
@@ -266,7 +286,12 @@ def restore_backup(request, backup_name):
 def delete_backup(request, backup_name):
     """删除备份视图"""
     # 检查备份是否存在
-    backup_dir = os.path.join(settings.BACKUP_ROOT, backup_name)
+    try:
+        backup_dir = get_safe_backup_dir(backup_name)
+    except ValueError:
+        messages.error(request, "无效的备份名称")
+        return redirect('backup_list')
+
     if not os.path.exists(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
@@ -307,7 +332,12 @@ def delete_backup(request, backup_name):
 def download_backup(request, backup_name):
     """下载备份视图"""
     # 检查备份是否存在
-    backup_dir = os.path.join(settings.BACKUP_ROOT, backup_name)
+    try:
+        backup_dir = get_safe_backup_dir(backup_name)
+    except ValueError:
+        messages.error(request, "无效的备份名称")
+        return redirect('backup_list')
+
     if not os.path.exists(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
