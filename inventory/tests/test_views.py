@@ -76,6 +76,29 @@ class ViewTestCase(TestCase):
             points=0
         )
 
+class MemberSearchApiTest(ViewTestCase):
+    """测试会员搜索 API 权限和响应"""
+
+    def test_member_search_requires_login(self):
+        """匿名用户不能读取会员个人信息"""
+        url = reverse('member_search_by_phone', args=[self.member.phone])
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response['Location'].startswith(f'/accounts/login/?next={url}'))
+
+    def test_member_search_returns_member_for_authenticated_user(self):
+        """登录用户仍可通过手机号查询会员"""
+        self.client.login(username='testuser', password='12345')
+        response = self.client.get(reverse('member_search_by_phone', args=[self.member.phone]))
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['member_id'], self.member.id)
+        self.assertEqual(data['member_phone'], self.member.phone)
+
 class ProductViewTest(ViewTestCase):
     """测试商品相关视图"""
     

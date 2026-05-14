@@ -22,6 +22,7 @@ import uuid
 from datetime import datetime, timedelta
 
 
+@login_required
 def member_search_by_phone(request, phone):
     """
     根据手机号搜索会员的API
