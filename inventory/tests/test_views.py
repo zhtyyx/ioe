@@ -76,6 +76,18 @@ class ViewTestCase(TestCase):
             points=0
         )
 
+class AuthViewTest(ViewTestCase):
+    """测试认证相关视图"""
+
+    def test_logout_redirects_to_login_and_clears_session(self):
+        """登出后应跳转到登录页，避免相对路径重定向到无效地址"""
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(reverse('logout'))
+
+        self.assertRedirects(response, reverse('login'), fetch_redirect_response=False)
+        self.assertNotIn('_auth_user_id', self.client.session)
+
 class ProductViewTest(ViewTestCase):
     """测试商品相关视图"""
     
