@@ -5,10 +5,28 @@ import csv
 import io
 from datetime import datetime
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 from django.contrib.auth.models import User
 
 from ..models import Member, MemberLevel, MemberTransaction
+
+
+def apply_member_balance_change(member, amount, *, mark_recharged=False):
+    """
+    Apply a balance delta without saving a stale in-memory Member instance.
+    This prevents concurrent balance changes from overwriting each other.
+    """
+    update_fields = {
+        'balance': F('balance') + amount,
+        'updated_at': timezone.now(),
+    }
+    if mark_recharged:
+        update_fields['is_recharged'] = True
+
+    Member.objects.filter(pk=member.pk).update(**update_fields)
+    member.refresh_from_db(fields=['balance', 'is_recharged', 'updated_at'])
+    return member
 
 
 def check_and_update_member_level(member):
