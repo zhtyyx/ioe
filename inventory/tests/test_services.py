@@ -9,11 +9,49 @@ from inventory.models import (
     Inventory, 
     InventoryTransaction,
     InventoryCheck,
-    InventoryCheckItem
+    InventoryCheckItem,
+    Member,
+    MemberLevel
 )
+from inventory.services import member_service
 from inventory.services.inventory_service import InventoryService
 from inventory.services.inventory_check_service import InventoryCheckService
 from inventory.exceptions import InsufficientStockError, InventoryValidationError
+
+
+class MemberServiceTest(TestCase):
+    """测试会员服务"""
+
+    def setUp(self):
+        self.level = MemberLevel.objects.create(
+            name='普通会员',
+            discount=Decimal('0.95'),
+            points_threshold=0,
+            color='primary'
+        )
+        self.member = Member.objects.create(
+            name='测试会员',
+            phone='13800138000',
+            level=self.level,
+            balance=Decimal('100.00')
+        )
+
+    def test_balance_change_uses_database_increment(self):
+        """余额更新不能用过期对象覆盖已提交的余额变更"""
+        stale_member = Member.objects.get(pk=self.member.pk)
+
+        Member.objects.filter(pk=self.member.pk).update(balance=Decimal('125.00'))
+
+        member_service.apply_member_balance_change(
+            stale_member,
+            Decimal('50.00'),
+            mark_recharged=True
+        )
+
+        stale_member.refresh_from_db()
+        self.assertEqual(stale_member.balance, Decimal('175.00'))
+        self.assertTrue(stale_member.is_recharged)
+
 
 class InventoryServiceTest(TestCase):
     """测试库存服务"""
