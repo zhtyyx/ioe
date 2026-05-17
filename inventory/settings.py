@@ -122,6 +122,14 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Runtime directories used by logging and backup management.
+LOG_DIR = os.path.join(BASE_DIR, 'logs')
+BACKUP_ROOT = os.path.join(BASE_DIR, 'backups')
+TEMP_DIR = os.path.join(BASE_DIR, 'temp')
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(BACKUP_ROOT, exist_ok=True)
+os.makedirs(TEMP_DIR, exist_ok=True)
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
@@ -163,7 +171,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs/inventory.log'),
+            'filename': os.path.join(LOG_DIR, 'inventory.log'),
             'formatter': 'verbose',
         },
     },

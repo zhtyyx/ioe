@@ -6,6 +6,7 @@ import glob
 import logging
 from pathlib import Path
 from django.conf import settings
+from django import get_version
 from django.core.management import call_command
 from django.contrib.auth.models import User
 
@@ -17,7 +18,7 @@ class BackupService:
     @staticmethod
     def get_backup_directory():
         """获取备份目录，如果不存在则创建"""
-        backup_dir = os.path.join(settings.BASE_DIR, 'backups')
+        backup_dir = getattr(settings, 'BACKUP_ROOT', os.path.join(settings.BASE_DIR, 'backups'))
         os.makedirs(backup_dir, exist_ok=True)
         return backup_dir
 
@@ -63,7 +64,7 @@ class BackupService:
                 'backup_name': backup_name,
                 'created_at': datetime.datetime.now().isoformat(),
                 'created_by': user.username if user else 'system',
-                'django_version': settings.DJANGO_VERSION,
+                'django_version': get_version(),
                 'database_engine': settings.DATABASES['default']['ENGINE'],
             }
             
