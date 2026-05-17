@@ -251,7 +251,8 @@ class MemberRechargeViewTest(ViewTestCase):
             'remark': long_remark,
         })
 
-        self.assertRedirects(response, reverse('member_detail', args=[self.member.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], reverse('member_detail', args=[self.member.id]))
         self.member.refresh_from_db()
         self.assertEqual(self.member.balance, Decimal('150.00'))
         self.assertTrue(self.member.is_recharged)
