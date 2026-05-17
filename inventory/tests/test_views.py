@@ -2,6 +2,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission, Group
 from decimal import Decimal
+from unittest.mock import patch
 
 from inventory.models import (
     Category, 
@@ -10,6 +11,8 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    RechargeRecord,
+    MemberTransaction,
     Sale,
     SaleItem
 )
@@ -204,3 +207,74 @@ class SaleViewTest(ViewTestCase):
         
         # 验证重定向到销售项创建页面
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+
+
+class AuthViewTest(ViewTestCase):
+    """测试需要认证的视图"""
+
+    def test_member_search_requires_login(self):
+        response = self.client.get(reverse('member_search_by_phone', args=[self.member.phone]))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/accounts/login/', response['Location'])
+
+
+class MemberRechargeViewTest(ViewTestCase):
+    """测试会员充值视图"""
+
+    def setUp(self):
+        super().setUp()
+        self.client.login(username='testuser', password='12345')
+
+    def test_invalid_recharge_amount_does_not_create_records(self):
+        response = self.client.post(reverse('member_recharge', args=[self.member.id]), {
+            'amount': 'not-a-number',
+            'actual_amount': '10.00',
+            'payment_method': 'cash',
+            'remark': '',
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(RechargeRecord.objects.filter(member=self.member).exists())
+        self.assertFalse(MemberTransaction.objects.filter(member=self.member).exists())
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+
+
+    def test_recharge_with_long_remark_keeps_books_consistent(self):
+        long_remark = 'x' * 400
+
+        response = self.client.post(reverse('member_recharge', args=[self.member.id]), {
+            'amount': '50.00',
+            'actual_amount': '50.00',
+            'payment_method': 'cash',
+            'remark': long_remark,
+        })
+
+        self.assertRedirects(response, reverse('member_detail', args=[self.member.id]))
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('150.00'))
+        self.assertTrue(self.member.is_recharged)
+
+        recharge = RechargeRecord.objects.get(member=self.member)
+        self.assertEqual(recharge.remark, long_remark)
+
+        transaction = MemberTransaction.objects.get(member=self.member, transaction_type='RECHARGE')
+        description_limit = MemberTransaction._meta.get_field('description').max_length
+        self.assertLessEqual(len(transaction.description), description_limit)
+        self.assertEqual(transaction.balance_change, Decimal('50.00'))
+
+    def test_recharge_rolls_back_if_transaction_write_fails(self):
+        with patch('inventory.views.member.MemberTransaction.objects.create', side_effect=RuntimeError('write failed')):
+            with self.assertRaises(RuntimeError):
+                self.client.post(reverse('member_recharge', args=[self.member.id]), {
+                    'amount': '25.00',
+                    'actual_amount': '25.00',
+                    'payment_method': 'cash',
+                    'remark': 'rollback',
+                })
+
+        self.assertFalse(RechargeRecord.objects.filter(member=self.member).exists())
+        self.assertFalse(MemberTransaction.objects.filter(member=self.member).exists())
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))

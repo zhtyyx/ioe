@@ -1,11 +1,11 @@
 import re
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.db import models, transaction
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q, Sum, Count
+from django.db.models import Q, Sum, Count, F
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from decimal import Decimal
@@ -22,6 +22,7 @@ import uuid
 from datetime import datetime, timedelta
 
 
+@login_required
 def member_search_by_phone(request, phone):
     """
     根据手机号搜索会员的API
@@ -565,52 +566,57 @@ def member_recharge(request, pk):
     member = get_object_or_404(Member, pk=pk)
     
     if request.method == 'POST':
-        amount = Decimal(request.POST.get('amount', '0'))
-        actual_amount = Decimal(request.POST.get('actual_amount', '0'))
-        payment_method = request.POST.get('payment_method', 'cash')
-        remark = request.POST.get('remark', '')
+        form = RechargeForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, '请输入有效的充值信息')
+            return redirect('member_recharge', pk=pk)
+        
+        amount = form.cleaned_data['amount']
+        actual_amount = form.cleaned_data['actual_amount']
+        payment_method = form.cleaned_data['payment_method']
+        remark = form.cleaned_data['remark']
         
         if amount <= 0:
             messages.error(request, '充值金额必须大于0')
             return redirect('member_recharge', pk=pk)
         
-        # 创建充值记录
-        recharge = RechargeRecord.objects.create(
-            member=member,
-            amount=amount,
-            actual_amount=actual_amount,
-            payment_method=payment_method,
-            operator=request.user,
-            remark=remark
-        )
-        
-        # 创建余额交易记录
-        description_text = f'会员充值 - {dict(RechargeRecord.PAYMENT_METHODS).get(payment_method, "未知")}'
-        if remark:
-            description_text += f' ({remark})'
-        
-        transaction = MemberTransaction.objects.create(
-            member=member,
-            transaction_type='RECHARGE',
-            balance_change=amount,
-            points_change=0,  # 充值暂不增加积分
-            description=description_text,
-            created_by=request.user
-        )
-        
-        # 更新会员余额和状态
-        member.balance += amount
-        member.is_recharged = True
-        member.save()
-        
-        # 记录操作日志
-        OperationLog.objects.create(
-            operator=request.user,
-            operation_type='MEMBER',
-            details=f'为会员 {member.name} 充值 {amount} 元',
-            related_object_id=recharge.id,
-            related_content_type=ContentType.objects.get_for_model(RechargeRecord)
-        )
+        with transaction.atomic():
+            member = get_object_or_404(Member.objects.select_for_update(), pk=pk)
+            
+            # 创建充值记录
+            recharge = RechargeRecord.objects.create(
+                member=member,
+                amount=amount,
+                actual_amount=actual_amount,
+                payment_method=payment_method,
+                operator=request.user,
+                remark=remark
+            )
+            
+            # 创建余额交易记录
+            MemberTransaction.objects.create(
+                member=member,
+                transaction_type='RECHARGE',
+                balance_change=amount,
+                points_change=0,  # 充值暂不增加积分
+                description=_recharge_transaction_description(payment_method, remark),
+                created_by=request.user
+            )
+            
+            # 更新会员余额和状态
+            Member.objects.filter(pk=member.pk).update(
+                balance=F('balance') + amount,
+                is_recharged=True
+            )
+            
+            # 记录操作日志
+            OperationLog.objects.create(
+                operator=request.user,
+                operation_type='MEMBER',
+                details=f'为会员 {member.name} 充值 {amount} 元',
+                related_object_id=recharge.id,
+                related_content_type=ContentType.objects.get_for_model(RechargeRecord)
+            )
         
         messages.success(request, f'已成功为 {member.name} 充值 {amount} 元')
         return redirect('member_detail', pk=member.pk)
@@ -618,6 +624,19 @@ def member_recharge(request, pk):
     return render(request, 'inventory/member/member_recharge.html', {
         'member': member
     })
+
+
+def _recharge_transaction_description(payment_method, remark):
+    """Build a transaction description that fits the model field."""
+    description = f'会员充值 - {dict(RechargeRecord.PAYMENT_METHODS).get(payment_method, "未知")}'
+    if remark:
+        description += f' ({remark})'
+    
+    max_length = MemberTransaction._meta.get_field('description').max_length
+    if max_length and len(description) > max_length:
+        description = description[:max_length - 3] + '...'
+    
+    return description
 
 
 @login_required
