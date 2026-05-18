@@ -237,6 +237,92 @@ class SaleViewTest(ViewTestCase):
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
 
 
+class SaleSettlementRegressionTest(ViewTestCase):
+    """销售收款的账务一致性回归测试"""
+
+    def setUp(self):
+        super().setUp()
+        self.client.login(username='testuser', password='12345')
+
+    def create_draft_sale(self):
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user,
+            status=Sale.STATUS_DRAFT,
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=1,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('10.00'),
+        )
+        sale.refresh_from_db()
+        return sale
+
+    def test_balance_sale_complete_is_idempotent(self):
+        """重复提交完成收款不能重复扣减会员余额或重复累计消费"""
+        sale = self.create_draft_sale()
+        url = reverse('sale_complete', args=[sale.id])
+
+        response = self.client.post(url, {
+            'payment_method': 'balance',
+            'remark': '',
+        })
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, Sale.STATUS_COMPLETED)
+        self.assertEqual(sale.balance_paid, Decimal('9.50'))
+        self.assertEqual(self.member.balance, Decimal('90.50'))
+        self.assertEqual(self.member.points, 9)
+        self.assertEqual(self.member.purchase_count, 1)
+
+        response = self.client.post(url, {
+            'payment_method': 'balance',
+            'remark': '',
+        })
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(sale.balance_paid, Decimal('9.50'))
+        self.assertEqual(self.member.balance, Decimal('90.50'))
+        self.assertEqual(self.member.points, 9)
+        self.assertEqual(self.member.purchase_count, 1)
+
+    def test_mixed_payment_rejects_balance_amount_above_final_amount(self):
+        """混合支付不能从会员余额扣超过应付金额的钱"""
+        sale = self.create_draft_sale()
+
+        response = self.client.post(reverse('sale_complete', args=[sale.id]), {
+            'payment_method': 'mixed',
+            'balance_amount': '20.00',
+            'remark': '',
+        })
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, Sale.STATUS_DRAFT)
+        self.assertEqual(sale.balance_paid, Decimal('0.00'))
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+
+    def test_cancel_sale_page_for_draft_sale_does_not_crash(self):
+        """未完成销售单的取消确认页应可正常打开"""
+        sale = self.create_draft_sale()
+
+        response = self.client.get(reverse('sale_cancel', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/sale_cancel.html')
+
+
 class BackupViewSecurityTest(TestCase):
     """备份管理视图的安全回归测试"""
 

@@ -16,6 +16,7 @@ from django.urls import reverse
 
 from inventory.models import Sale, SaleItem, Inventory, InventoryTransaction, Member, MemberTransaction, OperationLog, Product, Category, Supplier, MemberLevel
 from inventory.forms import SaleForm, SaleItemForm
+from inventory.services import member_service
 from inventory.utils.query_utils import paginate_queryset
 
 @login_required
@@ -358,6 +359,7 @@ def sale_create(request):
             
             # 设置支付方式
             sale.payment_method = request.POST.get('payment_method', 'cash')
+            sale.status = Sale.STATUS_COMPLETED
             
             # 设置积分（实付金额的整数部分）
             sale.points_earned = int(sale.final_amount) if sale.final_amount is not None else 0
@@ -550,89 +552,107 @@ def sale_complete(request, sale_id):
     """完成销售视图"""
     sale = get_object_or_404(Sale, id=sale_id)
     if request.method == 'POST':
-        form = SaleForm(request.POST, instance=sale)
-        if form.is_valid():
-            sale = form.save(commit=False)
-            sale.operator = request.user
-            
-            # 更新总金额（防止异常情况）
-            sale.update_total_amount()
-            
-            # 处理会员折扣
-            member_id = request.POST.get('member')
-            if member_id:
-                try:
-                    member = Member.objects.get(id=member_id)
+        with transaction.atomic():
+            sale = get_object_or_404(Sale.objects.select_for_update(), id=sale_id)
+            if sale.status == Sale.STATUS_COMPLETED:
+                messages.error(request, '销售单已完成，不能重复收款')
+                return redirect('sale_detail', sale_id=sale.id)
+            if sale.status == Sale.STATUS_CANCELLED:
+                messages.error(request, '已取消的销售单不能完成收款')
+                return redirect('sale_detail', sale_id=sale.id)
+
+            form = SaleForm(request.POST, instance=sale)
+            if form.is_valid():
+                sale = form.save(commit=False)
+                sale.operator = request.user
+
+                # 更新总金额（防止异常情况）
+                sale.update_total_amount()
+
+                member = None
+                member_id = request.POST.get('member')
+                if member_id:
+                    try:
+                        member = Member.objects.select_for_update().get(id=member_id)
+                    except Member.DoesNotExist:
+                        messages.error(request, '选择的会员不存在')
+                        return redirect('sale_complete', sale_id=sale.id)
                     sale.member = member
-                    
-                    # 应用会员折扣率
+                elif sale.member_id:
+                    member = Member.objects.select_for_update().get(pk=sale.member_id)
+                    sale.member = member
+
+                # 处理会员折扣
+                if member:
                     discount_rate = Decimal('1.0')  # 默认无折扣
                     if member.level and member.level.discount is not None:
                         try:
                             discount_rate = Decimal(str(member.level.discount))
                         except (ValueError, InvalidOperation, TypeError):
-                            # 如果折扣率无效，使用默认值
                             discount_rate = Decimal('1.0')
-                    
-                    sale.discount_amount = sale.total_amount * (1 - discount_rate)
+
+                    sale.discount_amount = sale.total_amount * (Decimal('1.0') - discount_rate)
                     sale.final_amount = sale.total_amount - sale.discount_amount
-                    
-                    # 计算获得积分 (实付金额的整数部分)
                     sale.points_earned = int(sale.final_amount)
-                    
-                    # 更新会员积分和消费记录
+
+                payment_method = request.POST.get('payment_method') or sale.payment_method
+                valid_payment_methods = {choice[0] for choice in Sale.PAYMENT_METHODS}
+                if payment_method not in valid_payment_methods:
+                    messages.error(request, '无效的支付方式')
+                    return redirect('sale_complete', sale_id=sale.id)
+
+                sale.payment_method = payment_method
+                balance_paid = Decimal('0.00')
+
+                if payment_method in {'balance', 'mixed'}:
+                    if not member:
+                        messages.error(request, '余额支付必须选择会员')
+                        return redirect('sale_complete', sale_id=sale.id)
+
+                    if payment_method == 'balance':
+                        balance_paid = sale.final_amount
+                    else:
+                        try:
+                            balance_paid = Decimal(request.POST.get('balance_amount', '0'))
+                        except (ValueError, TypeError, InvalidOperation):
+                            messages.error(request, '余额支付金额无效')
+                            return redirect('sale_complete', sale_id=sale.id)
+
+                        if balance_paid < 0:
+                            messages.error(request, '余额支付金额不能为负数')
+                            return redirect('sale_complete', sale_id=sale.id)
+                        if balance_paid > sale.final_amount:
+                            messages.error(request, '余额支付金额不能超过应付金额')
+                            return redirect('sale_complete', sale_id=sale.id)
+
+                    if balance_paid > 0:
+                        if member.balance < balance_paid:
+                            messages.error(request, '会员余额不足')
+                            return redirect('sale_complete', sale_id=sale.id)
+                        member_service.apply_member_balance_change(member, -balance_paid)
+
+                sale.balance_paid = balance_paid
+
+                if member:
                     member.points += sale.points_earned
                     member.purchase_count += 1
                     member.total_spend += sale.final_amount
-                    member.save()
-                except Member.DoesNotExist:
-                    pass
-            
-            # 设置支付方式
-            payment_method = request.POST.get('payment_method')
-            if payment_method:
-                sale.payment_method = payment_method
-                
-                # 如果使用余额支付，处理会员余额
-                if payment_method == 'balance' and sale.member:
-                    if sale.member.balance >= sale.final_amount:
-                        sale.member.balance -= sale.final_amount
-                        sale.member.save()
-                        sale.balance_paid = sale.final_amount
-                    else:
-                        messages.error(request, '会员余额不足')
-                        return redirect('sale_complete', sale_id=sale.id)
-                
-                # 如果是混合支付，处理余额部分
-                elif payment_method == 'mixed' and sale.member:
-                    balance_amount = request.POST.get('balance_amount', 0)
-                    try:
-                        balance_amount = Decimal(balance_amount)
-                    except (ValueError, TypeError, InvalidOperation):
-                        balance_amount = Decimal('0')
-                        
-                    if balance_amount > 0:
-                        if sale.member.balance >= balance_amount:
-                            sale.member.balance -= balance_amount
-                            sale.member.save()
-                            sale.balance_paid = balance_amount
-                        else:
-                            messages.error(request, '会员余额不足')
-                            return redirect('sale_complete', sale_id=sale.id)
-            
-            sale.save()
-            
-            # 记录操作日志
-            OperationLog.objects.create(
-                operator=request.user,
-                operation_type='SALE',
-                details=f'完成销售单 #{sale.id}，总金额: {sale.final_amount}，支付方式: {sale.get_payment_method_display()}',
-                related_object_id=sale.id,
-                related_content_type=ContentType.objects.get_for_model(Sale)
-            )
-            
-            messages.success(request, '销售单已完成')
-            return redirect('sale_detail', sale_id=sale.id)
+                    member.save(update_fields=['points', 'purchase_count', 'total_spend', 'updated_at'])
+
+                sale.status = Sale.STATUS_COMPLETED
+                sale.save()
+
+                # 记录操作日志
+                OperationLog.objects.create(
+                    operator=request.user,
+                    operation_type='SALE',
+                    details=f'完成销售单 #{sale.id}，总金额: {sale.final_amount}，支付方式: {sale.get_payment_method_display()}',
+                    related_object_id=sale.id,
+                    related_content_type=ContentType.objects.get_for_model(Sale)
+                )
+
+                messages.success(request, '销售单已完成')
+                return redirect('sale_detail', sale_id=sale.id)
     else:
         form = SaleForm(instance=sale)
     
@@ -648,8 +668,11 @@ def sale_cancel(request, sale_id):
     sale = get_object_or_404(Sale, id=sale_id)
     
     # 检查状态，只有未完成的销售单可以取消
-    if sale.status == 'COMPLETED':
+    if sale.status == Sale.STATUS_COMPLETED:
         messages.error(request, '已完成的销售单不能取消')
+        return redirect('sale_detail', sale_id=sale.id)
+    if sale.status == Sale.STATUS_CANCELLED:
+        messages.error(request, '销售单已取消')
         return redirect('sale_detail', sale_id=sale.id)
     
     if request.method == 'POST':
@@ -671,8 +694,8 @@ def sale_cancel(request, sale_id):
             )
         
         # 更改销售单状态
-        sale.status = 'CANCELLED'
-        sale.notes = f"{sale.notes or ''}\n取消原因: {reason}".strip()
+        sale.status = Sale.STATUS_CANCELLED
+        sale.remark = f"{sale.remark or ''}\n取消原因: {reason}".strip()
         sale.save()
         
         # 记录操作日志
@@ -696,8 +719,11 @@ def sale_delete_item(request, sale_id, item_id):
     item = get_object_or_404(SaleItem, id=item_id, sale=sale)
     
     # 检查销售单状态
-    if sale.status == 'COMPLETED':
+    if sale.status == Sale.STATUS_COMPLETED:
         messages.error(request, '已完成的销售单不能修改')
+        return redirect('sale_detail', sale_id=sale.id)
+    if sale.status == Sale.STATUS_CANCELLED:
+        messages.error(request, '已取消的销售单不能修改')
         return redirect('sale_detail', sale_id=sale.id)
     
     # 恢复库存

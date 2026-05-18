@@ -30,8 +30,11 @@ class SaleForm(forms.ModelForm):
     
     class Meta:
         model = Sale
-        fields = ['remark']
+        fields = ['payment_method', 'remark']
         widgets = {
+            'payment_method': forms.RadioSelect(attrs={
+                'class': 'form-check-input',
+            }),
             'remark': forms.Textarea(attrs={
                 'rows': 3,
                 'class': 'form-control',

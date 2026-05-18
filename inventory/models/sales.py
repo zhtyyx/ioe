@@ -9,6 +9,16 @@ class Sale(models.Model):
     """
     销售单模型
     """
+    STATUS_DRAFT = 'DRAFT'
+    STATUS_COMPLETED = 'COMPLETED'
+    STATUS_CANCELLED = 'CANCELLED'
+
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, '未完成'),
+        (STATUS_COMPLETED, '已完成'),
+        (STATUS_CANCELLED, '已取消'),
+    ]
+
     PAYMENT_METHODS = [
         ('cash', '现金'),
         ('wechat', '微信'),
@@ -26,6 +36,7 @@ class Sale(models.Model):
     points_earned = models.IntegerField(default=0, verbose_name='获得积分')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='cash', verbose_name='支付方式')
     balance_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='余额支付')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_DRAFT, verbose_name='状态')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     operator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='操作员')
     remark = models.TextField(blank=True, verbose_name='备注')
