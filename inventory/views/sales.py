@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Sum, Count, Avg, Max
+from django.db.models import Q, Sum, Count, Avg, Max, F
 from django.db import models, transaction, connection
 from django.utils import timezone
 from datetime import datetime, timedelta, date
@@ -16,6 +16,7 @@ from django.urls import reverse
 
 from inventory.models import Sale, SaleItem, Inventory, InventoryTransaction, Member, MemberTransaction, OperationLog, Product, Category, Supplier, MemberLevel
 from inventory.forms import SaleForm, SaleItemForm
+from inventory.services import member_service
 from inventory.utils.query_utils import paginate_queryset
 
 @login_required
@@ -505,25 +506,20 @@ def sale_item_create(request, sale_id):
                 sale_item.price = sale_item.actual_price
             elif hasattr(sale_item, 'price') and not hasattr(sale_item, 'actual_price'):
                 sale_item.actual_price = sale_item.price
-            
-            inventory = Inventory.objects.get(product=sale_item.product)
-            if inventory.quantity >= sale_item.quantity:
-                inventory.quantity -= sale_item.quantity
-                inventory.save()
-                
-                sale_item.save()
-                sale.update_total_amount()
-                
-                transaction = InventoryTransaction.objects.create(
-                    product=sale_item.product,
-                    transaction_type='OUT',
-                    quantity=sale_item.quantity,
-                    operator=request.user,
-                    notes=f'销售单号：{sale.id}'
-                )
-                
+
+            try:
+                with transaction.atomic():
+                    inventory = Inventory.objects.select_for_update().get(product=sale_item.product)
+                    if inventory.quantity < sale_item.quantity:
+                        messages.error(request, '库存不足')
+                        return redirect('sale_item_create', sale_id=sale.id)
+
+                    # SaleItem.save() is the single place that writes the stock movement.
+                    sale_item.save()
+                    sale.update_total_amount()
+
                 messages.success(request, '商品添加成功')
-                
+
                 # 记录操作日志
                 OperationLog.objects.create(
                     operator=request.user,
@@ -533,8 +529,8 @@ def sale_item_create(request, sale_id):
                     related_content_type=ContentType.objects.get_for_model(Sale)
                 )
                 return redirect('sale_item_create', sale_id=sale.id)
-            else:
-                messages.error(request, '库存不足')
+            except Inventory.DoesNotExist:
+                messages.error(request, '找不到该商品的库存记录')
     else:
         form = SaleItemForm()
     
@@ -552,84 +548,95 @@ def sale_complete(request, sale_id):
     if request.method == 'POST':
         form = SaleForm(request.POST, instance=sale)
         if form.is_valid():
-            sale = form.save(commit=False)
-            sale.operator = request.user
-            
-            # 更新总金额（防止异常情况）
-            sale.update_total_amount()
-            
-            # 处理会员折扣
-            member_id = request.POST.get('member')
-            if member_id:
-                try:
-                    member = Member.objects.get(id=member_id)
-                    sale.member = member
-                    
-                    # 应用会员折扣率
-                    discount_rate = Decimal('1.0')  # 默认无折扣
-                    if member.level and member.level.discount is not None:
-                        try:
-                            discount_rate = Decimal(str(member.level.discount))
-                        except (ValueError, InvalidOperation, TypeError):
-                            # 如果折扣率无效，使用默认值
-                            discount_rate = Decimal('1.0')
-                    
-                    sale.discount_amount = sale.total_amount * (1 - discount_rate)
-                    sale.final_amount = sale.total_amount - sale.discount_amount
-                    
-                    # 计算获得积分 (实付金额的整数部分)
-                    sale.points_earned = int(sale.final_amount)
-                    
-                    # 更新会员积分和消费记录
-                    member.points += sale.points_earned
-                    member.purchase_count += 1
-                    member.total_spend += sale.final_amount
-                    member.save()
-                except Member.DoesNotExist:
-                    pass
-            
-            # 设置支付方式
-            payment_method = request.POST.get('payment_method')
-            if payment_method:
-                sale.payment_method = payment_method
-                
+            with transaction.atomic():
+                sale = get_object_or_404(Sale.objects.select_for_update(), id=sale_id)
+                sale.remark = form.cleaned_data.get('remark', sale.remark)
+                sale.operator = request.user
+
+                # 更新总金额（防止异常情况）
+                sale.update_total_amount()
+
+                # 处理会员折扣。结算页不会提交 member 字段时，沿用销售单已有会员。
+                member = None
+                member_id = request.POST.get('member') or sale.member_id
+                if member_id:
+                    try:
+                        member = Member.objects.select_for_update().select_related('level').get(id=member_id)
+                        sale.member = member
+
+                        # 应用会员折扣率
+                        discount_rate = Decimal('1.0')  # 默认无折扣
+                        if member.level and member.level.discount is not None:
+                            try:
+                                discount_rate = Decimal(str(member.level.discount))
+                            except (ValueError, InvalidOperation, TypeError):
+                                # 如果折扣率无效，使用默认值
+                                discount_rate = Decimal('1.0')
+
+                        sale.discount_amount = sale.total_amount * (Decimal('1.0') - discount_rate)
+                        sale.final_amount = sale.total_amount - sale.discount_amount
+
+                        # 计算获得积分 (实付金额的整数部分)
+                        sale.points_earned = int(sale.final_amount)
+                    except (Member.DoesNotExist, ValueError, TypeError):
+                        member = None
+
+                # 设置支付方式
+                payment_method = request.POST.get('payment_method')
+                if payment_method:
+                    sale.payment_method = payment_method
+
+                balance_to_charge = Decimal('0.00')
+
                 # 如果使用余额支付，处理会员余额
-                if payment_method == 'balance' and sale.member:
-                    if sale.member.balance >= sale.final_amount:
-                        sale.member.balance -= sale.final_amount
-                        sale.member.save()
-                        sale.balance_paid = sale.final_amount
-                    else:
+                if sale.payment_method == 'balance':
+                    if not member:
+                        messages.error(request, '余额支付需要选择会员')
+                        return redirect('sale_complete', sale_id=sale.id)
+                    balance_to_charge = sale.final_amount
+
+                # 如果是混合支付，处理余额部分
+                elif sale.payment_method == 'mixed':
+                    if not member:
+                        messages.error(request, '混合支付需要选择会员')
+                        return redirect('sale_complete', sale_id=sale.id)
+                    try:
+                        balance_to_charge = Decimal(request.POST.get('balance_amount', 0))
+                    except (ValueError, TypeError, InvalidOperation):
+                        balance_to_charge = Decimal('0.00')
+
+                    if balance_to_charge < 0 or balance_to_charge > sale.final_amount:
+                        messages.error(request, '余额支付金额无效')
+                        return redirect('sale_complete', sale_id=sale.id)
+                else:
+                    sale.balance_paid = Decimal('0.00')
+
+                if balance_to_charge > 0:
+                    if member.balance < balance_to_charge:
                         messages.error(request, '会员余额不足')
                         return redirect('sale_complete', sale_id=sale.id)
-                
-                # 如果是混合支付，处理余额部分
-                elif payment_method == 'mixed' and sale.member:
-                    balance_amount = request.POST.get('balance_amount', 0)
-                    try:
-                        balance_amount = Decimal(balance_amount)
-                    except (ValueError, TypeError, InvalidOperation):
-                        balance_amount = Decimal('0')
-                        
-                    if balance_amount > 0:
-                        if sale.member.balance >= balance_amount:
-                            sale.member.balance -= balance_amount
-                            sale.member.save()
-                            sale.balance_paid = balance_amount
-                        else:
-                            messages.error(request, '会员余额不足')
-                            return redirect('sale_complete', sale_id=sale.id)
-            
-            sale.save()
-            
-            # 记录操作日志
-            OperationLog.objects.create(
-                operator=request.user,
-                operation_type='SALE',
-                details=f'完成销售单 #{sale.id}，总金额: {sale.final_amount}，支付方式: {sale.get_payment_method_display()}',
-                related_object_id=sale.id,
-                related_content_type=ContentType.objects.get_for_model(Sale)
-            )
+
+                    member_service.apply_member_balance_change(member, -balance_to_charge)
+                    sale.balance_paid = balance_to_charge
+
+                if member:
+                    Member.objects.filter(pk=member.pk).update(
+                        points=F('points') + sale.points_earned,
+                        purchase_count=F('purchase_count') + 1,
+                        total_spend=F('total_spend') + sale.final_amount,
+                        updated_at=timezone.now()
+                    )
+
+                sale.save()
+
+                # 记录操作日志
+                OperationLog.objects.create(
+                    operator=request.user,
+                    operation_type='SALE',
+                    details=f'完成销售单 #{sale.id}，总金额: {sale.final_amount}，支付方式: {sale.get_payment_method_display()}',
+                    related_object_id=sale.id,
+                    related_content_type=ContentType.objects.get_for_model(Sale)
+                )
             
             messages.success(request, '销售单已完成')
             return redirect('sale_detail', sale_id=sale.id)
@@ -646,6 +653,10 @@ def sale_complete(request, sale_id):
 def sale_cancel(request, sale_id):
     """取消销售单视图"""
     sale = get_object_or_404(Sale, id=sale_id)
+
+    if not hasattr(sale, 'status'):
+        messages.error(request, '当前销售单模型不支持取消状态，请联系管理员')
+        return redirect('sale_detail', sale_id=sale.id)
     
     # 检查状态，只有未完成的销售单可以取消
     if sale.status == 'COMPLETED':
@@ -696,36 +707,38 @@ def sale_delete_item(request, sale_id, item_id):
     item = get_object_or_404(SaleItem, id=item_id, sale=sale)
     
     # 检查销售单状态
-    if sale.status == 'COMPLETED':
+    if getattr(sale, 'status', None) == 'COMPLETED':
         messages.error(request, '已完成的销售单不能修改')
         return redirect('sale_detail', sale_id=sale.id)
-    
-    # 恢复库存
-    inventory = Inventory.objects.get(product=item.product)
-    inventory.quantity += item.quantity
-    inventory.save()
-    
-    # 创建入库交易记录
-    InventoryTransaction.objects.create(
-        product=item.product,
-        transaction_type='IN',
-        quantity=item.quantity,
-        operator=request.user,
-        notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
-    )
-    
-    # 记录操作日志
-    OperationLog.objects.create(
-        operator=request.user,
-        operation_type='SALE',
-        details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
-        related_object_id=sale.id,
-        related_content_type=ContentType.objects.get_for_model(Sale)
-    )
-    
-    # 删除商品并更新销售单总额
-    item.delete()
-    sale.update_total_amount()
+
+    with transaction.atomic():
+        # 恢复库存
+        inventory = Inventory.objects.select_for_update().get(product=item.product)
+        inventory.quantity += item.quantity
+        inventory.save()
+
+        # 创建入库交易记录
+        InventoryTransaction.objects.create(
+            product=item.product,
+            transaction_type='IN',
+            quantity=item.quantity,
+            operator=request.user,
+            notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
+        )
+
+        # 记录操作日志
+        OperationLog.objects.create(
+            operator=request.user,
+            operation_type='SALE',
+            details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
+            related_object_id=sale.id,
+            related_content_type=ContentType.objects.get_for_model(Sale)
+        )
+
+        # 删除商品并更新销售单总额
+        item.delete()
+        sale.update_total_amount()
+        sale.save()
     
     messages.success(request, '商品已从销售单中删除')
     return redirect('sale_item_create', sale_id=sale.id)

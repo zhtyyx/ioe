@@ -236,6 +236,158 @@ class SaleViewTest(ViewTestCase):
         # 验证重定向到销售项创建页面
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
 
+    def test_sale_item_create_decrements_inventory_once(self):
+        """添加销售商品时库存只能扣减一次"""
+        self.client.login(username='testuser', password='12345')
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user
+        )
+
+        response = self.client.post(reverse('sale_item_create', args=[sale.id]), {
+            'product': self.product.id,
+            'quantity': '5',
+            'price': '10.00',
+            'actual_price': '10.00',
+        })
+
+        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 95)
+        self.assertEqual(
+            InventoryTransaction.objects.filter(
+                product=self.product,
+                transaction_type='OUT',
+                quantity=5
+            ).count(),
+            1
+        )
+
+    def test_sale_delete_item_handles_sales_without_status(self):
+        """删除销售商品不应因 Sale 缺少 status 字段而 500"""
+        self.client.login(username='testuser', password='12345')
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user
+        )
+        sale_item = SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=5,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('50.00')
+        )
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 95)
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, sale_item.id]))
+
+        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        self.assertFalse(SaleItem.objects.filter(pk=sale_item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 100)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('0.00'))
+
+    def test_sale_complete_insufficient_balance_does_not_record_purchase(self):
+        """余额不足结算失败时不应增加会员消费统计"""
+        self.client.login(username='testuser', password='12345')
+        self.member_level.discount = Decimal('1.00')
+        self.member_level.save()
+        self.member.balance = Decimal('10.00')
+        self.member.save()
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=5,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('50.00')
+        )
+
+        response = self.client.post(reverse('sale_complete', args=[sale.id]), {
+            'payment_method': 'balance',
+            'remark': '',
+        })
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('10.00'))
+        self.assertEqual(self.member.purchase_count, 0)
+        self.assertEqual(self.member.total_spend, Decimal('0.00'))
+
+    def test_sale_complete_balance_payment_updates_balance_atomically(self):
+        """余额支付应使用数据库增量扣款并记录余额支付金额"""
+        self.client.login(username='testuser', password='12345')
+        self.member_level.discount = Decimal('1.00')
+        self.member_level.save()
+        self.member.balance = Decimal('125.00')
+        self.member.save()
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=5,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('50.00')
+        )
+
+        response = self.client.post(reverse('sale_complete', args=[sale.id]), {
+            'payment_method': 'balance',
+            'remark': '',
+        })
+
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('75.00'))
+        self.assertEqual(self.member.purchase_count, 1)
+        self.assertEqual(self.member.total_spend, Decimal('50.00'))
+        sale.refresh_from_db()
+        self.assertEqual(sale.balance_paid, Decimal('50.00'))
+
+    def test_sale_cancel_without_status_does_not_restore_inventory(self):
+        """当前 Sale 模型无状态字段时，取消入口不能部分回补库存"""
+        self.client.login(username='testuser', password='12345')
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=5,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('50.00')
+        )
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 95)
+
+        response = self.client.post(reverse('sale_cancel', args=[sale.id]), {'reason': '测试取消'})
+
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 95)
+
 
 class BackupViewSecurityTest(TestCase):
     """备份管理视图的安全回归测试"""
