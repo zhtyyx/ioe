@@ -292,6 +292,38 @@ class SaleViewTest(ViewTestCase):
         self.assertEqual(self.member.balance, Decimal('5.00'))
         self.assertEqual(self.inventory.quantity, 100)
 
+    def test_sale_delete_item_restores_inventory_and_updates_total(self):
+        """删除销售明细不能因缺失状态字段崩溃，并且要恢复库存和金额"""
+        self.client.login(username='testuser', password='12345')
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('20.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('20.00'),
+            payment_method='cash',
+            operator=self.user
+        )
+        item = SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=2,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('20.00')
+        )
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 98)
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        self.assertFalse(SaleItem.objects.filter(id=item.id).exists())
+        self.inventory.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 100)
+        self.assertEqual(sale.total_amount, Decimal('0.00'))
+        self.assertEqual(sale.final_amount, Decimal('0.00'))
+
 
 class BackupViewSecurityTest(TestCase):
     """备份管理视图的安全回归测试"""

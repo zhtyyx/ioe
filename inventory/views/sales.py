@@ -759,11 +759,6 @@ def sale_delete_item(request, sale_id, item_id):
     sale = get_object_or_404(Sale, id=sale_id)
     item = get_object_or_404(SaleItem, id=item_id, sale=sale)
     
-    # 检查销售单状态
-    if sale.status == 'COMPLETED':
-        messages.error(request, '已完成的销售单不能修改')
-        return redirect('sale_detail', sale_id=sale.id)
-    
     # 恢复库存
     inventory = Inventory.objects.get(product=item.product)
     inventory.quantity += item.quantity
@@ -790,6 +785,7 @@ def sale_delete_item(request, sale_id, item_id):
     # 删除商品并更新销售单总额
     item.delete()
     sale.update_total_amount()
+    sale.save()
     
     messages.success(request, '商品已从销售单中删除')
     return redirect('sale_item_create', sale_id=sale.id)
