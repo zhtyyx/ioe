@@ -13,6 +13,7 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    MemberTransaction,
     Sale,
     SaleItem
 )
@@ -224,7 +225,10 @@ class SaleViewTest(ViewTestCase):
         # 提交创建销售表单
         sale_data = {
             'payment_method': 'cash',
-            'member': self.member.id
+            'member': self.member.id,
+            'products[0][id]': self.product.id,
+            'products[0][quantity]': '2',
+            'products[0][price]': '10.00',
         }
         
         response = self.client.post(reverse('sale_create'), sale_data)
@@ -233,8 +237,60 @@ class SaleViewTest(ViewTestCase):
         self.assertTrue(Sale.objects.filter(member=self.member).exists())
         sale = Sale.objects.filter(member=self.member).first()
         
-        # 验证重定向到销售项创建页面
-        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        # 验证重定向到销售详情页面
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+
+    def test_sale_create_deducts_member_balance_for_account_payment(self):
+        """主收银流程使用余额支付时必须扣减会员余额"""
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(reverse('sale_create'), {
+            'payment_method': 'account',
+            'member': self.member.id,
+            'products[0][id]': self.product.id,
+            'products[0][quantity]': '2',
+            'products[0][price]': '10.00',
+        })
+
+        sale = Sale.objects.get(member=self.member)
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.assertEqual(sale.payment_method, 'balance')
+        self.assertEqual(sale.balance_paid, Decimal('19.00'))
+
+        self.member.refresh_from_db()
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('81.00'))
+        self.assertEqual(self.inventory.quantity, 98)
+        self.assertTrue(
+            MemberTransaction.objects.filter(
+                member=self.member,
+                transaction_type='PURCHASE',
+                balance_change=Decimal('-19.00'),
+                related_object_id=sale.id,
+                related_object_type='Sale'
+            ).exists()
+        )
+
+    def test_sale_create_rolls_back_when_member_balance_insufficient(self):
+        """余额不足时不能创建销售单或扣减库存"""
+        self.client.login(username='testuser', password='12345')
+        self.member.balance = Decimal('5.00')
+        self.member.save(update_fields=['balance'])
+
+        response = self.client.post(reverse('sale_create'), {
+            'payment_method': 'account',
+            'member': self.member.id,
+            'products[0][id]': self.product.id,
+            'products[0][quantity]': '1',
+            'products[0][price]': '10.00',
+        })
+
+        self.assertRedirects(response, reverse('sale_create'))
+        self.assertFalse(Sale.objects.filter(member=self.member).exists())
+        self.member.refresh_from_db()
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('5.00'))
+        self.assertEqual(self.inventory.quantity, 100)
 
 
 class BackupViewSecurityTest(TestCase):
