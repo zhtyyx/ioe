@@ -17,6 +17,7 @@ from django.urls import reverse
 from inventory.models import Sale, SaleItem, Inventory, InventoryTransaction, Member, MemberTransaction, OperationLog, Product, Category, Supplier, MemberLevel
 from inventory.forms import SaleForm, SaleItemForm
 from inventory.utils.query_utils import paginate_queryset
+from inventory.services import member_service
 
 @login_required
 def sale_list(request):
@@ -356,18 +357,46 @@ def sale_create(request):
                 except Member.DoesNotExist:
                     pass
             
-            # 设置支付方式
-            sale.payment_method = request.POST.get('payment_method', 'cash')
+            # 设置支付方式。旧版收银页提交 account，统一按余额支付处理。
+            payment_method = request.POST.get('payment_method', 'cash')
+            if payment_method == 'account':
+                payment_method = 'balance'
+            sale.payment_method = payment_method
             
             # 设置积分（实付金额的整数部分）
             sale.points_earned = int(sale.final_amount) if sale.final_amount is not None else 0
             
-            # 保存销售单基本信息
-            sale.save()
-            
             # 使用事务处理，确保所有操作要么全部成功，要么全部失败
             try:
                 with transaction.atomic():
+                    if sale.payment_method == 'balance':
+                        if not sale.member_id:
+                            messages.error(request, '余额支付必须选择会员')
+                            return redirect('sale_create')
+
+                        sale.member = Member.objects.select_for_update().get(pk=sale.member_id)
+                        if sale.member.balance < sale.final_amount:
+                            messages.error(request, '会员余额不足')
+                            return redirect('sale_create')
+
+                    # 保存销售单基本信息。余额校验失败时不会留下空销售单。
+                    sale.save()
+
+                    if sale.payment_method == 'balance':
+                        member_service.apply_member_balance_change(sale.member, -sale.final_amount)
+                        sale.balance_paid = sale.final_amount
+                        sale.save(update_fields=['balance_paid'])
+                        MemberTransaction.objects.create(
+                            member=sale.member,
+                            transaction_type='PURCHASE',
+                            balance_change=-sale.final_amount,
+                            points_change=0,
+                            description=f'销售单 #{sale.id} 余额支付',
+                            created_by=request.user,
+                            related_object_id=sale.id,
+                            related_object_type='Sale'
+                        )
+
                     # 添加商品项并更新库存
                     for item_data in valid_products_data:
                         # 手动创建SaleItem，避免触发连锁更新
