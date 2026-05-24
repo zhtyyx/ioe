@@ -13,6 +13,7 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    MemberTransaction,
     Sale,
     SaleItem
 )
@@ -198,6 +199,25 @@ class MemberApiViewTest(ViewTestCase):
 
 class SaleViewTest(ViewTestCase):
     """测试销售相关视图"""
+
+    def _create_sale_with_item(self, item_price):
+        sale = Sale.objects.create(
+            member=self.member,
+            total_amount=Decimal('0.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            operator=self.user
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=1,
+            price=item_price,
+            actual_price=item_price,
+            subtotal=item_price
+        )
+        sale.refresh_from_db()
+        return sale
     
     def test_sale_list_view(self):
         """测试销售列表视图"""
@@ -235,6 +255,50 @@ class SaleViewTest(ViewTestCase):
         
         # 验证重定向到销售项创建页面
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+
+    def test_sale_complete_insufficient_balance_does_not_credit_member(self):
+        """余额不足时不能给失败销售增加积分或消费统计"""
+        self.client.login(username='testuser', password='12345')
+        sale = self._create_sale_with_item(Decimal('120.00'))
+
+        response = self.client.post(
+            reverse('sale_complete', args=[sale.id]),
+            {'payment_method': 'balance'}
+        )
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+        self.assertEqual(self.member.points, 0)
+        self.assertEqual(self.member.purchase_count, 0)
+        self.assertEqual(self.member.total_spend, Decimal('0.00'))
+        self.assertEqual(sale.balance_paid, Decimal('0.00'))
+        self.assertFalse(MemberTransaction.objects.filter(member=self.member, transaction_type='PURCHASE').exists())
+
+    def test_sale_complete_balance_payment_updates_member_after_validation(self):
+        """余额支付成功后再扣余额并记录会员消费流水"""
+        self.client.login(username='testuser', password='12345')
+        sale = self._create_sale_with_item(Decimal('40.00'))
+
+        response = self.client.post(
+            reverse('sale_complete', args=[sale.id]),
+            {'payment_method': 'balance'}
+        )
+
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(sale.final_amount, Decimal('38.00'))
+        self.assertEqual(sale.balance_paid, Decimal('38.00'))
+        self.assertEqual(self.member.balance, Decimal('62.00'))
+        self.assertEqual(self.member.points, 38)
+        self.assertEqual(self.member.purchase_count, 1)
+        self.assertEqual(self.member.total_spend, Decimal('38.00'))
+
+        purchase = MemberTransaction.objects.get(member=self.member, transaction_type='PURCHASE')
+        self.assertEqual(purchase.balance_change, Decimal('-38.00'))
+        self.assertEqual(purchase.points_change, 38)
 
 
 class BackupViewSecurityTest(TestCase):
