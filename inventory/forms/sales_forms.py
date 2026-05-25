@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from decimal import Decimal
 
 from inventory.models import Sale, SaleItem, Product, Member
 from inventory.models.inventory import check_inventory
@@ -154,11 +155,11 @@ class SaleItemForm(forms.ModelForm):
                 cleaned_data['actual_price'] = product.price
                 
             # 如果实际价格小于标准价格的一半，标记警告
-            if cleaned_data.get('actual_price') < product.price * 0.5:
+            if cleaned_data.get('actual_price') < product.price * Decimal('0.5'):
                 self._warnings['low_price'] = f'警告：商品 "{product.name}" 的实际售价低于标准价格的50%，请确认是否正确。'
                 
             # 如果实际价格大于标准价格的两倍，标记警告
-            if cleaned_data.get('actual_price') > product.price * 2:
+            if cleaned_data.get('actual_price') > product.price * Decimal('2'):
                 self._warnings['high_price'] = f'警告：商品 "{product.name}" 的实际售价高于标准价格的200%，请确认是否正确。'
             
         return cleaned_data
