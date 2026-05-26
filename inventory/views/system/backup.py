@@ -9,8 +9,10 @@ from django.utils import timezone
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.admin.models import LogEntry
+from django.contrib.auth import get_user_model
 from django.core import management
 from django.utils.text import slugify
+from django.db import transaction
 import os
 import json
 import time
@@ -40,6 +42,25 @@ def get_safe_backup_dir(backup_name):
     if os.path.commonpath([backup_root, backup_dir]) != backup_root:
         raise ValueError("无效的备份路径")
     return backup_dir
+
+
+def create_backup_log(user, action_flag, object_id, object_repr, change_message):
+    """Create an admin log entry without relying on a fake content type id."""
+    if not user or not user.pk:
+        return
+
+    log_user = get_user_model().objects.filter(pk=user.pk).first()
+    if not log_user:
+        return
+
+    LogEntry.objects.create(
+        user=log_user,
+        action_flag=action_flag,
+        content_type=None,
+        object_id=object_id,
+        object_repr=object_repr,
+        change_message=change_message
+    )
 
 
 def get_dir_size_display(dir_path):
@@ -162,14 +183,12 @@ def create_backup(request):
             with open(backup_info_file, 'w', encoding='utf-8') as f:
                 json.dump(backup_info, f, indent=4, ensure_ascii=False)
             
-            # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=1,  # 添加
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'备份: {backup_name}',
-                change_message=f'创建了系统备份 {backup_name}' + (' 包含媒体文件' if backup_media else '')
+            create_backup_log(
+                request.user,
+                1,  # 添加
+                backup_name,
+                f'备份: {backup_name}',
+                f'创建了系统备份 {backup_name}' + (' 包含媒体文件' if backup_media else '')
             )
             
             messages.success(request, f"成功创建备份: {backup_name}")
@@ -225,8 +244,10 @@ def restore_backup(request, backup_name):
                 messages.error(request, f"备份文件 {db_file} 不存在")
                 return redirect('backup_list')
             
-            # 执行恢复
-            management.call_command('loaddata', db_file)
+            # 恢复代表用备份快照覆盖当前数据；先清库避免备份中不存在的记录残留。
+            with transaction.atomic():
+                management.call_command('flush', '--noinput', verbosity=0)
+                management.call_command('loaddata', db_file, verbosity=0)
             
             # 恢复媒体文件
             restore_media = request.POST.get('restore_media') == 'on'
@@ -255,14 +276,12 @@ def restore_backup(request, backup_name):
                                 os.remove(dst_path)
                             shutil.copy2(src_path, dst_path)
             
-            # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=2,  # 修改
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'恢复备份: {backup_name}',
-                change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
+            create_backup_log(
+                request.user,
+                2,  # 修改
+                backup_name,
+                f'恢复备份: {backup_name}',
+                f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
             )
             
             messages.success(request, f"成功恢复备份: {backup_name}")
@@ -307,14 +326,12 @@ def delete_backup(request, backup_name):
             # 删除备份目录
             shutil.rmtree(backup_dir)
             
-            # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=3,  # 删除
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'删除备份: {backup_name}',
-                change_message=f'删除了系统备份 {backup_name}'
+            create_backup_log(
+                request.user,
+                3,  # 删除
+                backup_name,
+                f'删除备份: {backup_name}',
+                f'删除了系统备份 {backup_name}'
             )
             
             messages.success(request, f"成功删除备份: {backup_name}")
@@ -359,14 +376,12 @@ def download_backup(request, backup_name):
             response = HttpResponse(f.read(), content_type='application/zip')
             response['Content-Disposition'] = f'attachment; filename="{backup_name}.zip"'
             
-            # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=1,  # 添加
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'下载备份: {backup_name}',
-                change_message=f'下载了系统备份 {backup_name}'
+            create_backup_log(
+                request.user,
+                1,  # 添加
+                backup_name,
+                f'下载备份: {backup_name}',
+                f'下载了系统备份 {backup_name}'
             )
             
             return response

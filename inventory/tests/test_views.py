@@ -1,9 +1,11 @@
 import os
+import json
 import tempfile
 
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission, Group
+from django.core.management import call_command
 from decimal import Decimal
 
 from inventory.models import (
@@ -13,6 +15,7 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    MemberTransaction,
     Sale,
     SaleItem
 )
@@ -198,6 +201,26 @@ class MemberApiViewTest(ViewTestCase):
 
 class SaleViewTest(ViewTestCase):
     """测试销售相关视图"""
+
+    def create_sale_for_completion(self, member=None, subtotal=Decimal('10.00')):
+        sale = Sale.objects.create(
+            member=member,
+            total_amount=subtotal,
+            discount_amount=Decimal('0.00'),
+            final_amount=subtotal,
+            payment_method='cash',
+            operator=self.user
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=1,
+            price=subtotal,
+            actual_price=subtotal,
+            subtotal=subtotal
+        )
+        sale.refresh_from_db()
+        return sale
     
     def test_sale_list_view(self):
         """测试销售列表视图"""
@@ -236,6 +259,51 @@ class SaleViewTest(ViewTestCase):
         # 验证重定向到销售项创建页面
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
 
+    def test_sale_complete_insufficient_balance_does_not_credit_member(self):
+        """余额不足时不能先写入会员积分和消费统计"""
+        self.client.login(username='testuser', password='12345')
+        self.member.balance = Decimal('0.00')
+        self.member.points = 0
+        self.member.purchase_count = 0
+        self.member.total_spend = Decimal('0.00')
+        self.member.save()
+        sale = self.create_sale_for_completion(member=self.member)
+
+        response = self.client.post(reverse('sale_complete', args=[sale.id]), {
+            'payment_method': 'balance',
+            'member': self.member.id,
+            'remark': ''
+        })
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('0.00'))
+        self.assertEqual(self.member.points, 0)
+        self.assertEqual(self.member.purchase_count, 0)
+        self.assertEqual(self.member.total_spend, Decimal('0.00'))
+        self.assertEqual(sale.balance_paid, Decimal('0.00'))
+        self.assertFalse(MemberTransaction.objects.filter(member=self.member, transaction_type='PURCHASE').exists())
+
+    def test_sale_complete_balance_payment_records_atomic_deduction(self):
+        """余额支付成功时通过会员流水记录扣款"""
+        self.client.login(username='testuser', password='12345')
+        sale = self.create_sale_for_completion(member=self.member, subtotal=Decimal('10.00'))
+
+        response = self.client.post(reverse('sale_complete', args=[sale.id]), {
+            'payment_method': 'balance',
+            'remark': ''
+        })
+
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.member.refresh_from_db()
+        sale.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('90.00'))
+        self.assertEqual(sale.balance_paid, Decimal('10.00'))
+        transaction = MemberTransaction.objects.get(member=self.member, transaction_type='PURCHASE')
+        self.assertEqual(transaction.balance_change, Decimal('-10.00'))
+        self.assertEqual(transaction.related_object_id, sale.id)
+
 
 class BackupViewSecurityTest(TestCase):
     """备份管理视图的安全回归测试"""
@@ -267,3 +335,44 @@ class BackupViewSecurityTest(TestCase):
         self.assertRedirects(response, reverse('backup_list'))
         self.assertTrue(os.path.exists(sentinel_path))
         self.assertTrue(os.path.isdir(self.backup_root))
+
+    def test_restore_backup_flushes_records_missing_from_snapshot(self):
+        """恢复备份应覆盖当前数据，而不是保留快照中不存在的记录"""
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        db_file = os.path.join(backup_dir, 'db.json')
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump({
+                'name': backup_name,
+                'created_at': '2026-01-01T00:00:00',
+                'created_by': self.user.username,
+                'includes_media': False
+            }, backup_info)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            call_command(
+                'dumpdata',
+                '--exclude', 'auth.permission',
+                '--exclude', 'contenttypes',
+                '--exclude', 'sessions.session',
+                '--output', db_file,
+                verbosity=0
+            )
+
+            extra_category = Category.objects.create(name='快照外分类')
+            Product.objects.create(
+                barcode='snapshot-extra',
+                name='快照外商品',
+                category=extra_category,
+                price=Decimal('1.00'),
+                cost=Decimal('0.50')
+            )
+
+            response = self.client.post(
+                reverse('restore_backup', args=[backup_name]),
+                {'confirm': 'on'}
+            )
+
+        self.assertRedirects(response, reverse('system_settings'), fetch_redirect_response=False)
+        self.assertFalse(Product.objects.filter(barcode='snapshot-extra').exists())
