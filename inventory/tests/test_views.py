@@ -398,6 +398,6 @@ class BackupViewSecurityTest(TestCase):
                 {'confirm': 'on'},
             )
 
-        self.assertRedirects(response, reverse('system_settings'))
+        self.assertRedirects(response, reverse('system_settings'), fetch_redirect_response=False)
         self.assertTrue(Category.objects.filter(pk=snapshot_category.pk).exists())
         self.assertFalse(Category.objects.filter(pk=ghost_category.pk).exists())
