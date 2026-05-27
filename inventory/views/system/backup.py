@@ -10,6 +10,8 @@ from django.conf import settings
 from django.urls import reverse
 from django.contrib.admin.models import LogEntry
 from django.core import management
+from django.db import transaction
+from django.contrib.auth import get_user_model
 from django.utils.text import slugify
 import os
 import json
@@ -28,6 +30,22 @@ from inventory.services.backup_service import BackupService
 logger = logging.getLogger(__name__)
 
 BACKUP_NAME_RE = re.compile(r'^[a-zA-Z0-9_\-]+$')
+
+
+def create_backup_log(request, action_flag, backup_name, object_repr, change_message):
+    """Write an admin log entry when the acting user still exists after restore."""
+    user = get_user_model().objects.filter(pk=getattr(request.user, 'pk', None)).first()
+    if not user:
+        return
+
+    LogEntry.objects.create(
+        user=user,
+        action_flag=action_flag,
+        content_type=None,
+        object_id=backup_name,
+        object_repr=object_repr,
+        change_message=change_message,
+    )
 
 
 def get_safe_backup_dir(backup_name):
@@ -163,13 +181,12 @@ def create_backup(request):
                 json.dump(backup_info, f, indent=4, ensure_ascii=False)
             
             # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=1,  # 添加
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'备份: {backup_name}',
-                change_message=f'创建了系统备份 {backup_name}' + (' 包含媒体文件' if backup_media else '')
+            create_backup_log(
+                request,
+                1,  # 添加
+                backup_name,
+                f'备份: {backup_name}',
+                f'创建了系统备份 {backup_name}' + (' 包含媒体文件' if backup_media else '')
             )
             
             messages.success(request, f"成功创建备份: {backup_name}")
@@ -225,8 +242,10 @@ def restore_backup(request, backup_name):
                 messages.error(request, f"备份文件 {db_file} 不存在")
                 return redirect('backup_list')
             
-            # 执行恢复
-            management.call_command('loaddata', db_file)
+            # 执行恢复：先清空数据库，避免备份中不存在的记录残留成幽灵数据。
+            with transaction.atomic():
+                management.call_command('flush', '--noinput', verbosity=0)
+                management.call_command('loaddata', db_file, verbosity=0)
             
             # 恢复媒体文件
             restore_media = request.POST.get('restore_media') == 'on'
@@ -256,13 +275,12 @@ def restore_backup(request, backup_name):
                             shutil.copy2(src_path, dst_path)
             
             # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=2,  # 修改
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'恢复备份: {backup_name}',
-                change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
+            create_backup_log(
+                request,
+                2,  # 修改
+                backup_name,
+                f'恢复备份: {backup_name}',
+                f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
             )
             
             messages.success(request, f"成功恢复备份: {backup_name}")
@@ -308,13 +326,12 @@ def delete_backup(request, backup_name):
             shutil.rmtree(backup_dir)
             
             # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=3,  # 删除
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'删除备份: {backup_name}',
-                change_message=f'删除了系统备份 {backup_name}'
+            create_backup_log(
+                request,
+                3,  # 删除
+                backup_name,
+                f'删除备份: {backup_name}',
+                f'删除了系统备份 {backup_name}'
             )
             
             messages.success(request, f"成功删除备份: {backup_name}")
@@ -360,13 +377,12 @@ def download_backup(request, backup_name):
             response['Content-Disposition'] = f'attachment; filename="{backup_name}.zip"'
             
             # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=1,  # 添加
-                content_type_id=0,  # 自定义内容类型
-                object_id=backup_name,
-                object_repr=f'下载备份: {backup_name}',
-                change_message=f'下载了系统备份 {backup_name}'
+            create_backup_log(
+                request,
+                1,  # 添加
+                backup_name,
+                f'下载备份: {backup_name}',
+                f'下载了系统备份 {backup_name}'
             )
             
             return response

@@ -1,9 +1,11 @@
 import os
 import tempfile
+import json
 
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission, Group
+from django.core.management import call_command
 from decimal import Decimal
 
 from inventory.models import (
@@ -13,6 +15,7 @@ from inventory.models import (
     InventoryTransaction,
     Member,
     MemberLevel,
+    MemberTransaction,
     Sale,
     SaleItem
 )
@@ -224,7 +227,13 @@ class SaleViewTest(ViewTestCase):
         # 提交创建销售表单
         sale_data = {
             'payment_method': 'cash',
-            'member': self.member.id
+            'member': self.member.id,
+            'products[0][id]': self.product.id,
+            'products[0][quantity]': '1',
+            'products[0][price]': '10.00',
+            'total_amount': '10.00',
+            'discount_amount': '0.50',
+            'final_amount': '9.50',
         }
         
         response = self.client.post(reverse('sale_create'), sale_data)
@@ -233,8 +242,98 @@ class SaleViewTest(ViewTestCase):
         self.assertTrue(Sale.objects.filter(member=self.member).exists())
         sale = Sale.objects.filter(member=self.member).first()
         
-        # 验证重定向到销售项创建页面
-        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        # 验证重定向到销售详情页面
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+
+    def test_sale_create_balance_payment_deducts_member_balance(self):
+        """收银台余额支付必须扣减会员余额并记录余额支付金额"""
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.post(reverse('sale_create'), {
+            'payment_method': 'account',
+            'member': self.member.id,
+            'products[0][id]': self.product.id,
+            'products[0][quantity]': '2',
+            'products[0][price]': '10.00',
+            'total_amount': '20.00',
+            'discount_amount': '1.00',
+            'final_amount': '19.00',
+        })
+
+        sale = Sale.objects.get(member=self.member)
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.assertEqual(sale.payment_method, 'balance')
+        self.assertEqual(sale.balance_paid, Decimal('19.00'))
+
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('81.00'))
+        self.assertTrue(MemberTransaction.objects.filter(
+            member=self.member,
+            transaction_type='PURCHASE',
+            balance_change=Decimal('-19.00'),
+            related_object_id=sale.id,
+            related_object_type='Sale',
+        ).exists())
+
+    def test_sale_create_insufficient_balance_rolls_back_sale_and_inventory(self):
+        """余额不足时不能生成销售单、扣库存或增加会员消费统计"""
+        self.client.login(username='testuser', password='12345')
+        self.member.balance = Decimal('5.00')
+        self.member.save(update_fields=['balance'])
+
+        response = self.client.post(reverse('sale_create'), {
+            'payment_method': 'account',
+            'member': self.member.id,
+            'products[0][id]': self.product.id,
+            'products[0][quantity]': '1',
+            'products[0][price]': '10.00',
+            'total_amount': '10.00',
+            'discount_amount': '0.50',
+            'final_amount': '9.50',
+        })
+
+        self.assertRedirects(response, reverse('sale_create'))
+        self.assertEqual(Sale.objects.count(), 0)
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 100)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('5.00'))
+        self.assertEqual(self.member.purchase_count, 0)
+
+    def test_sale_complete_insufficient_balance_does_not_credit_member(self):
+        """旧结算流程余额不足时不能先增加积分/消费统计"""
+        self.client.login(username='testuser', password='12345')
+        self.member.balance = Decimal('5.00')
+        self.member.save(update_fields=['balance'])
+        sale = Sale.objects.create(
+            total_amount=Decimal('20.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('20.00'),
+            operator=self.user,
+        )
+        SaleItem.objects.create(
+            sale=sale,
+            product=self.product,
+            quantity=2,
+            price=Decimal('10.00'),
+            actual_price=Decimal('10.00'),
+            subtotal=Decimal('20.00'),
+        )
+
+        response = self.client.post(reverse('sale_complete', args=[sale.id]), {
+            'member': self.member.id,
+            'payment_method': 'balance',
+            'remark': '',
+        })
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        sale.refresh_from_db()
+        self.assertEqual(sale.balance_paid, Decimal('0.00'))
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('5.00'))
+        self.assertEqual(self.member.points, 0)
+        self.assertEqual(self.member.purchase_count, 0)
+        self.assertEqual(self.member.total_spend, Decimal('0.00'))
 
 
 class BackupViewSecurityTest(TestCase):
@@ -267,3 +366,38 @@ class BackupViewSecurityTest(TestCase):
         self.assertRedirects(response, reverse('backup_list'))
         self.assertTrue(os.path.exists(sentinel_path))
         self.assertTrue(os.path.isdir(self.backup_root))
+
+    def test_restore_backup_flushes_records_missing_from_snapshot(self):
+        """Web 恢复应全量回到备份快照，不能保留备份外的幽灵记录"""
+        snapshot_category = Category.objects.create(name='快照分类')
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        backup_info = {
+            'name': backup_name,
+            'created_at': '2026-05-27T11:00:00',
+            'created_by': self.user.username,
+            'includes_media': False,
+        }
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as info_file:
+            json.dump(backup_info, info_file)
+        call_command(
+            'dumpdata',
+            '--exclude', 'auth.permission',
+            '--exclude', 'contenttypes',
+            '--exclude', 'sessions.session',
+            '--indent', '2',
+            '--output', os.path.join(backup_dir, 'db.json'),
+        )
+
+        ghost_category = Category.objects.create(name='备份后新增分类')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.post(
+                reverse('restore_backup', args=[backup_name]),
+                {'confirm': 'on'},
+            )
+
+        self.assertRedirects(response, reverse('system_settings'))
+        self.assertTrue(Category.objects.filter(pk=snapshot_category.pk).exists())
+        self.assertFalse(Category.objects.filter(pk=ghost_category.pk).exists())
