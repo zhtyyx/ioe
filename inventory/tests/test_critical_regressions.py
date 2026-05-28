@@ -172,7 +172,8 @@ class CriticalBackupRegressionTest(TestCase):
                     'confirm': 'on',
                 })
 
-        self.assertRedirects(response, reverse('system_settings'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertEqual(call_command.call_args_list[0], call('flush', interactive=False, verbosity=0))
         self.assertEqual(call_command.call_args_list[1][0][0], 'loaddata')
         self.assertTrue(call_command.call_args_list[1][0][1].endswith(os.path.join(backup_name, 'db.json')))
