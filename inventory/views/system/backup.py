@@ -166,7 +166,7 @@ def create_backup(request):
             LogEntry.objects.create(
                 user=request.user,
                 action_flag=1,  # 添加
-                content_type_id=0,  # 自定义内容类型
+                content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
                 object_id=backup_name,
                 object_repr=f'备份: {backup_name}',
                 change_message=f'创建了系统备份 {backup_name}' + (' 包含媒体文件' if backup_media else '')
@@ -259,7 +259,7 @@ def restore_backup(request, backup_name):
             LogEntry.objects.create(
                 user=request.user,
                 action_flag=2,  # 修改
-                content_type_id=0,  # 自定义内容类型
+                content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
                 object_id=backup_name,
                 object_repr=f'恢复备份: {backup_name}',
                 change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
@@ -311,7 +311,7 @@ def delete_backup(request, backup_name):
             LogEntry.objects.create(
                 user=request.user,
                 action_flag=3,  # 删除
-                content_type_id=0,  # 自定义内容类型
+                content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
                 object_id=backup_name,
                 object_repr=f'删除备份: {backup_name}',
                 change_message=f'删除了系统备份 {backup_name}'
@@ -363,7 +363,7 @@ def download_backup(request, backup_name):
             LogEntry.objects.create(
                 user=request.user,
                 action_flag=1,  # 添加
-                content_type_id=0,  # 自定义内容类型
+                content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
                 object_id=backup_name,
                 object_repr=f'下载备份: {backup_name}',
                 change_message=f'下载了系统备份 {backup_name}'
