@@ -9,6 +9,12 @@ class Sale(models.Model):
     """
     销售单模型
     """
+    STATUS_CHOICES = [
+        ('DRAFT', '未完成'),
+        ('COMPLETED', '已完成'),
+        ('CANCELLED', '已取消'),
+    ]
+
     PAYMENT_METHODS = [
         ('cash', '现金'),
         ('wechat', '微信'),
@@ -18,7 +24,7 @@ class Sale(models.Model):
         ('mixed', '混合支付'),
         ('other', '其他')
     ]
-    
+
     member = models.ForeignKey(Member, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='会员')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='总金额')
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='折扣金额')
@@ -26,6 +32,7 @@ class Sale(models.Model):
     points_earned = models.IntegerField(default=0, verbose_name='获得积分')
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='cash', verbose_name='支付方式')
     balance_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name='余额支付')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT', verbose_name='状态')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     operator = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, verbose_name='操作员')
     remark = models.TextField(blank=True, verbose_name='备注')

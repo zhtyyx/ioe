@@ -362,7 +362,10 @@ def sale_create(request):
             if payment_method == 'account':
                 payment_method = 'balance'
             sale.payment_method = payment_method
-            
+
+            # 收银台是一次性下单并结算，直接标记为已完成
+            sale.status = 'COMPLETED'
+
             # 设置积分（实付金额的整数部分）
             sale.points_earned = int(sale.final_amount) if sale.final_amount is not None else 0
             
@@ -576,6 +579,15 @@ def sale_item_create(request, sale_id):
 def sale_complete(request, sale_id):
     """完成销售视图"""
     sale = get_object_or_404(Sale, id=sale_id)
+
+    # 已完成/已取消的销售单不能再次结算
+    if sale.status == 'COMPLETED':
+        messages.error(request, '销售单已完成，不能重复收款')
+        return redirect('sale_detail', sale_id=sale.id)
+    if sale.status == 'CANCELLED':
+        messages.error(request, '已取消的销售单不能完成收款')
+        return redirect('sale_detail', sale_id=sale.id)
+
     if request.method == 'POST':
         form = SaleForm(request.POST, instance=sale)
         if form.is_valid():
@@ -647,8 +659,9 @@ def sale_complete(request, sale_id):
                             messages.error(request, '会员余额不足')
                             return redirect('sale_complete', sale_id=sale.id)
             
+            sale.status = 'COMPLETED'
             sale.save()
-            
+
             # 记录操作日志
             OperationLog.objects.create(
                 operator=request.user,
@@ -699,7 +712,7 @@ def sale_cancel(request, sale_id):
         
         # 更改销售单状态
         sale.status = 'CANCELLED'
-        sale.notes = f"{sale.notes or ''}\n取消原因: {reason}".strip()
+        sale.remark = f"{sale.remark or ''}\n取消原因: {reason}".strip()
         sale.save()
         
         # 记录操作日志
@@ -753,7 +766,8 @@ def sale_delete_item(request, sale_id, item_id):
     # 删除商品并更新销售单总额
     item.delete()
     sale.update_total_amount()
-    
+    sale.save()
+
     messages.success(request, '商品已从销售单中删除')
     return redirect('sale_item_create', sale_id=sale.id)
 
