@@ -2,7 +2,7 @@
 
 # 📦 IOE Inventory Management System
 
-[![Django](https://img.shields.io/badge/Django-3.2+-green.svg)](https://www.djangoproject.com/) &nbsp; [![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)](https://www.python.org/) &nbsp; [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Django](https://img.shields.io/badge/Django-4.2+-green.svg)](https://www.djangoproject.com/) &nbsp; [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/) &nbsp; [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 _All-in-one retail inventory solution, tailored for your store_
 
@@ -83,11 +83,15 @@ IOE is a **comprehensive inventory management system** developed with Django, sp
 pip install -r requirements.txt
 ```
 
-### Create Database, Configure in settings.py, Initialize Database
+### Initialize the Database
+
+The system uses **SQLite** by default and works out of the box — running the migration creates the database automatically:
 
 ```bash
 python manage.py migrate
 ```
+
+> The project ships with the `psycopg2` driver, so you can switch to PostgreSQL for production by editing `DATABASES` in `inventory/settings.py`.
 
 ### Create Admin Account
 
