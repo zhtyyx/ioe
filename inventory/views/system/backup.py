@@ -9,7 +9,9 @@ from django.utils import timezone
 from django.conf import settings
 from django.urls import reverse
 from django.contrib.admin.models import LogEntry
+from django.contrib.auth import get_user_model
 from django.core import management
+from django.db import transaction
 from django.utils.text import slugify
 import os
 import json
@@ -225,8 +227,10 @@ def restore_backup(request, backup_name):
                 messages.error(request, f"备份文件 {db_file} 不存在")
                 return redirect('backup_list')
             
-            # 执行恢复
-            management.call_command('loaddata', db_file)
+            # 先清空数据库再加载快照；loaddata 只会 upsert，不能删除备份后新增的数据。
+            with transaction.atomic():
+                management.call_command('flush', '--noinput', verbosity=0)
+                management.call_command('loaddata', db_file, verbosity=0)
             
             # 恢复媒体文件
             restore_media = request.POST.get('restore_media') == 'on'
@@ -255,15 +259,19 @@ def restore_backup(request, backup_name):
                                 os.remove(dst_path)
                             shutil.copy2(src_path, dst_path)
             
-            # 记录日志
-            LogEntry.objects.create(
-                user=request.user,
-                action_flag=2,  # 修改
-                content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
-                object_id=backup_name,
-                object_repr=f'恢复备份: {backup_name}',
-                change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
-            )
+            # 恢复快照后，执行恢复的用户可能已不存在于当前数据库。
+            restored_user = get_user_model().objects.filter(pk=request.user.pk).first()
+            if restored_user:
+                LogEntry.objects.create(
+                    user=restored_user,
+                    action_flag=2,  # 修改
+                    content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
+                    object_id=backup_name,
+                    object_repr=f'恢复备份: {backup_name}',
+                    change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
+                )
+            else:
+                logger.warning("恢复备份后执行用户不存在，跳过管理日志记录: %s", backup_name)
             
             messages.success(request, f"成功恢复备份: {backup_name}")
             return redirect('system_settings')
