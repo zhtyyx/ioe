@@ -1,6 +1,8 @@
+import json
 import os
 import tempfile
 
+from django.core import management
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User, Permission, Group
@@ -267,3 +269,55 @@ class BackupViewSecurityTest(TestCase):
         self.assertRedirects(response, reverse('backup_list'))
         self.assertTrue(os.path.exists(sentinel_path))
         self.assertTrue(os.path.isdir(self.backup_root))
+
+    def test_restore_backup_flushes_records_missing_from_snapshot(self):
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        db_file = os.path.join(backup_dir, 'db.json')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            management.call_command(
+                'dumpdata',
+                '--exclude',
+                'auth.permission',
+                '--exclude',
+                'contenttypes',
+                '--exclude',
+                'sessions.session',
+                '--indent',
+                '4',
+                '--output',
+                db_file,
+                verbosity=0,
+            )
+
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        category = Category.objects.create(name='备份后分类')
+        product = Product.objects.create(
+            barcode='post-backup-product',
+            name='备份后商品',
+            category=category,
+            price=Decimal('10.00'),
+            cost=Decimal('5.00'),
+        )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.post(
+                reverse('restore_backup', args=[backup_name]),
+                {'confirm': 'on'},
+            )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], reverse('system_settings'))
+        self.assertFalse(Product.objects.filter(pk=product.pk).exists())

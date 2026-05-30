@@ -1,0 +1,25 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}取消销售单 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-warning">
+            <h4 class="card-title mb-0">取消销售单 #{{ sale.id }}</h4>
+        </div>
+        <div class="card-body">
+            <p class="text-danger">取消后将恢复该销售单中的商品库存，此操作不能重复执行。</p>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="reason" class="form-label">取消原因</label>
+                    <textarea class="form-control" id="reason" name="reason" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-warning">确认取消</button>
+                <a href="{% url 'sale_detail' sale.id %}" class="btn btn-outline-secondary">返回详情</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

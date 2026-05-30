@@ -101,7 +101,7 @@
                         {% csrf_token %}
                         <h5 class="mb-3">支付方式</h5>
                         <div class="row mb-3">
-                            {% for value, label in form.payment_method.field.choices %}
+                            {% for value, label in payment_methods %}
                             <div class="col-md-4 mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="radio" name="payment_method" id="payment_{{ value }}" 
