@@ -782,40 +782,58 @@ def sale_cancel(request, sale_id):
 def sale_delete_item(request, sale_id, item_id):
     """删除销售单商品视图"""
     sale = get_object_or_404(Sale, id=sale_id)
-    item = get_object_or_404(SaleItem, id=item_id, sale=sale)
-    
-    # 检查销售单状态
-    if sale.status != 'DRAFT':
-        messages.error(request, '只有未完成的销售单可以修改商品')
+
+    if request.method != 'POST':
+        messages.error(request, '请通过确认操作删除销售商品')
+        if sale.status == 'DRAFT':
+            return redirect('sale_item_create', sale_id=sale.id)
         return redirect('sale_detail', sale_id=sale.id)
-    
-    # 恢复库存
-    inventory = Inventory.objects.get(product=item.product)
-    inventory.quantity += item.quantity
-    inventory.save()
-    
-    # 创建入库交易记录
-    InventoryTransaction.objects.create(
-        product=item.product,
-        transaction_type='IN',
-        quantity=item.quantity,
-        operator=request.user,
-        notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
-    )
-    
-    # 记录操作日志
-    OperationLog.objects.create(
-        operator=request.user,
-        operation_type='SALE',
-        details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
-        related_object_id=sale.id,
-        related_content_type=ContentType.objects.get_for_model(Sale)
-    )
-    
-    # 删除商品并更新销售单总额
-    item.delete()
-    sale.update_total_amount()
-    sale.save()
+
+    try:
+        with transaction.atomic():
+            sale = Sale.objects.select_for_update().get(id=sale.id)
+
+            # 检查销售单状态
+            if sale.status != 'DRAFT':
+                messages.error(request, '只有未完成的销售单可以修改商品')
+                return redirect('sale_detail', sale_id=sale.id)
+
+            try:
+                item = SaleItem.objects.select_for_update().select_related('product').get(id=item_id, sale=sale)
+            except SaleItem.DoesNotExist:
+                messages.error(request, '销售商品不存在或已被删除')
+                return redirect('sale_item_create', sale_id=sale.id)
+
+            # 恢复库存
+            inventory = Inventory.objects.select_for_update().get(product=item.product)
+            inventory.quantity += item.quantity
+            inventory.save()
+
+            # 创建入库交易记录
+            InventoryTransaction.objects.create(
+                product=item.product,
+                transaction_type='IN',
+                quantity=item.quantity,
+                operator=request.user,
+                notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
+            )
+
+            # 记录操作日志
+            OperationLog.objects.create(
+                operator=request.user,
+                operation_type='SALE',
+                details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
+                related_object_id=sale.id,
+                related_content_type=ContentType.objects.get_for_model(Sale)
+            )
+
+            # 删除商品并更新销售单总额
+            item.delete()
+            sale.update_total_amount()
+            sale.save()
+    except Inventory.DoesNotExist:
+        messages.error(request, '找不到对应的库存记录')
+        return redirect('sale_item_create', sale_id=sale.id)
 
     messages.success(request, '商品已从销售单中删除')
     return redirect('sale_item_create', sale_id=sale.id)
