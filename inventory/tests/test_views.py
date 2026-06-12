@@ -270,6 +270,40 @@ class BackupViewSecurityTest(TestCase):
         self.assertTrue(os.path.exists(sentinel_path))
         self.assertTrue(os.path.isdir(self.backup_root))
 
+    def test_restore_backup_page_renders_real_form_fields(self):
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('restore_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'action="{reverse("restore_backup", args=[backup_name])}"')
+        self.assertContains(response, 'name="confirm_restore"')
+        self.assertContains(response, backup_name)
+
+    def test_delete_backup_get_renders_confirmation_template(self):
+        backup_name = 'snapshot'
+        os.makedirs(os.path.join(self.backup_root, backup_name), exist_ok=True)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('delete_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/system/delete_backup.html')
+        self.assertContains(response, backup_name)
+
     def test_restore_backup_flushes_records_missing_from_snapshot(self):
         backup_name = 'snapshot'
         backup_dir = os.path.join(self.backup_root, backup_name)
@@ -315,7 +349,7 @@ class BackupViewSecurityTest(TestCase):
         with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
             response = self.client.post(
                 reverse('restore_backup', args=[backup_name]),
-                {'confirm': 'on'},
+                {'confirm_restore': 'on'},
             )
 
         self.assertEqual(response.status_code, 302)

@@ -160,6 +160,29 @@ class SaleStatusTest(TestCase):
         sale.refresh_from_db()
         self.assertEqual(sale.total_amount, Decimal('20.00'))  # 删除后总额已落库
 
+    def test_get_delete_item_does_not_mutate_inventory_or_sale_items(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+        self.inventory.refresh_from_db()
+        before = self.inventory.quantity
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        self.assertTrue(SaleItem.objects.filter(pk=item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before)
+
+    def test_sale_item_page_renders_csrf_protected_delete_form(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+
+        response = self.client.get(reverse('sale_item_create', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'action="{reverse("sale_item_delete", args=[sale.id, item.id])}"')
+        self.assertContains(response, 'method="post"')
+
     def test_sale_complete_page_renders_for_draft_sale(self):
         sale = self._make_sale(status='DRAFT')
 

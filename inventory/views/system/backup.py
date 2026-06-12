@@ -209,16 +209,31 @@ def restore_backup(request, backup_name):
     if os.path.exists(backup_info_file):
         with open(backup_info_file, 'r', encoding='utf-8') as f:
             backup_info = json.load(f)
+
+    created_at = None
+    if backup_info.get('created_at'):
+        try:
+            created_at = datetime.fromisoformat(backup_info['created_at'])
+        except (TypeError, ValueError):
+            created_at = None
+    backup = {
+        'name': backup_name,
+        'created_at': created_at,
+        'created_by': backup_info.get('created_by', '未知'),
+        'size': get_dir_size_display(backup_dir),
+    }
+    context = {
+        'backup': backup,
+        'backup_name': backup_name,
+        'backup_info': backup_info
+    }
     
     if request.method == 'POST':
         # 确认恢复
-        confirmed = request.POST.get('confirm') == 'on'
+        confirmed = request.POST.get('confirm') == 'on' or request.POST.get('confirm_restore') == 'on'
         if not confirmed:
             messages.error(request, "请确认您要恢复备份")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', context)
         
         try:
             # 恢复数据库
@@ -279,15 +294,9 @@ def restore_backup(request, backup_name):
         except Exception as e:
             messages.error(request, f"恢复备份失败: {str(e)}")
             logger.error(f"恢复备份失败: {str(e)}")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', context)
     
-    return render(request, 'inventory/system/restore_backup.html', {
-        'backup_name': backup_name,
-        'backup_info': backup_info
-    })
+    return render(request, 'inventory/system/restore_backup.html', context)
 
 @login_required
 @permission_required('inventory.can_manage_backup')

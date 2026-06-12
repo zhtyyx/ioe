@@ -148,7 +148,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <a href="#" id="confirm-delete-backup" class="btn btn-danger">确认删除</a>
+                <form method="post" action="#" id="confirm-delete-backup-form" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="confirm" value="on">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
             </div>
         </div>
     </div>
@@ -160,13 +164,13 @@
         const deleteBackupModal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
         const deleteButtons = document.querySelectorAll('.delete-backup');
         const backupNameToDelete = document.getElementById('backup-name-to-delete');
-        const confirmDeleteButton = document.getElementById('confirm-delete-backup');
+        const confirmDeleteForm = document.getElementById('confirm-delete-backup-form');
         
         deleteButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const backupName = this.getAttribute('data-backup-name');
                 backupNameToDelete.textContent = backupName;
-                confirmDeleteButton.href = `/system/backup/delete/${backupName}/`;
+                confirmDeleteForm.action = `/system/backup/delete/${backupName}/`;
                 deleteBackupModal.show();
             });
         });
