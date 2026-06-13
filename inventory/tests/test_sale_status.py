@@ -1,12 +1,14 @@
 from decimal import Decimal
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from inventory.models import (
     Category,
     Inventory,
+    InventoryTransaction,
     Member,
     MemberLevel,
     MemberTransaction,
@@ -159,6 +161,63 @@ class SaleStatusTest(TestCase):
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
         sale.refresh_from_db()
         self.assertEqual(sale.total_amount, Decimal('20.00'))  # 删除后总额已落库
+
+    def test_delete_item_requires_post_and_does_not_restore_inventory_on_get(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+        self.inventory.refresh_from_db()
+        before = self.inventory.quantity
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(SaleItem.objects.filter(pk=item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before)
+
+    def test_sale_detail_does_not_mutate_completed_sale_amounts(self):
+        sale = self._make_sale(status='COMPLETED')
+        Sale.objects.filter(pk=sale.pk).update(
+            total_amount=Decimal('1.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('1.00'),
+        )
+
+        response = self.client.get(reverse('sale_detail', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('1.00'))
+        self.assertEqual(sale.final_amount, Decimal('1.00'))
+
+    def test_sale_item_save_rolls_back_when_inventory_update_fails(self):
+        self.inventory.quantity = 1
+        self.inventory.save(update_fields=['quantity'])
+        sale = Sale.objects.create(
+            total_amount=Decimal('0.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('0.00'),
+            payment_method='cash',
+            operator=self.user,
+            status='DRAFT',
+        )
+
+        with self.assertRaises(ValidationError):
+            SaleItem.objects.create(
+                sale=sale,
+                product=self.product,
+                quantity=2,
+                price=Decimal('10.00'),
+                actual_price=Decimal('10.00'),
+                subtotal=Decimal('20.00'),
+            )
+
+        self.assertFalse(SaleItem.objects.filter(sale=sale).exists())
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('0.00'))
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 1)
+        self.assertFalse(InventoryTransaction.objects.filter(product=self.product).exists())
 
     def test_sale_complete_page_renders_for_draft_sale(self):
         sale = self._make_sale(status='DRAFT')
