@@ -316,7 +316,7 @@ class BackupViewSecurityTest(TestCase):
         with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
             response = self.client.post(
                 reverse('restore_backup', args=[backup_name]),
-                {'confirm': 'on'},
+                {'confirm_restore': 'on'},
             )
 
         self.assertEqual(response.status_code, 302)
@@ -380,7 +380,7 @@ class BackupViewSecurityTest(TestCase):
             ):
                 response = self.client.post(
                     reverse('restore_backup', args=[backup_name]),
-                    {'confirm': 'on', 'restore_media': 'on'},
+                    {'confirm_restore': 'on', 'restore_media': 'on'},
                 )
 
         self.assertEqual(response.status_code, 200)

@@ -125,6 +125,25 @@ def restore_media_root(current_backup_dir):
     if current_backup_dir and os.path.exists(current_backup_dir):
         os.rename(current_backup_dir, media_root)
 
+
+def get_restore_backup_context(backup_name, backup_dir, backup_info):
+    created_at = backup_info.get('created_at', '')
+    try:
+        created_at = datetime.fromisoformat(created_at)
+    except (TypeError, ValueError):
+        pass
+
+    return {
+        'backup_name': backup_name,
+        'backup_info': backup_info,
+        'backup': {
+            'name': backup_name,
+            'created_at': created_at,
+            'created_by': backup_info.get('created_by', '未知'),
+            'size': get_dir_size_display(backup_dir),
+        },
+    }
+
 @login_required
 @permission_required('inventory.can_manage_backup')
 def backup_list(request):
@@ -270,16 +289,14 @@ def restore_backup(request, backup_name):
     if os.path.exists(backup_info_file):
         with open(backup_info_file, 'r', encoding='utf-8') as f:
             backup_info = json.load(f)
+    restore_context = get_restore_backup_context(backup_name, backup_dir, backup_info)
     
     if request.method == 'POST':
         # 确认恢复
-        confirmed = request.POST.get('confirm') == 'on'
+        confirmed = request.POST.get('confirm') == 'on' or request.POST.get('confirm_restore') == 'on'
         if not confirmed:
             messages.error(request, "请确认您要恢复备份")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', restore_context)
 
         restore_media = request.POST.get('restore_media') == 'on'
         staged_media_dir = None
@@ -329,20 +346,14 @@ def restore_backup(request, backup_name):
                 restore_media_root(current_media_backup_dir)
             messages.error(request, f"恢复备份失败: {str(e)}")
             logger.error(f"恢复备份失败: {str(e)}")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', restore_context)
         finally:
             if staged_media_dir and os.path.exists(staged_media_dir):
                 shutil.rmtree(staged_media_dir, ignore_errors=True)
             if current_media_backup_dir and os.path.exists(current_media_backup_dir):
                 shutil.rmtree(current_media_backup_dir, ignore_errors=True)
     
-    return render(request, 'inventory/system/restore_backup.html', {
-        'backup_name': backup_name,
-        'backup_info': backup_info
-    })
+    return render(request, 'inventory/system/restore_backup.html', restore_context)
 
 @login_required
 @permission_required('inventory.can_manage_backup')
