@@ -160,6 +160,44 @@ class SaleStatusTest(TestCase):
         sale.refresh_from_db()
         self.assertEqual(sale.total_amount, Decimal('20.00'))  # 删除后总额已落库
 
+    def test_delete_item_requires_post_and_preserves_inventory_on_get(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+        self.inventory.refresh_from_db()
+        before = self.inventory.quantity
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(SaleItem.objects.filter(pk=item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before)
+
+    def test_sale_item_create_page_lists_existing_items(self):
+        sale = self._make_sale(status='DRAFT')
+
+        response = self.client.get(reverse('sale_item_create', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.product.name)
+
+    def test_sale_detail_does_not_rewrite_persisted_amounts(self):
+        sale = self._make_sale(status='COMPLETED')
+        Sale.objects.filter(pk=sale.pk).update(
+            total_amount=Decimal('1.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('1.00'),
+            balance_paid=Decimal('20.00'),
+        )
+
+        response = self.client.get(reverse('sale_detail', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('1.00'))
+        self.assertEqual(sale.final_amount, Decimal('1.00'))
+        self.assertEqual(sale.balance_paid, Decimal('20.00'))
+
     def test_sale_complete_page_renders_for_draft_sale(self):
         sale = self._make_sale(status='DRAFT')
 

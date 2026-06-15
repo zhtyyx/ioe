@@ -1,0 +1,60 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}删除备份 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title mb-0">删除备份</h2>
+                        <p class="text-muted">确认删除系统备份</p>
+                    </div>
+                    <a href="{% url 'backup_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> 返回备份列表
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 col-lg-6 mx-auto">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> 删除确认
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <strong>警告：此操作不可逆！</strong>
+                    <p class="mb-0 mt-2">备份 <strong>{{ backup_name }}</strong> 将被永久删除，删除后无法用于恢复系统数据。</p>
+                </div>
+
+                <form method="post" action="{% url 'delete_backup' backup_name %}">
+                    {% csrf_token %}
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" name="confirm" id="confirm_delete_backup" required>
+                        <label class="form-check-label" for="confirm_delete_backup">
+                            我确认要永久删除此备份
+                        </label>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'backup_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> 取消
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i> 确认删除
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
