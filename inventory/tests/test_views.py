@@ -1,10 +1,12 @@
 import json
 import os
 import tempfile
+from unittest.mock import patch
 
 from django.core import management
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User, Permission, Group
 from decimal import Decimal
 
@@ -315,9 +317,134 @@ class BackupViewSecurityTest(TestCase):
         with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
             response = self.client.post(
                 reverse('restore_backup', args=[backup_name]),
-                {'confirm': 'on'},
+                {'confirm_restore': 'on'},
             )
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+    def test_restore_backup_page_uses_view_context(self):
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('restore_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, backup_name)
+        self.assertContains(response, 'confirm_restore')
+
+    def test_restore_backup_media_stage_failure_preserves_current_data(self):
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        media_root = os.path.join(self.temp_parent.name, 'media')
+        backup_media_dir = os.path.join(backup_dir, 'media')
+        os.makedirs(backup_media_dir, exist_ok=True)
+        os.makedirs(media_root, exist_ok=True)
+        db_file = os.path.join(backup_dir, 'db.json')
+        current_media_file = os.path.join(media_root, 'current.txt')
+        with open(current_media_file, 'w', encoding='utf-8') as current_media:
+            current_media.write('keep current media')
+        with open(os.path.join(backup_media_dir, 'backup.txt'), 'w', encoding='utf-8') as backup_media:
+            backup_media.write('backup media')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            management.call_command(
+                'dumpdata',
+                '--exclude',
+                'auth.permission',
+                '--exclude',
+                'contenttypes',
+                '--exclude',
+                'sessions.session',
+                '--indent',
+                '4',
+                '--output',
+                db_file,
+                verbosity=0,
+            )
+
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': True,
+                },
+                backup_info,
+            )
+
+        category = Category.objects.create(name='备份后分类')
+        product = Product.objects.create(
+            barcode='post-backup-media-product',
+            name='备份后媒体测试商品',
+            category=category,
+            price=Decimal('10.00'),
+            cost=Decimal('5.00'),
+        )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            with patch('inventory.views.system.backup.shutil.copytree', side_effect=OSError('copy failed')):
+                response = self.client.post(
+                    reverse('restore_backup', args=[backup_name]),
+                    {'confirm_restore': 'on', 'restore_media': 'on'},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(os.path.exists(current_media_file))
+        self.assertTrue(Product.objects.filter(pk=product.pk).exists())
+
+    def test_delete_backup_confirmation_page_and_post_delete(self):
+        backup_name = 'snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            get_response = self.client.get(reverse('delete_backup', args=[backup_name]))
+            post_response = self.client.post(reverse('delete_backup', args=[backup_name]), {'confirm': 'on'})
+
+        self.assertEqual(get_response.status_code, 200)
+        self.assertEqual(post_response.status_code, 302)
+        self.assertFalse(os.path.exists(backup_dir))
+
+    def test_download_log_file_records_nullable_content_type(self):
+        log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, 'download-test.log')
+        with open(log_file, 'w', encoding='utf-8') as log:
+            log.write('download me')
+        self.addCleanup(lambda: os.path.exists(log_file) and os.remove(log_file))
+
+        response = self.client.get(reverse('download_log_file', args=['download-test.log']))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            LogEntry.objects.filter(
+                user=self.user,
+                object_id='download-test.log',
+                content_type__isnull=True,
+            ).exists()
+        )
