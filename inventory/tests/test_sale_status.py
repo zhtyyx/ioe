@@ -141,6 +141,19 @@ class SaleStatusTest(TestCase):
         self.inventory.refresh_from_db()
         self.assertEqual(self.inventory.quantity, restored_quantity)
 
+    def test_get_delete_item_does_not_mutate_draft_sale_or_inventory(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+        self.inventory.refresh_from_db()
+        before_quantity = self.inventory.quantity
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        self.assertTrue(SaleItem.objects.filter(pk=item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before_quantity)
+
     def test_delete_item_persists_recalculated_total(self):
         sale = self._make_sale(status='DRAFT')
         extra = SaleItem.objects.create(
@@ -159,6 +172,24 @@ class SaleStatusTest(TestCase):
         self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
         sale.refresh_from_db()
         self.assertEqual(sale.total_amount, Decimal('20.00'))  # 删除后总额已落库
+
+    def test_sale_detail_get_does_not_rewrite_persisted_amounts(self):
+        sale = self._make_sale(status='COMPLETED')
+        Sale.objects.filter(pk=sale.pk).update(
+            total_amount=Decimal('15.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('15.00'),
+            balance_paid=Decimal('15.00'),
+        )
+
+        response = self.client.get(reverse('sale_detail', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('15.00'))
+        self.assertEqual(sale.discount_amount, Decimal('0.00'))
+        self.assertEqual(sale.final_amount, Decimal('15.00'))
+        self.assertEqual(sale.balance_paid, Decimal('15.00'))
 
     def test_sale_complete_page_renders_for_draft_sale(self):
         sale = self._make_sale(status='DRAFT')
