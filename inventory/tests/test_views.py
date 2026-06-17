@@ -1,6 +1,8 @@
 import json
 import os
+import shutil
 import tempfile
+from unittest import mock
 
 from django.core import management
 from django.test import TestCase, Client
@@ -321,3 +323,93 @@ class BackupViewSecurityTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+    def test_restore_backup_page_renders_backup_context(self):
+        backup_name = 'pagecontext'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': True,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('restore_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, backup_name)
+
+    def test_restore_backup_media_replace_failure_restores_current_media_and_db(self):
+        backup_name = 'mediafail'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        backup_media_dir = os.path.join(backup_dir, 'media')
+        media_root = os.path.join(self.temp_parent.name, 'media')
+        os.makedirs(backup_media_dir, exist_ok=True)
+        os.makedirs(media_root, exist_ok=True)
+        db_file = os.path.join(backup_dir, 'db.json')
+
+        with open(os.path.join(media_root, 'current.txt'), 'w', encoding='utf-8') as current:
+            current.write('current media')
+        with open(os.path.join(backup_media_dir, 'replacement.txt'), 'w', encoding='utf-8') as replacement:
+            replacement.write('backup media')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            management.call_command(
+                'dumpdata',
+                '--exclude',
+                'auth.permission',
+                '--exclude',
+                'contenttypes',
+                '--exclude',
+                'sessions.session',
+                '--indent',
+                '4',
+                '--output',
+                db_file,
+                verbosity=0,
+            )
+
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': True,
+                },
+                backup_info,
+            )
+
+        category = Category.objects.create(name='恢复失败后仍应存在分类')
+        product = Product.objects.create(
+            barcode='restore-failure-product',
+            name='恢复失败后仍应存在商品',
+            category=category,
+            price=Decimal('10.00'),
+            cost=Decimal('5.00'),
+        )
+
+        real_move = shutil.move
+
+        def fail_staged_media_move(src, dst, *args, **kwargs):
+            if os.path.basename(src) == 'media' and os.path.abspath(dst) == os.path.abspath(media_root):
+                raise OSError('cannot replace media')
+            return real_move(src, dst, *args, **kwargs)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            with mock.patch('inventory.views.system.backup.shutil.move', side_effect=fail_staged_media_move):
+                response = self.client.post(
+                    reverse('restore_backup', args=[backup_name]),
+                    {'confirm': 'on', 'restore_media': 'on'},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Product.objects.filter(pk=product.pk).exists())
+        self.assertTrue(os.path.exists(os.path.join(media_root, 'current.txt')))
+        self.assertFalse(os.path.exists(os.path.join(media_root, 'replacement.txt')))
