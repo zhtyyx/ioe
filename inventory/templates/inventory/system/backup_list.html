@@ -52,7 +52,7 @@
                                         <a href="{% url 'download_backup' backup.name %}" class="btn btn-info" title="下载">
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        <button type="button" class="btn btn-danger delete-backup" data-backup-name="{{ backup.name }}" title="删除">
+                                        <button type="button" class="btn btn-danger delete-backup" data-backup-name="{{ backup.name }}" data-delete-url="{% url 'delete_backup' backup.name %}" title="删除">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </div>
@@ -148,7 +148,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <a href="#" id="confirm-delete-backup" class="btn btn-danger">确认删除</a>
+                <form method="post" id="deleteBackupForm" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="confirm" value="on">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
             </div>
         </div>
     </div>
@@ -160,13 +164,14 @@
         const deleteBackupModal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
         const deleteButtons = document.querySelectorAll('.delete-backup');
         const backupNameToDelete = document.getElementById('backup-name-to-delete');
-        const confirmDeleteButton = document.getElementById('confirm-delete-backup');
+        const deleteBackupForm = document.getElementById('deleteBackupForm');
         
         deleteButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const backupName = this.getAttribute('data-backup-name');
+                const deleteUrl = this.getAttribute('data-delete-url');
                 backupNameToDelete.textContent = backupName;
-                confirmDeleteButton.href = `/system/backup/delete/${backupName}/`;
+                deleteBackupForm.action = deleteUrl;
                 deleteBackupModal.show();
             });
         });
