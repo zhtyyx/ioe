@@ -80,31 +80,6 @@ def sale_detail(request, sale_id):
     sale = get_object_or_404(Sale, pk=sale_id)
     items = SaleItem.objects.filter(sale=sale).select_related('product')
     
-    # 确保销售单金额与商品项总和一致
-    items_total = sum(item.subtotal for item in items)
-    if items_total > 0 and (sale.total_amount == 0 or abs(sale.total_amount - items_total) > 1):
-        print(f"警告: 销售单金额({sale.total_amount})与商品项总和({items_total})不一致，正在修复")
-        # 更新销售单金额
-        discount_rate = Decimal('1.0')
-        if sale.member and sale.member.level and sale.member.level.discount:
-            try:
-                discount_rate = Decimal(str(sale.member.level.discount))
-            except:
-                discount_rate = Decimal('1.0')
-        
-        discount_amount = items_total * (Decimal('1.0') - discount_rate)
-        final_amount = items_total - discount_amount
-        
-        # 使用原始SQL直接更新数据库
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "UPDATE inventory_sale SET total_amount = %s, discount_amount = %s, final_amount = %s WHERE id = %s",
-                [items_total, discount_amount, final_amount, sale.id]
-            )
-        
-        # 重新加载销售单数据
-        sale = get_object_or_404(Sale, pk=sale_id)
-    
     context = {
         'sale': sale,
         'items': items,
@@ -782,40 +757,62 @@ def sale_cancel(request, sale_id):
 def sale_delete_item(request, sale_id, item_id):
     """删除销售单商品视图"""
     sale = get_object_or_404(Sale, id=sale_id)
-    item = get_object_or_404(SaleItem, id=item_id, sale=sale)
+
+    if request.method != 'POST':
+        messages.error(request, '请通过删除按钮提交确认操作')
+        if sale.status == 'DRAFT':
+            return redirect('sale_item_create', sale_id=sale.id)
+        return redirect('sale_detail', sale_id=sale.id)
     
     # 检查销售单状态
     if sale.status != 'DRAFT':
         messages.error(request, '只有未完成的销售单可以修改商品')
         return redirect('sale_detail', sale_id=sale.id)
-    
-    # 恢复库存
-    inventory = Inventory.objects.get(product=item.product)
-    inventory.quantity += item.quantity
-    inventory.save()
-    
-    # 创建入库交易记录
-    InventoryTransaction.objects.create(
-        product=item.product,
-        transaction_type='IN',
-        quantity=item.quantity,
-        operator=request.user,
-        notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
-    )
-    
-    # 记录操作日志
-    OperationLog.objects.create(
-        operator=request.user,
-        operation_type='SALE',
-        details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
-        related_object_id=sale.id,
-        related_content_type=ContentType.objects.get_for_model(Sale)
-    )
-    
-    # 删除商品并更新销售单总额
-    item.delete()
-    sale.update_total_amount()
-    sale.save()
+
+    try:
+        with transaction.atomic():
+            sale = Sale.objects.select_for_update().get(id=sale.id)
+            if sale.status != 'DRAFT':
+                raise ValueError('只有未完成的销售单可以修改商品')
+
+            item = SaleItem.objects.select_for_update().select_related('product').get(
+                id=item_id,
+                sale=sale,
+            )
+
+            # 恢复库存
+            inventory = Inventory.objects.select_for_update().get(product=item.product)
+            inventory.quantity += item.quantity
+            inventory.save()
+            
+            # 创建入库交易记录
+            InventoryTransaction.objects.create(
+                product=item.product,
+                transaction_type='IN',
+                quantity=item.quantity,
+                operator=request.user,
+                notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
+            )
+            
+            # 记录操作日志
+            OperationLog.objects.create(
+                operator=request.user,
+                operation_type='SALE',
+                details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
+                related_object_id=sale.id,
+                related_content_type=ContentType.objects.get_for_model(Sale)
+            )
+            
+            # 删除商品并更新销售单总额
+            item.delete()
+            sale.update_total_amount()
+            sale.save()
+    except SaleItem.DoesNotExist:
+        messages.error(request, '销售商品不存在或已被删除')
+        return redirect('sale_item_create', sale_id=sale.id)
+    except (Inventory.DoesNotExist, ValueError) as e:
+        messages.error(request, str(e))
+        return redirect('sale_detail', sale_id=sale.id)
 
     messages.success(request, '商品已从销售单中删除')
     return redirect('sale_item_create', sale_id=sale.id)
