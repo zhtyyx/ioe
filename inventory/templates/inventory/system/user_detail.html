@@ -71,30 +71,18 @@
                             电子邮箱
                             <span>{{ user.email|default:"-" }}</span>
                         </li>
-                        {% if user.profile.phone %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             手机号
-                            <span>{{ user.profile.phone }}</span>
+                            <span>{{ profile.phone|default:"-" }}</span>
                         </li>
-                        {% endif %}
-                        {% if user.profile.department %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             部门
-                            <span>{{ user.profile.department }}</span>
+                            <span>{{ profile.department|default:"-" }}</span>
                         </li>
-                        {% endif %}
-                        {% if user.profile.employee_id %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             工号
-                            <span>{{ user.profile.employee_id }}</span>
+                            <span>{{ profile.employee_id|default:"-" }}</span>
                         </li>
-                        {% endif %}
-                        {% if user.profile.notes %}
-                        <li class="list-group-item">
-                            备注
-                            <p class="text-muted mb-0 mt-1">{{ user.profile.notes }}</p>
-                        </li>
-                        {% endif %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             最后登录
                             <span>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</span>

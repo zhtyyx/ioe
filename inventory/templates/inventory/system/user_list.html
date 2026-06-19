@@ -57,7 +57,7 @@
     <!-- 用户列表 -->
     <div class="card">
         <div class="card-body">
-            {% if users %}
+            {% if user_data %}
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
@@ -73,22 +73,22 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for user in users %}
+                        {% for entry in user_data %}
                         <tr>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.get_full_name|default:"-" }}</td>
-                            <td>{{ user.profile.phone|default:"-" }}</td>
-                            <td>{{ user.profile.department|default:"-" }}</td>
+                            <td>{{ entry.user.username }}</td>
+                            <td>{{ entry.user.get_full_name|default:"-" }}</td>
+                            <td>{{ entry.profile.phone|default:"-" }}</td>
+                            <td>{{ entry.profile.department|default:"-" }}</td>
                             <td>
-                                {% for group in user.groups.all %}
+                                {% for group in entry.user.groups.all %}
                                 <span class="badge bg-secondary">{{ group.name }}</span>
                                 {% empty %}
                                 <span class="text-muted">-</span>
                                 {% endfor %}
                             </td>
-                            <td>{{ user.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
+                            <td>{{ entry.user.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
                             <td>
-                                {% if user.is_active %}
+                                {% if entry.user.is_active %}
                                 <span class="badge bg-success">活跃</span>
                                 {% else %}
                                 <span class="badge bg-danger">禁用</span>
@@ -96,14 +96,14 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'user_detail' user.id %}" class="btn btn-outline-primary" title="查看详情">
+                                    <a href="{% url 'user_detail' entry.user.id %}" class="btn btn-outline-primary" title="查看详情">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'user_update' user.id %}" class="btn btn-outline-secondary" title="编辑用户">
+                                    <a href="{% url 'user_update' entry.user.id %}" class="btn btn-outline-secondary" title="编辑用户">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    {% if user.id != request.user.id %}
-                                    <a href="{% url 'user_delete' user.id %}" class="btn btn-outline-danger" title="删除用户">
+                                    {% if entry.user.id != request.user.id %}
+                                    <a href="{% url 'user_delete' entry.user.id %}" class="btn btn-outline-danger" title="删除用户">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                     {% endif %}

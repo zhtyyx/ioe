@@ -19,8 +19,8 @@ def user_list(request):
     is_active = request.GET.get('is_active', '')
     user_group = request.GET.get('group', '')
     
-    # 基本查询集
-    users = User.objects.select_related('profile').prefetch_related('groups').all()
+    # 基本查询集（profile 是 optional，用 LEFT JOIN 避免崩溃）
+    users = User.objects.prefetch_related('groups').all()
     
     # 应用筛选
     if search_query:
@@ -39,15 +39,24 @@ def user_list(request):
     
     # 获取用户组
     groups = Group.objects.all()
-    
+
+    # 安全获取 profile 数据（profile 是 optional）
+    user_data = []
+    for u in users:
+        try:
+            p = u.profile
+        except UserProfile.DoesNotExist:
+            p = None
+        user_data.append({'user': u, 'profile': p})
+
     context = {
-        'users': users,
+        'user_data': user_data,
         'groups': groups,
         'search_query': search_query,
         'is_active': is_active,
         'user_group': user_group
     }
-    
+
     return render(request, 'inventory/system/user_list.html', context)
 
 
@@ -248,8 +257,15 @@ def user_update(request, pk):
         messages.success(request, f'用户 {user.username} 更新成功')
         return redirect('user_list')
     
+    # 安全获取 profile
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        profile = None
+
     return render(request, 'inventory/system/user_update.html', {
         'user': user,
+        'profile': profile,
         'groups': groups
     })
 
@@ -293,8 +309,15 @@ def user_detail(request, pk):
     
     # 获取用户最近的操作日志
     logs = OperationLog.objects.filter(operator=user).order_by('-timestamp')[:20]
-    
+
+    # 安全获取 profile
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        profile = None
+
     return render(request, 'inventory/system/user_detail.html', {
         'user': user,
+        'profile': profile,
         'logs': logs
     }) 
