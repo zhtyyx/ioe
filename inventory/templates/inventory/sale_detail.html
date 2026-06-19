@@ -16,6 +16,11 @@
                         <a href="{% url 'sale_list' %}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left me-1"></i> 返回列表
                         </a>
+                        {% if sale.status == 'COMPLETED' %}
+                        <a href="{% url 'sale_return' sale.id %}" class="btn btn-outline-warning">
+                            <i class="bi bi-arrow-return-left me-1"></i> 退货
+                        </a>
+                        {% endif %}
                         <button class="btn btn-outline-primary print-button">
                             <i class="bi bi-printer me-1"></i> 打印
                         </button>
@@ -59,7 +64,17 @@
                     </li>
                     <li class="list-group-item d-flex justify-content-between">
                         <span class="text-muted">状态:</span>
+                        {% if sale.status == 'COMPLETED' %}
                         <span class="badge bg-success">已完成</span>
+                        {% elif sale.status == 'CANCELLED' %}
+                        <span class="badge bg-secondary">已取消</span>
+                        {% elif sale.status == 'RETURNED' %}
+                        <span class="badge bg-warning text-dark">已退货</span>
+                        {% elif sale.status == 'DRAFT' %}
+                        <span class="badge bg-info">未完成</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ sale.get_status_display }}</span>
+                        {% endif %}
                     </li>
                 </ul>
             </div>

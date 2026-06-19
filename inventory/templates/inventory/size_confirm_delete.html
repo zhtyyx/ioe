@@ -1,0 +1,26 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}删除尺码{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="card-title mb-0">确认删除</h4>
+            </div>
+            <div class="card-body">
+                <p>确定要删除尺码 <strong>"{{ size.name }}"</strong> 吗？</p>
+                <p class="text-muted">此操作不可撤销。</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger">确认删除</button>
+                        <a href="{% url 'size_list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

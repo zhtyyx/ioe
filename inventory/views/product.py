@@ -625,11 +625,11 @@ def product_import(request):
             csv_file = request.FILES['csv_file']
             
             # 验证CSV文件
-            validation_result = validate_csv(csv_file, 
-                                            required_headers=['name', 'retail_price'],
-                                            expected_headers=['name', 'category', 'retail_price', 
-                                                            'wholesale_price', 'cost_price', 
-                                                            'barcode', 'sku', 'specification'])
+            validation_result = validate_csv(csv_file,
+                                            required_headers=['name', 'price'],
+                                            expected_headers=['name', 'category', 'price',
+                                                            'cost', 'barcode',
+                                                            'specification', 'manufacturer'])
             
             if not validation_result['valid']:
                 messages.error(request, f"CSV文件验证失败: {validation_result['errors']}")
@@ -709,19 +709,20 @@ def product_export(request):
     
     # 写入CSV
     writer = csv.writer(response)
-    writer.writerow(['ID', '名称', '分类', '零售价', '批发价', '成本价', '条码', 'SKU', '规格', '状态'])
-    
+    writer.writerow(['ID', '名称', '分类', '售价', '成本价', '条码', '规格', '制造商', '颜色', '尺码', '状态'])
+
     for product in products:
         writer.writerow([
             product.id,
             product.name,
             product.category.name if product.category else '',
-            product.retail_price,
-            product.wholesale_price,
-            product.cost_price,
+            product.price,
+            product.cost,
             product.barcode or '',
-            product.sku or '',
             product.specification or '',
+            product.manufacturer or '',
+            product.get_color_display() if product.color else '',
+            product.get_size_display() if product.size else '',
             '启用' if product.is_active else '禁用',
         ])
     

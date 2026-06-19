@@ -1,0 +1,74 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}导入商品{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title mb-0">批量导入商品</h2>
+                        <p class="text-muted mb-0">从 CSV 文件批量导入商品数据</p>
+                    </div>
+                    <a href="{% url 'product_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> 返回
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">上传 CSV 文件</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="csv_file" class="form-label">选择 CSV 文件</label>
+                        <input type="file" name="csv_file" id="csv_file" class="form-control"
+                               accept=".csv" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload me-1"></i> 导入
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">CSV 格式说明</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">CSV 文件需包含以下列（第一行为表头）：</p>
+                <table class="table table-sm">
+                    <thead>
+                        <tr><th>列名</th><th>必填</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>name</td><td><span class="text-danger">是</span></td></tr>
+                        <tr><td>price</td><td><span class="text-danger">是</span></td></tr>
+                        <tr><td>category</td><td>否</td></tr>
+                        <tr><td>cost</td><td>否</td></tr>
+                        <tr><td>barcode</td><td>否</td></tr>
+                        <tr><td>specification</td><td>否</td></tr>
+                        <tr><td>manufacturer</td><td>否</td></tr>
+                    </tbody>
+                </table>
+
+                <h6>示例数据</h6>
+                <pre class="bg-light p-2 small" style="max-height: 200px; overflow-y: auto;">{{ sample_csv }}</pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

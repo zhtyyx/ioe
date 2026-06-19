@@ -1,0 +1,64 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}退货处理 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="card-title mb-0">退货处理</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    确认退货后，库存将恢复，已支付的款项将退回。
+                    {% if sale.member and sale.balance_paid %}
+                    <br>会员 <strong>{{ sale.member.name }}</strong> 的余额将退回 ¥{{ sale.balance_paid|floatformat:2 }}。
+                    {% endif %}
+                </div>
+
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>销售单号</span>
+                        <span class="fw-bold">#{{ sale.id }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>总金额</span>
+                        <span>¥{{ sale.total_amount|floatformat:2 }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>实付金额</span>
+                        <span class="text-success fw-bold">¥{{ sale.final_amount|floatformat:2 }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>商品数量</span>
+                        <span>{{ sale.total_quantity }} 件</span>
+                    </li>
+                    {% if sale.member %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>会员</span>
+                        <span>{{ sale.member.name }}</span>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">退货原因</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3"
+                                  placeholder="请填写退货原因..." required></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-return-left me-1"></i> 确认退货
+                        </button>
+                        <a href="{% url 'sale_detail' sale.id %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

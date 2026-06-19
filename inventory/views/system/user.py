@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 
-from ...models.common import OperationLog
+from ...models.common import OperationLog, UserProfile
 
 
 @login_required
@@ -90,6 +90,11 @@ def user_create(request):
         is_staff = request.POST.get('is_staff') == 'on'
         is_superuser = request.POST.get('is_superuser') == 'on'
         group_ids = request.POST.getlist('groups')
+        # Profile fields
+        phone = request.POST.get('phone', '')
+        department = request.POST.get('department', '')
+        employee_id = request.POST.get('employee_id', '')
+        profile_notes = request.POST.get('profile_notes', '')
         
         # 表单验证
         errors = []
@@ -132,7 +137,16 @@ def user_create(request):
         if group_ids:
             selected_groups = Group.objects.filter(id__in=group_ids)
             user.groups.add(*selected_groups)
-        
+
+        # 创建用户扩展信息
+        UserProfile.objects.create(
+            user=user,
+            phone=phone,
+            department=department,
+            employee_id=employee_id,
+            notes=profile_notes
+        )
+
         # 记录操作日志
         OperationLog.objects.create(
             operator=request.user,
@@ -168,6 +182,11 @@ def user_update(request, pk):
         group_ids = request.POST.getlist('groups')
         new_password = request.POST.get('new_password', '')
         new_password_confirm = request.POST.get('new_password_confirm', '')
+        # Profile fields
+        phone = request.POST.get('phone', '')
+        department = request.POST.get('department', '')
+        employee_id = request.POST.get('employee_id', '')
+        profile_notes = request.POST.get('profile_notes', '')
         
         # 表单验证
         errors = []
@@ -207,7 +226,15 @@ def user_update(request, pk):
         if group_ids:
             selected_groups = Group.objects.filter(id__in=group_ids)
             user.groups.add(*selected_groups)
-        
+
+        # 更新或创建用户扩展信息
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.phone = phone
+        profile.department = department
+        profile.employee_id = employee_id
+        profile.notes = profile_notes
+        profile.save()
+
         # 记录操作日志
         OperationLog.objects.create(
             operator=request.user,

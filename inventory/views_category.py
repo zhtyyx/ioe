@@ -89,3 +89,128 @@ def category_delete(request, category_id):
         return redirect('category_list')
     
     return render(request, 'inventory/category_confirm_delete.html', {'category': category})
+
+
+# ===== 颜色管理 =====
+
+@login_required
+def color_list(request):
+    """颜色列表视图"""
+    from inventory.models import Color
+    colors = Color.objects.all().order_by('name')
+    return render(request, 'inventory/color_list.html', {'colors': colors})
+
+
+@login_required
+def color_create(request):
+    """创建颜色视图"""
+    from inventory.models import Color
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        if name:
+            if not Color.objects.filter(name=name).exists():
+                Color.objects.create(name=name, code=code)
+                messages.success(request, f'颜色 "{name}" 添加成功')
+            else:
+                messages.error(request, f'颜色 "{name}" 已存在')
+        else:
+            messages.error(request, '颜色名称不能为空')
+        return redirect('color_list')
+    return render(request, 'inventory/color_form.html')
+
+
+@login_required
+def color_edit(request, color_id):
+    """编辑颜色视图"""
+    from inventory.models import Color
+    color = get_object_or_404(Color, id=color_id)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        code = request.POST.get('code', '').strip()
+        if name:
+            if Color.objects.filter(name=name).exclude(id=color_id).exists():
+                messages.error(request, f'颜色 "{name}" 已存在')
+            else:
+                color.name = name
+                color.code = code
+                color.save()
+                messages.success(request, f'颜色 "{name}" 更新成功')
+        else:
+            messages.error(request, '颜色名称不能为空')
+        return redirect('color_list')
+    return render(request, 'inventory/color_form.html', {'color': color})
+
+
+@login_required
+def color_delete(request, color_id):
+    """删除颜色视图"""
+    from inventory.models import Color
+    color = get_object_or_404(Color, id=color_id)
+    if request.method == 'POST':
+        color_name = color.name
+        color.delete()
+        messages.success(request, f'颜色 "{color_name}" 已删除')
+        return redirect('color_list')
+    return render(request, 'inventory/color_confirm_delete.html', {'color': color})
+
+
+# ===== 尺码管理 =====
+
+@login_required
+def size_list(request):
+    """尺码列表视图"""
+    from inventory.models import Size
+    sizes = Size.objects.all().order_by('name')
+    return render(request, 'inventory/size_list.html', {'sizes': sizes})
+
+
+@login_required
+def size_create(request):
+    """创建尺码视图"""
+    from inventory.models import Size
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            if not Size.objects.filter(name=name).exists():
+                Size.objects.create(name=name)
+                messages.success(request, f'尺码 "{name}" 添加成功')
+            else:
+                messages.error(request, f'尺码 "{name}" 已存在')
+        else:
+            messages.error(request, '尺码名称不能为空')
+        return redirect('size_list')
+    return render(request, 'inventory/size_form.html')
+
+
+@login_required
+def size_edit(request, size_id):
+    """编辑尺码视图"""
+    from inventory.models import Size
+    size = get_object_or_404(Size, id=size_id)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name:
+            if Size.objects.filter(name=name).exclude(id=size_id).exists():
+                messages.error(request, f'尺码 "{name}" 已存在')
+            else:
+                size.name = name
+                size.save()
+                messages.success(request, f'尺码 "{name}" 更新成功')
+        else:
+            messages.error(request, '尺码名称不能为空')
+        return redirect('size_list')
+    return render(request, 'inventory/size_form.html', {'size': size})
+
+
+@login_required
+def size_delete(request, size_id):
+    """删除尺码视图"""
+    from inventory.models import Size
+    size = get_object_or_404(Size, id=size_id)
+    if request.method == 'POST':
+        size_name = size.name
+        size.delete()
+        messages.success(request, f'尺码 "{size_name}" 已删除')
+        return redirect('size_list')
+    return render(request, 'inventory/size_confirm_delete.html', {'size': size})

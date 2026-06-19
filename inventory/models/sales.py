@@ -13,6 +13,7 @@ class Sale(models.Model):
         ('DRAFT', '未完成'),
         ('COMPLETED', '已完成'),
         ('CANCELLED', '已取消'),
+        ('RETURNED', '已退货'),
     ]
 
     PAYMENT_METHODS = [
