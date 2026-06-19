@@ -57,15 +57,14 @@
     <!-- 用户列表 -->
     <div class="card">
         <div class="card-body">
-            {% if user_data %}
+            {% if users %}
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>用户名</th>
                             <th>姓名</th>
-                            <th>手机号</th>
-                            <th>部门</th>
+                            <th>邮箱</th>
                             <th>用户组</th>
                             <th>最后登录</th>
                             <th>状态</th>
@@ -73,22 +72,21 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for entry in user_data %}
+                        {% for user in users %}
                         <tr>
-                            <td>{{ entry.user.username }}</td>
-                            <td>{{ entry.user.get_full_name|default:"-" }}</td>
-                            <td>{{ entry.profile.phone|default:"-" }}</td>
-                            <td>{{ entry.profile.department|default:"-" }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.get_full_name|default:"-" }}</td>
+                            <td>{{ user.email|default:"-" }}</td>
                             <td>
-                                {% for group in entry.user.groups.all %}
+                                {% for group in user.groups.all %}
                                 <span class="badge bg-secondary">{{ group.name }}</span>
                                 {% empty %}
                                 <span class="text-muted">-</span>
                                 {% endfor %}
                             </td>
-                            <td>{{ entry.user.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
+                            <td>{{ user.last_login|date:"Y-m-d H:i"|default:"-" }}</td>
                             <td>
-                                {% if entry.user.is_active %}
+                                {% if user.is_active %}
                                 <span class="badge bg-success">活跃</span>
                                 {% else %}
                                 <span class="badge bg-danger">禁用</span>
@@ -96,14 +94,14 @@
                             </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'user_detail' entry.user.id %}" class="btn btn-outline-primary" title="查看详情">
+                                    <a href="{% url 'user_detail' user.id %}" class="btn btn-outline-primary" title="查看详情">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'user_update' entry.user.id %}" class="btn btn-outline-secondary" title="编辑用户">
+                                    <a href="{% url 'user_update' user.id %}" class="btn btn-outline-secondary" title="编辑用户">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    {% if entry.user.id != request.user.id %}
-                                    <a href="{% url 'user_delete' entry.user.id %}" class="btn btn-outline-danger" title="删除用户">
+                                    {% if user.id != request.user.id %}
+                                    <a href="{% url 'user_delete' user.id %}" class="btn btn-outline-danger" title="删除用户">
                                         <i class="fas fa-trash"></i>
                                     </a>
                                     {% endif %}

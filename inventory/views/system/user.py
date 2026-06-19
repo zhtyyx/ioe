@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 
-from ...models.common import OperationLog, UserProfile
+from ...models.common import OperationLog
 
 
 @login_required
@@ -19,8 +19,8 @@ def user_list(request):
     is_active = request.GET.get('is_active', '')
     user_group = request.GET.get('group', '')
     
-    # 基本查询集（profile 是 optional，用 LEFT JOIN 避免崩溃）
-    users = User.objects.prefetch_related('groups').all()
+    # 基本查询集
+    users = User.objects.select_related('profile').prefetch_related('groups').all()
     
     # 应用筛选
     if search_query:
@@ -39,24 +39,15 @@ def user_list(request):
     
     # 获取用户组
     groups = Group.objects.all()
-
-    # 安全获取 profile 数据（profile 是 optional）
-    user_data = []
-    for u in users:
-        try:
-            p = u.profile
-        except UserProfile.DoesNotExist:
-            p = None
-        user_data.append({'user': u, 'profile': p})
-
+    
     context = {
-        'user_data': user_data,
+        'users': users,
         'groups': groups,
         'search_query': search_query,
         'is_active': is_active,
         'user_group': user_group
     }
-
+    
     return render(request, 'inventory/system/user_list.html', context)
 
 
@@ -99,11 +90,6 @@ def user_create(request):
         is_staff = request.POST.get('is_staff') == 'on'
         is_superuser = request.POST.get('is_superuser') == 'on'
         group_ids = request.POST.getlist('groups')
-        # Profile fields
-        phone = request.POST.get('phone', '')
-        department = request.POST.get('department', '')
-        employee_id = request.POST.get('employee_id', '')
-        profile_notes = request.POST.get('profile_notes', '')
         
         # 表单验证
         errors = []
@@ -146,16 +132,7 @@ def user_create(request):
         if group_ids:
             selected_groups = Group.objects.filter(id__in=group_ids)
             user.groups.add(*selected_groups)
-
-        # 创建用户扩展信息
-        UserProfile.objects.create(
-            user=user,
-            phone=phone,
-            department=department,
-            employee_id=employee_id,
-            notes=profile_notes
-        )
-
+        
         # 记录操作日志
         OperationLog.objects.create(
             operator=request.user,
@@ -191,11 +168,6 @@ def user_update(request, pk):
         group_ids = request.POST.getlist('groups')
         new_password = request.POST.get('new_password', '')
         new_password_confirm = request.POST.get('new_password_confirm', '')
-        # Profile fields
-        phone = request.POST.get('phone', '')
-        department = request.POST.get('department', '')
-        employee_id = request.POST.get('employee_id', '')
-        profile_notes = request.POST.get('profile_notes', '')
         
         # 表单验证
         errors = []
@@ -235,15 +207,7 @@ def user_update(request, pk):
         if group_ids:
             selected_groups = Group.objects.filter(id__in=group_ids)
             user.groups.add(*selected_groups)
-
-        # 更新或创建用户扩展信息
-        profile, created = UserProfile.objects.get_or_create(user=user)
-        profile.phone = phone
-        profile.department = department
-        profile.employee_id = employee_id
-        profile.notes = profile_notes
-        profile.save()
-
+        
         # 记录操作日志
         OperationLog.objects.create(
             operator=request.user,
@@ -257,15 +221,8 @@ def user_update(request, pk):
         messages.success(request, f'用户 {user.username} 更新成功')
         return redirect('user_list')
     
-    # 安全获取 profile
-    try:
-        profile = user.profile
-    except UserProfile.DoesNotExist:
-        profile = None
-
     return render(request, 'inventory/system/user_update.html', {
         'user': user,
-        'profile': profile,
         'groups': groups
     })
 
@@ -309,15 +266,8 @@ def user_detail(request, pk):
     
     # 获取用户最近的操作日志
     logs = OperationLog.objects.filter(operator=user).order_by('-timestamp')[:20]
-
-    # 安全获取 profile
-    try:
-        profile = user.profile
-    except UserProfile.DoesNotExist:
-        profile = None
-
+    
     return render(request, 'inventory/system/user_detail.html', {
         'user': user,
-        'profile': profile,
         'logs': logs
     }) 

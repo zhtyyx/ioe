@@ -19,7 +19,7 @@ from .member import Member, MemberLevel, RechargeRecord, MemberTransaction
 from .sales import Sale, SaleItem
 
 # 通用模型
-from .common import OperationLog, SystemConfig, UserProfile
+from .common import OperationLog, SystemConfig
 
 # 导出所有模型，使它们可以通过inventory.models访问
 __all__ = [
@@ -40,5 +40,5 @@ __all__ = [
     'Sale', 'SaleItem',
     
     # 通用模型
-    'OperationLog', 'SystemConfig', 'UserProfile',
+    'OperationLog', 'SystemConfig',
 ] 

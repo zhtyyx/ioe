@@ -31,23 +31,6 @@ class OperationLog(models.Model):
         return f'{self.operator.username} - {self.get_operation_type_display()} - {self.timestamp}'
 
 
-class UserProfile(models.Model):
-    """用户扩展信息，补充 Django 内置 User 模型缺少的字段"""
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile', verbose_name='用户')
-    phone = models.CharField(max_length=20, blank=True, verbose_name='手机号')
-    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name='头像')
-    department = models.CharField(max_length=50, blank=True, verbose_name='部门')
-    employee_id = models.CharField(max_length=50, blank=True, verbose_name='工号')
-    notes = models.TextField(blank=True, verbose_name='备注')
-
-    class Meta:
-        verbose_name = '用户扩展信息'
-        verbose_name_plural = '用户扩展信息'
-
-    def __str__(self):
-        return f'{self.user.username} 的扩展信息'
-
-
 class SystemConfig(models.Model):
     """系统配置模型"""
     company_name = models.CharField(max_length=100, verbose_name="公司名称", default="我的商店")
