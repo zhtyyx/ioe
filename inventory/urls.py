@@ -152,6 +152,9 @@ urlpatterns = [
     path('system/backup/download/<str:backup_name>/', system_views.download_backup, name='download_backup'),
     path('system/manual-backup/', system_views.manual_backup, name='manual_backup'),
     
+    # 个人资料
+    path('profile/', system_views.profile_edit, name='profile_edit'),
+
     # 用户管理相关URL
     path('system/users/', system_views.user_list, name='user_list'),
     path('system/users/create/', system_views.user_create, name='user_create'),

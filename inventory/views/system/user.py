@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 
-from ...models.common import OperationLog
+from ...models.common import OperationLog, UserProfile
 
 
 @login_required
@@ -90,7 +90,11 @@ def user_create(request):
         is_staff = request.POST.get('is_staff') == 'on'
         is_superuser = request.POST.get('is_superuser') == 'on'
         group_ids = request.POST.getlist('groups')
-        
+        phone = request.POST.get('phone', '')
+        department = request.POST.get('department', '')
+        employee_id = request.POST.get('employee_id', '')
+        profile_notes = request.POST.get('profile_notes', '')
+
         # 表单验证
         errors = []
         
@@ -132,7 +136,14 @@ def user_create(request):
         if group_ids:
             selected_groups = Group.objects.filter(id__in=group_ids)
             user.groups.add(*selected_groups)
-        
+
+        # 填充扩展信息（signal 已自动创建空 profile）
+        user.profile.phone = phone
+        user.profile.department = department
+        user.profile.employee_id = employee_id
+        user.profile.notes = profile_notes
+        user.profile.save()
+
         # 记录操作日志
         OperationLog.objects.create(
             operator=request.user,
@@ -168,10 +179,14 @@ def user_update(request, pk):
         group_ids = request.POST.getlist('groups')
         new_password = request.POST.get('new_password', '')
         new_password_confirm = request.POST.get('new_password_confirm', '')
-        
+        phone = request.POST.get('phone', '')
+        department = request.POST.get('department', '')
+        employee_id = request.POST.get('employee_id', '')
+        profile_notes = request.POST.get('profile_notes', '')
+
         # 表单验证
         errors = []
-        
+
         # 密码验证
         if new_password:
             if len(new_password) < 8:
@@ -207,7 +222,14 @@ def user_update(request, pk):
         if group_ids:
             selected_groups = Group.objects.filter(id__in=group_ids)
             user.groups.add(*selected_groups)
-        
+
+        # 更新扩展信息（signal 保证 profile 一定存在）
+        user.profile.phone = phone
+        user.profile.department = department
+        user.profile.employee_id = employee_id
+        user.profile.notes = profile_notes
+        user.profile.save()
+
         # 记录操作日志
         OperationLog.objects.create(
             operator=request.user,
@@ -270,4 +292,24 @@ def user_detail(request, pk):
     return render(request, 'inventory/system/user_detail.html', {
         'user': user,
         'logs': logs
+    })
+
+
+@login_required
+def profile_edit(request):
+    """当前登录用户编辑自己的扩展信息（不涉及登录凭据）"""
+    profile = request.user.profile  # signal 保证必定存在
+
+    if request.method == 'POST':
+        profile.phone = request.POST.get('phone', '')
+        profile.department = request.POST.get('department', '')
+        profile.employee_id = request.POST.get('employee_id', '')
+        profile.notes = request.POST.get('notes', '')
+        profile.save()
+
+        messages.success(request, '个人信息已更新')
+        return redirect('profile_edit')
+
+    return render(request, 'inventory/system/profile_edit.html', {
+        'profile': profile
     }) 
