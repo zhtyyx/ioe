@@ -64,6 +64,7 @@
                         <tr>
                             <th>用户名</th>
                             <th>姓名</th>
+                            <th>邮箱</th>
                             <th>手机号</th>
                             <th>部门</th>
                             <th>用户组</th>
@@ -77,6 +78,7 @@
                         <tr>
                             <td>{{ user.username }}</td>
                             <td>{{ user.get_full_name|default:"-" }}</td>
+                            <td>{{ user.email|default:"-" }}</td>
                             <td>{{ user.profile.phone|default:"-" }}</td>
                             <td>{{ user.profile.department|default:"-" }}</td>
                             <td>
