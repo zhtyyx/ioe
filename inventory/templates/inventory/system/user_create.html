@@ -71,6 +71,28 @@
                             </div>
                         </div>
                         
+                        <!-- 扩展信息 -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">手机号</label>
+                                <input type="text" name="phone" id="phone" class="form-control" value="{{ form_data.phone|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="department" class="form-label">部门</label>
+                                <input type="text" name="department" id="department" class="form-control" value="{{ form_data.department|default:'' }}" placeholder="例如：销售部">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="employee_id" class="form-label">工号</label>
+                                <input type="text" name="employee_id" id="employee_id" class="form-control" value="{{ form_data.employee_id|default:'' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="profile_notes" class="form-label">备注</label>
+                                <textarea name="profile_notes" id="profile_notes" class="form-control" rows="2">{{ form_data.profile_notes|default:'' }}</textarea>
+                            </div>
+                        </div>
+
                         <!-- 用户组和权限 -->
                         <div class="mb-3">
                             <label class="form-label">用户角色</label>

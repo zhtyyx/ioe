@@ -163,7 +163,14 @@ def inventory_in(request):
                 messages.error(request, f'入库失败: {result}')
     else:
         form = InventoryTransactionForm()
-    
+        product_id = request.GET.get('product_id')
+        if product_id:
+            try:
+                product = Product.objects.get(id=product_id)
+                form.fields['product'].initial = product
+            except Product.DoesNotExist:
+                pass
+
     return render(request, 'inventory/inventory_transaction_form.html', {
         'form': form,
         'form_title': '商品入库',
@@ -217,7 +224,14 @@ def inventory_out(request):
                 messages.error(request, f'出库失败: {result}')
     else:
         form = InventoryTransactionForm()
-    
+        product_id = request.GET.get('product_id')
+        if product_id:
+            try:
+                product = Product.objects.get(id=product_id)
+                form.fields['product'].initial = product
+            except Product.DoesNotExist:
+                pass
+
     return render(request, 'inventory/inventory_transaction_form.html', {
         'form': form,
         'form_title': '商品出库',

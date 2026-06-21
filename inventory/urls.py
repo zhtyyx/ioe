@@ -47,6 +47,8 @@ urlpatterns = [
     path('products/<int:pk>/edit/', product_views.product_update, name='product_edit'),
     path('products/<int:pk>/', product_views.product_detail, name='product_detail'),
     path('products/<int:pk>/delete/', product_views.product_delete, name='product_delete'),
+    path('products/import/', product_views.product_import, name='product_import'),
+    path('products/export/', product_views.product_export, name='product_export'),
     
     # 使用新的条码视图
     path('products/barcode/', views_barcode.barcode_product_create, name='barcode_product_create'),
@@ -93,6 +95,16 @@ urlpatterns = [
     path('categories/create/', views_category.category_create, name='category_create'),
     path('categories/<int:category_id>/edit/', views_category.category_edit, name='category_edit'),
     path('categories/<int:category_id>/delete/', views_category.category_delete, name='category_delete'),
+
+    # 颜色/尺码管理URL
+    path('colors/', views_category.color_list, name='color_list'),
+    path('colors/create/', views_category.color_create, name='color_create'),
+    path('colors/<int:color_id>/edit/', views_category.color_edit, name='color_edit'),
+    path('colors/<int:color_id>/delete/', views_category.color_delete, name='color_delete'),
+    path('sizes/', views_category.size_list, name='size_list'),
+    path('sizes/create/', views_category.size_create, name='size_create'),
+    path('sizes/<int:size_id>/edit/', views_category.size_edit, name='size_edit'),
+    path('sizes/<int:size_id>/delete/', views_category.size_delete, name='size_delete'),
     
     # 库存盘点URL
     path('inventory-checks/', views_inventory_check.inventory_check_list, name='inventory_check_list'),
@@ -120,6 +132,7 @@ urlpatterns = [
     path('sales/<int:sale_id>/', sales_views.sale_detail, name='sale_detail'),
     path('sales/<int:sale_id>/complete/', sales_views.sale_complete, name='sale_complete'),
     path('sales/<int:sale_id>/cancel/', sales_views.sale_cancel, name='sale_cancel'),
+    path('sales/<int:sale_id>/return/', sales_views.sale_return, name='sale_return'),
     path('sales/<int:sale_id>/items/<int:item_id>/delete/', sales_views.sale_delete_item, name='sale_item_delete'),
 
     # 系统管理 - 新增系统日志相关URL
@@ -139,6 +152,9 @@ urlpatterns = [
     path('system/backup/download/<str:backup_name>/', system_views.download_backup, name='download_backup'),
     path('system/manual-backup/', system_views.manual_backup, name='manual_backup'),
     
+    # 个人资料
+    path('profile/', system_views.profile_edit, name='profile_edit'),
+
     # 用户管理相关URL
     path('system/users/', system_views.user_list, name='user_list'),
     path('system/users/create/', system_views.user_create, name='user_create'),

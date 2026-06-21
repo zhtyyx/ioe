@@ -26,23 +26,22 @@ def import_products_from_csv(csv_file, user):
     headers = next(csv_data)  # 获取表头
     
     # 验证必要的表头
-    required_headers = ['name', 'retail_price']
+    required_headers = ['name', 'price']
     missing_headers = [h for h in required_headers if h not in headers]
     if missing_headers:
         raise ValueError(f"CSV文件缺少必要的表头: {', '.join(missing_headers)}")
-    
+
     # 获取各列索引
     headers_lower = [h.lower() for h in headers]
     name_idx = headers_lower.index('name')
-    retail_price_idx = headers_lower.index('retail_price')
-    
+    retail_price_idx = headers_lower.index('price')
+
     # 可选列的索引
     category_idx = headers_lower.index('category') if 'category' in headers_lower else -1
-    wholesale_price_idx = headers_lower.index('wholesale_price') if 'wholesale_price' in headers_lower else -1
-    cost_price_idx = headers_lower.index('cost_price') if 'cost_price' in headers_lower else -1
+    cost_price_idx = headers_lower.index('cost') if 'cost' in headers_lower else -1
     barcode_idx = headers_lower.index('barcode') if 'barcode' in headers_lower else -1
-    sku_idx = headers_lower.index('sku') if 'sku' in headers_lower else -1
     specification_idx = headers_lower.index('specification') if 'specification' in headers_lower else -1
+    manufacturer_idx = headers_lower.index('manufacturer') if 'manufacturer' in headers_lower else -1
     
     # 处理每一行数据
     for row_num, row in enumerate(csv_data, start=2):  # 从2开始，因为1是表头
@@ -93,9 +92,9 @@ def import_products_from_csv(csv_file, user):
                     category=category,
                     price=retail_price,
                     cost=float(row[cost_price_idx]) if cost_price_idx >= 0 and row[cost_price_idx] else retail_price * 0.7,
-                    barcode=row[barcode_idx].strip() if barcode_idx >= 0 and row[barcode_idx] else None,
-                    specification=row[specification_idx].strip() if specification_idx >= 0 and row[specification_idx] else "",
-                    created_by=user
+                    barcode=row[barcode_idx].strip() if barcode_idx >= 0 and row[barcode_idx] else '',
+                    specification=row[specification_idx].strip() if specification_idx >= 0 and row[specification_idx] else '',
+                    manufacturer=row[manufacturer_idx].strip() if manufacturer_idx >= 0 and row[manufacturer_idx] else '',
                 )
                 
                 # 创建初始库存记录
@@ -120,9 +119,8 @@ def search_products(query, category_id=None, active_only=True):
     
     if query:
         products = products.filter(
-            Q(name__icontains=query) | 
+            Q(name__icontains=query) |
             Q(barcode__icontains=query) |
-            Q(sku__icontains=query) |
             Q(specification__icontains=query)
         )
     

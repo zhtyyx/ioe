@@ -1,0 +1,30 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}{% if size %}编辑尺码{% else %}添加尺码{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">{% if size %}编辑尺码{% else %}添加尺码{% endif %}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="name" class="form-label">尺码名称 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               value="{{ size.name|default:'' }}" required
+                               placeholder="例如：均码、28码、EU 38">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <a href="{% url 'size_list' %}" class="btn btn-secondary">取消</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

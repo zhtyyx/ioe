@@ -821,6 +821,82 @@ def sale_delete_item(request, sale_id, item_id):
     return redirect('sale_item_create', sale_id=sale.id)
 
 @login_required
+def sale_return(request, sale_id):
+    """退货视图 — 恢复库存、退款余额、标记销售单为已退货"""
+    sale = get_object_or_404(Sale, id=sale_id)
+
+    if sale.status != 'COMPLETED':
+        messages.error(request, '只有已完成的销售单可以退货')
+        return redirect('sale_detail', sale_id=sale.id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '')
+
+        with transaction.atomic():
+            sale = Sale.objects.select_for_update().get(id=sale.id)
+            if sale.status != 'COMPLETED':
+                messages.error(request, '只有已完成的销售单可以退货')
+                return redirect('sale_detail', sale_id=sale.id)
+
+            # 恢复库存
+            for item in sale.items.select_related('product'):
+                inventory_obj = Inventory.objects.select_for_update().get(product=item.product)
+                inventory_obj.quantity += item.quantity
+                inventory_obj.save()
+
+                InventoryTransaction.objects.create(
+                    product=item.product,
+                    transaction_type='IN',
+                    quantity=item.quantity,
+                    operator=request.user,
+                    notes=f'退货单 #{sale.id} 恢复库存'
+                )
+
+            # 如果有会员且使用了余额支付，退款到余额
+            if sale.member and sale.balance_paid and sale.balance_paid > 0:
+                member = Member.objects.select_for_update().get(id=sale.member.id)
+                member.balance += sale.balance_paid
+                member.save(update_fields=['balance', 'updated_at'])
+
+                MemberTransaction.objects.create(
+                    member=member,
+                    transaction_type='REFUND',
+                    balance_change=sale.balance_paid,
+                    points_change=0,
+                    description=f'销售单 #{sale.id} 退货退款',
+                    created_by=request.user,
+                    related_object_id=sale.id,
+                    related_object_type='Sale'
+                )
+
+            # 如果扣过积分，退回积分
+            if sale.member and sale.points_earned > 0:
+                member = Member.objects.select_for_update().get(id=sale.member.id)
+                member.points = max(0, member.points - sale.points_earned)
+                member.purchase_count = max(0, member.purchase_count - 1)
+                member.total_spend = max(0, member.total_spend - sale.final_amount)
+                member.save(update_fields=['points', 'purchase_count', 'total_spend', 'updated_at'])
+
+            # 更改状态
+            sale.status = 'RETURNED'
+            sale.remark = f"{sale.remark or ''}\n退货原因: {reason}".strip()
+            sale.save()
+
+            OperationLog.objects.create(
+                operator=request.user,
+                operation_type='SALE',
+                details=f'销售单 #{sale.id} 退货，原因: {reason}',
+                related_object_id=sale.id,
+                related_content_type=ContentType.objects.get_for_model(Sale)
+            )
+
+        messages.success(request, '销售单已退货，库存已恢复，款项已退回')
+        return redirect('sale_detail', sale_id=sale.id)
+
+    return render(request, 'inventory/sale_return.html', {'sale': sale})
+
+
+@login_required
 def member_purchases(request):
     """会员购买历史报表"""
     # 获取查询参数

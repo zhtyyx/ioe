@@ -32,7 +32,8 @@ from .user import (
     user_create,
     user_update,
     user_delete,
-    user_detail
+    user_detail,
+    profile_edit
 )
 
 __all__ = [
@@ -65,4 +66,5 @@ __all__ = [
     'user_update',
     'user_delete',
     'user_detail',
+    'profile_edit',
 ] 
