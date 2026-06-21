@@ -28,7 +28,7 @@
   <a href="README.docker_en.md"><b>Docker Guide</b></a>
 </p>
 
-<img src="./asset/ioe_dashboard_en.png" width="100%" alt="IOE English dashboard preview" />
+<img src="./asset/main_page.png" width="100%" alt="IOE dashboard preview" />
 
 </div>
 
@@ -71,8 +71,6 @@ Use it when you need a self-hosted system for:
 ## Screenshots
 
 <div align="center">
-  <img src="./asset/ioe_dashboard_en.png" width="100%" alt="English dashboard" /><br/><br/>
-  <img src="./asset/ioe_login_en.png" width="100%" alt="English login page" /><br/><br/>
   <img src="./asset/库存列表.png" width="100%" alt="Inventory list" /><br/><br/>
   <img src="./asset/收银台-添加商品.png" width="100%" alt="Checkout workflow" /><br/><br/>
   <img src="./asset/销售记录.png" width="100%" alt="Sales records" /><br/><br/>

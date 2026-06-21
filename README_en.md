@@ -116,8 +116,6 @@ For Docker deployment instructions, please refer to [Docker Deployment Guide](RE
 ## 📸 System Screenshots
 
 <div align="center">
-  <img src="./asset/ioe_dashboard_en.png" width="100%" /><br/><br/>
-  <img src="./asset/ioe_login_en.png" width="100%" /><br/><br/>
   <img src="./asset/开始盘点.png" width="100%" /><br/><br/>
   <img src="./asset/报表中心.png" width="100%" /><br/><br/>
   <img src="./asset/会员等级管理.png" width="100%" /><br/><br/>
@@ -129,6 +127,7 @@ For Docker deployment instructions, please refer to [Docker Deployment Guide](RE
   <img src="./asset/收银台-添加商品.png" width="100%" /><br/><br/>
   <img src="./asset/添加会员.png" width="100%" /><br/><br/>
   <img src="./asset/销售记录.png" width="100%" /><br/><br/>
+  <img src="./asset/main_page.png" width="100%" /><br/><br/>
 
 </div>
 
