@@ -1,157 +1,176 @@
 <div align="center">
 
-# 📦 IOE 库存管理系统
+# IOE 库存管理系统
 
-[![Django](https://img.shields.io/badge/Django-4.2+-green.svg)](https://www.djangoproject.com/) &nbsp; [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/) &nbsp; [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**面向零售门店、小型仓库和销售场景的 Django 库存、收银、会员与报表系统。**
 
-_一站式零售库存解决方案，为您的商店量身定制_
+<p>
+  <a href="README.md">English</a> | <b>简体中文</b>
+</p>
+
+<p>
+  <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/Django-4.2+-0C4B33?style=for-the-badge&logo=django&logoColor=white" alt="Django" /></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" /></a>
+  <a href="README.docker_zh.md"><img src="https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-F6C915?style=for-the-badge" alt="MIT License" /></a>
+</p>
+
+<p>
+  <a href="https://github.com/zhtyyx/ioe/stargazers"><img src="https://img.shields.io/github/stars/zhtyyx/ioe?style=social" alt="GitHub stars" /></a>
+  <a href="https://github.com/zhtyyx/ioe/fork"><img src="https://img.shields.io/github/forks/zhtyyx/ioe?style=social" alt="GitHub forks" /></a>
+  <a href="https://github.com/zhtyyx/ioe/issues"><img src="https://img.shields.io/github/issues/zhtyyx/ioe" alt="GitHub issues" /></a>
+</p>
+
+<p>
+  <a href="#快速开始"><b>快速开始</b></a> ·
+  <a href="#系统截图"><b>系统截图</b></a> ·
+  <a href="#star-趋势"><b>Star 趋势</b></a> ·
+  <a href="README.docker_zh.md"><b>Docker 部署</b></a>
+</p>
+
+<img src="./asset/main_page.png" width="100%" alt="IOE 系统首页预览" />
 
 </div>
 
-## 🚀 项目概述
+## 为什么选择 IOE
 
-IOE是一个基于Django开发的**综合性库存管理系统**，专为零售商店、小型仓库和商品销售场所设计。系统提供了完整的商品管理、库存跟踪、销售记录、会员管理和数据分析功能，帮助企业高效管理库存和销售流程。
+IOE 不是单纯的商品表 CRUD，而是围绕真实门店流程设计的一套库存管理系统。它把商品资料、库存变动、收银销售、会员余额、积分、库存盘点、经营报表、操作日志和备份工具放在一个 Django 应用里，便于自部署和二次开发。
 
-<!-- 内容分隔线 -->
+适合这些场景：
 
-## ✨ 主要功能模块
+- 零售门店需要统一管理商品、库存和收银
+- 小型仓库需要入库、出库、调整和盘点
+- 店铺需要会员等级、积分、充值和余额消费
+- 团队希望拥有可定制、可私有部署的 Django 代码库
 
-### 🏷️ 商品管理
+## 核心能力
 
-- **商品信息管理**：添加、编辑和查看商品详细信息，包括名称、条码、价格等
-- **商品分类管理**：创建和管理商品分类，便于组织和查询
-- **商品规格管理**：设置商品的颜色、尺码、规格和制造商等属性
-- **商品图片上传**：上传和管理商品图片
+<table>
+  <tr>
+    <td><b>商品资料</b></td>
+    <td>商品、分类、条码、图片、规格、制造商和价格管理。</td>
+  </tr>
+  <tr>
+    <td><b>库存控制</b></td>
+    <td>入库、出库、调整、低库存预警、库存流水和库存盘点。</td>
+  </tr>
+  <tr>
+    <td><b>销售收银</b></td>
+    <td>销售单、支付方式、会员折扣、余额支付、积分、取消和退货流程。</td>
+  </tr>
+  <tr>
+    <td><b>会员运营</b></td>
+    <td>会员资料、会员等级、生日提醒、充值记录、余额、积分和消费历史。</td>
+  </tr>
+  <tr>
+    <td><b>报表与系统工具</b></td>
+    <td>销售趋势、商品表现、库存健康、利润分析、操作日志和系统备份。</td>
+  </tr>
+</table>
 
-### 📊 库存管理
+## 系统截图
 
-- **实时库存跟踪**：精确掌握每个商品的库存数量
-- **智能库存预警**：设置阈值，低库存自动提醒
-- **入库/出库管理**：系统自动更新库存数量
-- **库存调整**：支持手动调整和批量操作
-- **全面交易记录**：详细记录所有库存变动明细
+<div align="center">
+  <img src="./asset/库存列表.png" width="100%" alt="库存列表" /><br/><br/>
+  <img src="./asset/收银台-添加商品.png" width="100%" alt="收银台" /><br/><br/>
+  <img src="./asset/销售记录.png" width="100%" alt="销售记录" /><br/><br/>
+  <img src="./asset/报表中心.png" width="100%" alt="报表中心" /><br/><br/>
+  <img src="./asset/库存盘点.png" width="100%" alt="库存盘点" /><br/><br/>
+</div>
 
-### 📝 库存盘点
+## 快速开始
 
-- **盘点计划创建**：周期性或临时库存盘点安排
-- **高效盘点执行**：记录实际与系统差异
-- **盘点审核流程**：确保盘点数据准确性
-- **详细盘点报告**：生成可视化盘点差异报告
-- **自动库存调整**：根据盘点结果一键调整
-
-### 💰 销售管理
-
-- **销售单创建**：直观便捷的销售操作界面
-- **多元支付方式**：现金、微信、支付宝、银行卡和账户余额等
-- **灵活销售折扣**：支持多种折扣策略
-- **销售记录查询**：多维度筛选历史销售数据
-- **无忧退货处理**：简化销售退货流程
-
-### 👥 会员管理
-
-- **会员信息管理**：全面记录会员基础资料
-- **会员等级体系**：自定义等级和专属优惠
-- **积分奖励系统**：消费自动累积积分
-- **消费历史追踪**：会员消费行为分析
-- **账户余额管理**：充值与消费一体化
-- **贴心生日提醒**：增强会员关怀
-
-### 📊 数据分析与报表
-
-- **销售趋势图表**：直观展示业务走向
-- **商品表现分析**：识别热销与滞销商品
-- **库存健康评估**：优化库存投资回报
-- **利润精准计算**：多维度利润分析
-- **会员价值评估**：深入了解会员贡献
-- **系统使用审计**：全面操作日志记录
-
-## 💡 系统特点
-
-| 特点 | 描述 |
-|------|------|
-| 📱 用户友好 | 简洁直观的界面设计，易于上手和使用 |
-| 🔄 功能完善 | 覆盖零售业务全流程，从商品入库到销售、会员管理 |
-| 📊 数据可视化 | 丰富的报表和图表，直观展示业务数据 |
-| 🔒 安全可靠 | 完善的权限控制和操作日志，保障数据安全 |
-| 🔌 灵活扩展 | 模块化设计，易于扩展新功能 |
-
-## 🚀 快速开始
-
-### 安装依赖
+### 1. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 初始化数据库
+### 2. 初始化数据库
 
-系统默认使用 SQLite，开箱即用，执行迁移即可自动创建：
+系统默认使用 SQLite，本地运行无需额外安装数据库服务。
 
 ```bash
 python manage.py migrate
 ```
 
-> 如需用于生产环境，可在 `inventory/settings.py` 的 `DATABASES` 中改用 PostgreSQL（已内置 `psycopg2` 驱动）。
+生产环境可以在 `inventory/settings.py` 的 `DATABASES` 中切换到 PostgreSQL。项目已包含 `psycopg2` 依赖。
 
-### 创建管理员账户
+### 3. 创建管理员账户
 
 ```bash
 python manage.py createsuperuser
 ```
 
-### 启动服务
+### 4. 启动开发服务
 
 ```bash
 python manage.py runserver
 ```
 
-### 访问系统
+然后在浏览器中打开 [http://127.0.0.1:8000/](http://127.0.0.1:8000/)。
 
-在浏览器中访问 [http://127.0.0.1:8000/](http://127.0.0.1:8000/) 即可使用系统
+## Docker 部署
 
-### Docker部署
+- [Docker 部署指南](README.docker_zh.md)
+- [Docker Deployment Guide](README.docker_en.md)
 
-有关Docker部署的详细说明，请参阅[Docker部署指南](README.docker.md)
-
-## 📸 系统截图
-
-<div align="center">
-  <img src="./asset/开始盘点.png" width="100%" /><br/><br/>
-  <img src="./asset/报表中心.png" width="100%" /><br/><br/>
-  <img src="./asset/会员等级管理.png" width="100%" /><br/><br/>
-  <img src="./asset/会员管理.png" width="100%" /><br/><br/>
-  <img src="./asset/商品分类列表.png" width="100%" /><br/><br/>
-  <img src="./asset/导入会员.png" width="100%" /><br/><br/>
-  <img src="./asset/库存列表.png" width="100%" /><br/><br/>
-  <img src="./asset/库存盘点.png" width="100%" /><br/><br/>
-  <img src="./asset/收银台-添加商品.png" width="100%" /><br/><br/>
-  <img src="./asset/添加会员.png" width="100%" /><br/><br/>
-  <img src="./asset/销售记录.png" width="100%" /><br/><br/>
-  <img src="./asset/main_page.png" width="100%" /><br/><br/>
-
-</div>
-
-## 📄 License
-
-本项目采用 MIT License
-
-## ☕ Buy Me a Coffee
-如果你觉得这个项目对你有帮助，你可以通过以下方式支持：
+## Star 趋势
 
 <div align="center">
-  <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
+  <a href="https://star-history.com/#zhtyyx/ioe&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date&theme=dark" />
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date" />
+      <img alt="IOE Star 趋势图" src="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date" width="100%" />
+    </picture>
+  </a>
 </div>
 
+## 项目结构
 
-## 📞 联系我们
+```text
+.
+├── inventory/        # 主要 Django 应用
+├── project/          # Django 项目配置
+├── asset/            # 截图和 README 素材
+├── requirements.txt  # Python 依赖
+├── Dockerfile
+├── docker-compose.yml
+└── manage.py
+```
 
-如有问题，建议，或定制化需求，欢迎通过以下方式联系：
+## 参与贡献
 
-- 项目问题: [提交Issue](https://github.com/zhtyyx/ioe/issues)
-- 邮箱: zhtyyx@gmail.com
+欢迎提交 issue 和 pull request。为了保持主分支稳定，建议：
+
+- 一个 PR 只修一个问题
+- 一个 PR 只做一个功能域
+- 涉及库存、销售、余额、备份的改动请补测试
+- UI 改动请附截图说明
+
+较大的功能建议先开 issue 讨论范围，再开始实现。
+
+## 支持项目
+
+如果这个项目对你有帮助，可以通过以下方式支持后续维护：
+
+<div align="center">
+  <img src="./asset/buyme.jpg" width="30%" alt="支持项目二维码" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" alt="微信二维码" />
+</div>
+
+## 联系方式
+
+- 问题反馈：[GitHub Issues](https://github.com/zhtyyx/ioe/issues)
+- 邮箱：[zhtyyx@gmail.com](mailto:zhtyyx@gmail.com)
+
+## 许可证
+
+本项目采用 [MIT License](LICENSE)。
 
 ---
 
 <div align="center">
-  软件著作权已登记，如有疑问请联系我。  
+  软件著作权已登记，如有疑问请联系项目维护者。<br/>
+  Copyright (c) 2025-2026 IOE Team. All rights reserved.
 </div>
