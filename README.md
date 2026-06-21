@@ -73,11 +73,13 @@ Use it when you need a self-hosted system for:
 <div align="center">
   <img src="./asset/ioe_dashboard_en.png" width="100%" alt="English dashboard" /><br/><br/>
   <img src="./asset/ioe_login_en.png" width="100%" alt="English login page" /><br/><br/>
-  <img src="./asset/库存列表.png" width="100%" alt="Inventory list" /><br/><br/>
-  <img src="./asset/收银台-添加商品.png" width="100%" alt="Checkout workflow" /><br/><br/>
-  <img src="./asset/销售记录.png" width="100%" alt="Sales records" /><br/><br/>
-  <img src="./asset/报表中心.png" width="100%" alt="Reports center" /><br/><br/>
-  <img src="./asset/库存盘点.png" width="100%" alt="Inventory counting" /><br/><br/>
+  <img src="./asset/ioe_products_en.png" width="100%" alt="English product list" /><br/><br/>
+  <img src="./asset/ioe_categories_en.png" width="100%" alt="English category list" /><br/><br/>
+  <img src="./asset/ioe_inventory_en.png" width="100%" alt="English inventory list" /><br/><br/>
+  <img src="./asset/ioe_checkout_en.png" width="100%" alt="English checkout workflow" /><br/><br/>
+  <img src="./asset/ioe_sales_en.png" width="100%" alt="English sales records" /><br/><br/>
+  <img src="./asset/ioe_reports_en.png" width="100%" alt="English reports center" /><br/><br/>
+  <img src="./asset/ioe_stocktaking_en.png" width="100%" alt="English stocktaking list" /><br/><br/>
 </div>
 
 ## Quick Start

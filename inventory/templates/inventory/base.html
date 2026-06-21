@@ -48,6 +48,7 @@
             font-weight: 700;
             font-size: 1.4rem;
             padding: 0.5rem 0;
+            white-space: nowrap;
         }
         
         .nav-link {
@@ -62,6 +63,10 @@
         .nav-link:hover, .nav-link.active {
             color: white !important;
             background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .language-switcher {
+            min-width: 7rem;
         }
         
         /* 卡片样式优化 */
@@ -571,14 +576,15 @@
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
-        <div class="container">
+        <div class="container-fluid px-4">
             <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
-                <i class="bi bi-box-seam me-2"></i>{% if request.LANGUAGE_CODE == 'en' %}Inventory Management System{% else %}库存管理系统{% endif %}
+                <i class="bi bi-box-seam me-2"></i>IOE
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
+                {% if request.user.is_authenticated %}
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/product/' %}active{% endif %}" href="{% url 'product_list' %}">
@@ -620,15 +626,19 @@
                         </a>
                     </li>
                 </ul>
+                {% else %}
+                <div class="me-auto"></div>
+                {% endif %}
                 <div class="d-flex align-items-center gap-2">
                     <form action="{% url 'set_language' %}" method="post" class="d-flex align-items-center">
                         {% csrf_token %}
                         <input name="next" type="hidden" value="{{ request.get_full_path }}">
-                        <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" aria-label="{% if request.LANGUAGE_CODE == 'en' %}Language{% else %}语言{% endif %}">
+                        <select name="language" class="form-select form-select-sm language-switcher" onchange="this.form.submit()" aria-label="{% if request.LANGUAGE_CODE == 'en' %}Language{% else %}语言{% endif %}">
                             <option value="zh-hans" {% if request.LANGUAGE_CODE != 'en' %}selected{% endif %}>中文</option>
                             <option value="en" {% if request.LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
                         </select>
                     </form>
+                    {% if request.user.is_authenticated %}
                     <div class="dropdown">
                         <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="bi bi-person-circle me-1"></i>
@@ -648,6 +658,7 @@
                             </li>
                         </ul>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

@@ -1,6 +1,6 @@
 {% extends 'inventory/base.html' %}
 
-{% block title %}库存管理 - {{ block.super }}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Inventory{% else %}库存管理{% endif %} - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -9,12 +9,12 @@
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h2 class="card-title mb-0">库存管理</h2>
-                        <p class="text-muted mb-md-0">管理所有商品库存信息</p>
+                        <h2 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Inventory{% else %}库存管理{% endif %}</h2>
+                        <p class="text-muted mb-md-0">{% if request.LANGUAGE_CODE == 'en' %}Manage product stock levels and alerts{% else %}管理所有商品库存信息{% endif %}</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'inventory_create' %}" class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-1"></i> 入库
+                            <i class="bi bi-plus-circle me-1"></i> {% if request.LANGUAGE_CODE == 'en' %}Stock In{% else %}入库{% endif %}
                         </a>
                     </div>
                 </div>
@@ -33,13 +33,13 @@
                         <div class="col-md-4">
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
-                                <input type="text" name="search" class="form-control" value="{{ search_query }}" placeholder="搜索商品名称或条码...">
+                                <input type="text" name="search" class="form-control" value="{{ search_query }}" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Search product name or barcode...{% else %}搜索商品名称或条码...{% endif %}">
                             </div>
                         </div>
                         <div class="col-md-8">
                             <div class="d-flex flex-wrap gap-2">
                                 <select name="category" class="form-select" style="width: auto;" onchange="this.form.submit()">
-                                    <option value="">所有分类</option>
+                                    <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Categories{% else %}所有分类{% endif %}</option>
                                     {% for category in categories %}
                                     <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
                                         {{ category.name }}
@@ -48,7 +48,7 @@
                                 </select>
                                 
                                 <select name="color" class="form-select" style="width: auto;" onchange="this.form.submit()">
-                                    <option value="">所有颜色</option>
+                                    <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Colors{% else %}所有颜色{% endif %}</option>
                                     {% for color_code, color_name in colors %}
                                     <option value="{{ color_code }}" {% if selected_color == color_code %}selected{% endif %}>
                                         {{ color_name }}
@@ -57,7 +57,7 @@
                                 </select>
                                 
                                 <select name="size" class="form-select" style="width: auto;" onchange="this.form.submit()">
-                                    <option value="">所有尺码</option>
+                                    <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Sizes{% else %}所有尺码{% endif %}</option>
                                     {% for size_code, size_name in sizes %}
                                     <option value="{{ size_code }}" {% if selected_size == size_code %}selected{% endif %}>
                                         {{ size_name }}
@@ -65,10 +65,10 @@
                                     {% endfor %}
                                 </select>
                                 
-                                <button type="submit" class="btn btn-primary">筛选</button>
+                                <button type="submit" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}Filter{% else %}筛选{% endif %}</button>
                                 {% if selected_category or selected_color or selected_size or search_query %}
                                 <a href="{% url 'inventory_list' %}" class="btn btn-outline-secondary">
-                                    <i class="bi bi-x-circle me-1"></i>清除筛选
+                                    <i class="bi bi-x-circle me-1"></i>{% if request.LANGUAGE_CODE == 'en' %}Clear Filters{% else %}清除筛选{% endif %}
                                 </a>
                                 {% endif %}
                             </div>
@@ -79,9 +79,9 @@
                 <!-- 库存状态过滤 -->
                 <div class="d-flex mb-4">
                     <div class="btn-group" id="stockFilter">
-                        <button type="button" class="btn btn-outline-secondary active" data-filter="all">全部</button>
-                        <button type="button" class="btn btn-outline-danger" data-filter="low">库存预警</button>
-                        <button type="button" class="btn btn-outline-success" data-filter="normal">库存正常</button>
+                        <button type="button" class="btn btn-outline-secondary active" data-filter="all">{% if request.LANGUAGE_CODE == 'en' %}All{% else %}全部{% endif %}</button>
+                        <button type="button" class="btn btn-outline-danger" data-filter="low">{% if request.LANGUAGE_CODE == 'en' %}Low Stock{% else %}库存预警{% endif %}</button>
+                        <button type="button" class="btn btn-outline-success" data-filter="normal">{% if request.LANGUAGE_CODE == 'en' %}Normal{% else %}库存正常{% endif %}</button>
                     </div>
                 </div>
                 
@@ -89,13 +89,13 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>商品信息</th>
-                                <th>分类</th>
-                                <th>颜色/尺码</th>
-                                <th>当前库存</th>
-                                <th>预警库存</th>
-                                <th>状态</th>
-                                <th>操作</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Product{% else %}商品信息{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Category{% else %}分类{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Color / Size{% else %}颜色/尺码{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Current Stock{% else %}当前库存{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Warning Level{% else %}预警库存{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Status{% else %}状态{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Actions{% else %}操作{% endif %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -138,9 +138,9 @@
                                 </td>
                                 <td>
                                     {% if item.quantity <= item.warning_level %}
-                                    <span class="badge bg-danger">库存不足</span>
+                                    <span class="badge bg-danger">{% if request.LANGUAGE_CODE == 'en' %}Low Stock{% else %}库存不足{% endif %}</span>
                                     {% else %}
-                                    <span class="badge bg-success">正常</span>
+                                    <span class="badge bg-success">{% if request.LANGUAGE_CODE == 'en' %}Normal{% else %}正常{% endif %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -162,12 +162,12 @@
                                 <td colspan="7" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center">
                                         <i class="bi bi-clipboard-x text-muted" style="font-size: 2.5rem;"></i>
-                                        <p class="mt-3 mb-1">暂无库存数据</p>
+                                        <p class="mt-3 mb-1">{% if request.LANGUAGE_CODE == 'en' %}No inventory data yet{% else %}暂无库存数据{% endif %}</p>
                                         <small class="text-muted">
                                             {% if search_query or selected_category or selected_color or selected_size %}
-                                            没有找到符合筛选条件的库存，请尝试调整筛选条件
+                                            {% if request.LANGUAGE_CODE == 'en' %}No inventory matches the current filters{% else %}没有找到符合筛选条件的库存，请尝试调整筛选条件{% endif %}
                                             {% else %}
-                                            点击"入库"按钮添加库存
+                                            {% if request.LANGUAGE_CODE == 'en' %}Click Stock In to add inventory{% else %}点击"入库"按钮添加库存{% endif %}
                                             {% endif %}
                                         </small>
                                     </div>
@@ -182,7 +182,7 @@
                 {% if inventory_items %}
                 <div class="d-flex justify-content-between align-items-center mt-4">
                     <div class="text-muted small">
-                        显示 1 至 {{ inventory_items|length }} 条，共 {{ inventory_items|length }} 条记录
+                        {% if request.LANGUAGE_CODE == 'en' %}Showing 1 to {{ inventory_items|length }} of {{ inventory_items|length }} records{% else %}显示 1 至 {{ inventory_items|length }} 条，共 {{ inventory_items|length }} 条记录{% endif %}
                     </div>
                     <nav aria-label="Page navigation">
                         <ul class="pagination pagination-sm mb-0">

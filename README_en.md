@@ -118,17 +118,13 @@ For Docker deployment instructions, please refer to [Docker Deployment Guide](RE
 <div align="center">
   <img src="./asset/ioe_dashboard_en.png" width="100%" /><br/><br/>
   <img src="./asset/ioe_login_en.png" width="100%" /><br/><br/>
-  <img src="./asset/开始盘点.png" width="100%" /><br/><br/>
-  <img src="./asset/报表中心.png" width="100%" /><br/><br/>
-  <img src="./asset/会员等级管理.png" width="100%" /><br/><br/>
-  <img src="./asset/会员管理.png" width="100%" /><br/><br/>
-  <img src="./asset/商品分类列表.png" width="100%" /><br/><br/>
-  <img src="./asset/导入会员.png" width="100%" /><br/><br/>
-  <img src="./asset/库存列表.png" width="100%" /><br/><br/>
-  <img src="./asset/库存盘点.png" width="100%" /><br/><br/>
-  <img src="./asset/收银台-添加商品.png" width="100%" /><br/><br/>
-  <img src="./asset/添加会员.png" width="100%" /><br/><br/>
-  <img src="./asset/销售记录.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_products_en.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_categories_en.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_inventory_en.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_checkout_en.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_sales_en.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_reports_en.png" width="100%" /><br/><br/>
+  <img src="./asset/ioe_stocktaking_en.png" width="100%" /><br/><br/>
 
 </div>
 

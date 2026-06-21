@@ -1,6 +1,6 @@
 {% extends 'inventory/base.html' %}
 
-{% block title %}销售管理 - {{ block.super }}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Sales{% else %}销售管理{% endif %} - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -9,12 +9,12 @@
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h2 class="card-title mb-0">销售记录</h2>
-                        <p class="text-muted mb-md-0">管理所有销售交易信息</p>
+                        <h2 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Sales Records{% else %}销售记录{% endif %}</h2>
+                        <p class="text-muted mb-md-0">{% if request.LANGUAGE_CODE == 'en' %}Manage all sales transactions{% else %}管理所有销售交易信息{% endif %}</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'sale_create' %}" class="btn btn-primary">
-                            <i class="bi bi-cart-plus me-1"></i> 新增销售
+                            <i class="bi bi-cart-plus me-1"></i> {% if request.LANGUAGE_CODE == 'en' %}New Sale{% else %}新增销售{% endif %}
                         </a>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                         <div class="d-flex flex-column flex-md-row gap-2">
                             <div class="input-group">
                                 <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
-                                <input type="text" class="form-control border-primary" id="searchInput" placeholder="搜索订单编号或客户...">
+                                <input type="text" class="form-control border-primary" id="searchInput" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Search order number or customer...{% else %}搜索订单编号或客户...{% endif %}">
                                 <button class="btn btn-outline-primary d-none d-md-inline-block" type="button" id="clearSearch" title="清除搜索"><i class="bi bi-x-lg"></i></button>
                             </div>
                             <div class="input-group">
@@ -44,9 +44,9 @@
                     </div>
                     <div class="col-lg-4 d-flex justify-content-lg-end align-items-center">
                         <div class="btn-group">
-                            <button type="button" class="btn btn-outline-secondary active" id="viewAll">全部</button>
-                            <button type="button" class="btn btn-outline-secondary" id="viewToday">今日</button>
-                            <button type="button" class="btn btn-outline-secondary" id="viewMonth">本月</button>
+                            <button type="button" class="btn btn-outline-secondary active" id="viewAll">{% if request.LANGUAGE_CODE == 'en' %}All{% else %}全部{% endif %}</button>
+                            <button type="button" class="btn btn-outline-secondary" id="viewToday">{% if request.LANGUAGE_CODE == 'en' %}Today{% else %}今日{% endif %}</button>
+                            <button type="button" class="btn btn-outline-secondary" id="viewMonth">{% if request.LANGUAGE_CODE == 'en' %}This Month{% else %}本月{% endif %}</button>
                         </div>
                     </div>
                 </div>
@@ -55,12 +55,12 @@
                     <table class="table table-striped table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>订单信息</th>
-                                <th>销售日期</th>
-                                <th>客户</th>
-                                <th>金额</th>
-                                <th>状态</th>
-                                <th>操作</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Order{% else %}订单信息{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Sale Date{% else %}销售日期{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Customer{% else %}客户{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Amount{% else %}金额{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Status{% else %}状态{% endif %}</th>
+                                <th>{% if request.LANGUAGE_CODE == 'en' %}Actions{% else %}操作{% endif %}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -74,8 +74,8 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <h6 class="mb-0">订单 #{{ sale.id }}</h6>
-                                            <small class="text-muted">{{ sale.total_quantity }} 件商品</small>
+                                            <h6 class="mb-0">{% if request.LANGUAGE_CODE == 'en' %}Order{% else %}订单{% endif %} #{{ sale.id }}</h6>
+                                            <small class="text-muted">{{ sale.total_quantity }} {% if request.LANGUAGE_CODE == 'en' %}items{% else %}件商品{% endif %}</small>
                                         </div>
                                     </div>
                                 </td>
@@ -89,7 +89,7 @@
                                     {% if sale.member %}
                                     <span class="badge bg-info text-dark">{{ sale.member.name }}</span>
                                     {% else %}
-                                    <span class="text-muted">散客</span>
+                                    <span class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Walk-in{% else %}散客{% endif %}</span>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -99,7 +99,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <span class="badge bg-success">已完成</span>
+                                    <span class="badge bg-success">{% if request.LANGUAGE_CODE == 'en' %}Completed{% else %}已完成{% endif %}</span>
                                 </td>
                                 <td>
                                     <div class="btn-group">
@@ -117,8 +117,8 @@
                                 <td colspan="6" class="text-center py-4">
                                     <div class="d-flex flex-column align-items-center">
                                         <i class="bi bi-cart-x text-muted" style="font-size: 2rem;"></i>
-                                        <p class="mt-2 mb-0">暂无销售记录</p>
-                                        <small class="text-muted">点击"新增销售"按钮创建销售记录</small>
+                                        <p class="mt-2 mb-0">{% if request.LANGUAGE_CODE == 'en' %}No sales records yet{% else %}暂无销售记录{% endif %}</p>
+                                        <small class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Click New Sale to create a sales record{% else %}点击"新增销售"按钮创建销售记录{% endif %}</small>
                                     </div>
                                 </td>
                             </tr>
@@ -134,7 +134,7 @@
                         <div class="card border-0 bg-gradient-light h-100 shadow-sm">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="card-subtitle text-muted">今日销售额</h6>
+                                    <h6 class="card-subtitle text-muted">{% if request.LANGUAGE_CODE == 'en' %}Today Sales{% else %}今日销售额{% endif %}</h6>
                                     <div class="stat-icon bg-success-subtle rounded-circle p-2">
                                         <i class="bi bi-currency-yen text-success fs-4"></i>
                                     </div>
@@ -150,7 +150,7 @@
                         <div class="card border-0 bg-gradient-light h-100 shadow-sm">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="card-subtitle text-muted">本月销售额</h6>
+                                    <h6 class="card-subtitle text-muted">{% if request.LANGUAGE_CODE == 'en' %}Monthly Sales{% else %}本月销售额{% endif %}</h6>
                                     <div class="stat-icon bg-primary-subtle rounded-circle p-2">
                                         <i class="bi bi-bar-chart-line text-primary fs-4"></i>
                                     </div>
@@ -166,7 +166,7 @@
                         <div class="card border-0 bg-gradient-light h-100 shadow-sm">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="card-subtitle text-muted">总订单数</h6>
+                                    <h6 class="card-subtitle text-muted">{% if request.LANGUAGE_CODE == 'en' %}Total Orders{% else %}总订单数{% endif %}</h6>
                                     <div class="stat-icon bg-info-subtle rounded-circle p-2">
                                         <i class="bi bi-receipt text-info fs-4"></i>
                                     </div>

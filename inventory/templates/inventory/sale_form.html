@@ -1,7 +1,7 @@
 {% extends 'inventory/base.html' %}
 {% load custom_filters %}
 
-{% block title %}收银台 - {{ block.super }}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Checkout{% else %}收银台{% endif %} - {{ block.super }}{% endblock %}
 
 {% block head %}
 <!-- 版本更新标记：确认模板加载 -->
@@ -1195,18 +1195,18 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="left-area">
             <!-- 收银台标题 -->
             <div class="cashier-header">
-                <i class="bi bi-cart3"></i> 收银台
+                <i class="bi bi-cart3"></i> {% if request.LANGUAGE_CODE == 'en' %}Checkout{% else %}收银台{% endif %}
             </div>
             
             <!-- 商品搜索区域 -->
             <div class="product-search-area p-3 border-bottom">
                 <div class="input-group">
-                    <input type="text" id="product-search-input" class="form-control" placeholder="扫描商品条码或输入商品名称">
+                    <input type="text" id="product-search-input" class="form-control" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Scan barcode or enter product name{% else %}扫描商品条码或输入商品名称{% endif %}">
                     <button type="button" class="btn btn-primary" onclick="searchProductByBarcode(document.getElementById('product-search-input').value)">
-                        <i class="bi bi-search"></i> 查找
+                        <i class="bi bi-search"></i> {% if request.LANGUAGE_CODE == 'en' %}Find{% else %}查找{% endif %}
                         </button>
                     </div>
-                <div class="text-muted small mt-1">按F3快捷键聚焦 / 按Enter键搜索</div>
+                <div class="text-muted small mt-1">{% if request.LANGUAGE_CODE == 'en' %}Press F3 to focus / Enter to search{% else %}按F3快捷键聚焦 / 按Enter键搜索{% endif %}</div>
             </div>
             
             <!-- 商品列表 -->
@@ -1214,12 +1214,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <table class="product-table">
                     <thead>
                         <tr>
-                            <th width="30%">商品名称</th>
-                            <th width="20%">数量</th>
-                            <th width="15%">单价</th>
-                            <th width="15%">规格</th>
-                            <th width="15%">小计</th>
-                            <th width="5%">操作</th>
+                            <th width="30%">{% if request.LANGUAGE_CODE == 'en' %}Product{% else %}商品名称{% endif %}</th>
+                            <th width="20%">{% if request.LANGUAGE_CODE == 'en' %}Quantity{% else %}数量{% endif %}</th>
+                            <th width="15%">{% if request.LANGUAGE_CODE == 'en' %}Unit Price{% else %}单价{% endif %}</th>
+                            <th width="15%">{% if request.LANGUAGE_CODE == 'en' %}Spec{% else %}规格{% endif %}</th>
+                            <th width="15%">{% if request.LANGUAGE_CODE == 'en' %}Subtotal{% else %}小计{% endif %}</th>
+                            <th width="5%">{% if request.LANGUAGE_CODE == 'en' %}Action{% else %}操作{% endif %}</th>
                         </tr>
                     </thead>
                     <tbody id="product-table-body">
@@ -1231,15 +1231,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- 订单汇总 -->
             <div class="order-summary">
                 <div class="summary-row">
-                    <div class="summary-label">商品总额：</div>
+                    <div class="summary-label">{% if request.LANGUAGE_CODE == 'en' %}Product Total:{% else %}商品总额：{% endif %}</div>
                     <div class="summary-value">¥<span id="total-amount">0.00</span></div>
                 </div>
                 <div class="summary-row">
-                    <div class="summary-label">折扣金额：</div>
+                    <div class="summary-label">{% if request.LANGUAGE_CODE == 'en' %}Discount:{% else %}折扣金额：{% endif %}</div>
                     <div class="summary-value">¥<span id="discount-amount">0.00</span></div>
                 </div>
                 <div class="summary-row">
-                    <div class="summary-label">应付金额：</div>
+                    <div class="summary-label">{% if request.LANGUAGE_CODE == 'en' %}Amount Due:{% else %}应付金额：{% endif %}</div>
                     <div class="summary-value">¥<span id="final-amount">0.00</span></div>
                 </div>
                 
@@ -1255,11 +1255,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <!-- 添加备注字段 -->
                     <div class="form-group mb-3">
-                        <label for="remark" class="text-muted small">备注信息 (可选):</label>
+                        <label for="remark" class="text-muted small">{% if request.LANGUAGE_CODE == 'en' %}Remark (optional):{% else %}备注信息 (可选):{% endif %}</label>
                         <textarea id="remark" name="remark" class="form-control form-control-sm" rows="2"></textarea>
                     </div>
                     
-                    <button type="submit" class="btn btn-success checkout-btn">完成结账</button>
+                    <button type="submit" class="btn btn-success checkout-btn">{% if request.LANGUAGE_CODE == 'en' %}Complete Checkout{% else %}完成结账{% endif %}</button>
                 </form>
             </div>
         </div>
@@ -1268,54 +1268,54 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="right-area">
             <!-- 收银员信息 -->
             <div class="cashier-info">
-                收银员：{{ request.user.username }}
+                {% if request.LANGUAGE_CODE == 'en' %}Cashier: {% else %}收银员：{% endif %}{{ request.user.username }}
             </div>
             
             <!-- 会员搜索和信息区域 -->
             <div class="member-section mb-4">
                 <!-- 会员搜索 -->
                 <div class="member-search mb-3">
-                    <h5 class="member-section-title mb-2">会员查找</h5>
+                    <h5 class="member-section-title mb-2">{% if request.LANGUAGE_CODE == 'en' %}Member Lookup{% else %}会员查找{% endif %}</h5>
                     <div class="input-group">
-                        <input type="text" id="member-search-input" class="form-control" placeholder="输入会员手机号或姓名">
+                        <input type="text" id="member-search-input" class="form-control" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Enter member phone or name{% else %}输入会员手机号或姓名{% endif %}">
                         <button class="btn btn-primary" type="button" onclick="searchMember(document.getElementById('member-search-input').value)">
                             <i class="bi bi-search"></i>
                         </button>
                     </div>
-                    <div class="text-muted small mt-1">按F2快捷键聚焦 / 按Enter键搜索</div>
+                    <div class="text-muted small mt-1">{% if request.LANGUAGE_CODE == 'en' %}Press F2 to focus / Enter to search{% else %}按F2快捷键聚焦 / 按Enter键搜索{% endif %}</div>
                 </div>
 
                 <!-- 会员信息显示 -->
                 <div class="member-info" id="member-info-box" style="display: {% if form.member.value %}block{% else %}none{% endif %}">
-                    <h5 class="mb-3">会员信息</h5>
+                    <h5 class="mb-3">{% if request.LANGUAGE_CODE == 'en' %}Member Information{% else %}会员信息{% endif %}</h5>
                     
                     <div class="member-field">
-                        <div class="field-label">姓名：</div>
+                        <div class="field-label">{% if request.LANGUAGE_CODE == 'en' %}Name:{% else %}姓名：{% endif %}</div>
                         <div class="field-value" id="member-name-value">{{ member_name|default:'未知' }}</div>
                 </div>
 
                     <div class="member-field">
-                        <div class="field-label">电话：</div>
+                        <div class="field-label">{% if request.LANGUAGE_CODE == 'en' %}Phone:{% else %}电话：{% endif %}</div>
                         <div class="field-value" id="member-phone-value">{{ member_phone|default:'未知' }}</div>
                         </div>
                     
                     <div class="member-field">
-                        <div class="field-label">折扣率：</div>
+                        <div class="field-label">{% if request.LANGUAGE_CODE == 'en' %}Discount Rate:{% else %}折扣率：{% endif %}</div>
                         <div class="field-value" id="member-discount-value">
                             {% if discount_rate and discount_rate < 1 %}
                                 {{ discount_rate|multiply:10|floatformat:1 }}折
                             {% else %}
-                                无折扣
+                                {% if request.LANGUAGE_CODE == 'en' %}No Discount{% else %}无折扣{% endif %}
                             {% endif %}
                         </div>
                     </div>
                     
                     <div class="mt-3">
                         <button type="button" class="btn btn-outline-primary btn-sm" onclick="editMember()">
-                            <i class="bi bi-pencil"></i> 编辑会员
+                            <i class="bi bi-pencil"></i> {% if request.LANGUAGE_CODE == 'en' %}Edit Member{% else %}编辑会员{% endif %}
                         </button>
                         <button type="button" class="btn btn-outline-danger btn-sm ms-2" onclick="clearMember()">
-                            <i class="bi bi-x-circle"></i> 清除
+                            <i class="bi bi-x-circle"></i> {% if request.LANGUAGE_CODE == 'en' %}Clear{% else %}清除{% endif %}
                         </button>
                     </div>
                         </div>
@@ -1323,32 +1323,32 @@ document.addEventListener('DOMContentLoaded', function() {
             
             <!-- 支付方式 -->
             <div class="payment-section mt-4">
-                <h5 class="payment-title mb-3">支付方式</h5>
+                <h5 class="payment-title mb-3">{% if request.LANGUAGE_CODE == 'en' %}Payment Method{% else %}支付方式{% endif %}</h5>
                 
                 <div class="payment-methods">
                     <button type="button" class="payment-btn active" data-payment="cash">
                         <i class="bi bi-cash-coin"></i>
-                        现金
+                        {% if request.LANGUAGE_CODE == 'en' %}Cash{% else %}现金{% endif %}
                     </button>
                     <button type="button" class="payment-btn" data-payment="wechat">
                         <i class="bi bi-wechat"></i>
-                        微信
+                        {% if request.LANGUAGE_CODE == 'en' %}WeChat{% else %}微信{% endif %}
                     </button>
                     <button type="button" class="payment-btn" data-payment="alipay">
                         <i class="bi bi-credit-card-2-front"></i>
-                        支付宝
+                        {% if request.LANGUAGE_CODE == 'en' %}Alipay{% else %}支付宝{% endif %}
                     </button>
                     <button type="button" class="payment-btn" data-payment="card">
                         <i class="bi bi-credit-card"></i>
-                        POS机
+                        {% if request.LANGUAGE_CODE == 'en' %}POS{% else %}POS机{% endif %}
                     </button>
                     <button type="button" class="payment-btn" data-payment="balance">
                         <i class="bi bi-wallet2"></i>
-                        余额
+                        {% if request.LANGUAGE_CODE == 'en' %}Balance{% else %}余额{% endif %}
                     </button>
                     <button type="button" class="payment-btn" data-payment="credit">
                         <i class="bi bi-journal-text"></i>
-                        挂账
+                        {% if request.LANGUAGE_CODE == 'en' %}Credit{% else %}挂账{% endif %}
                     </button>
                 </div>
             </div>
@@ -1360,7 +1360,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">选择商品</h5>
+                <h5 class="modal-title">{% if request.LANGUAGE_CODE == 'en' %}Select Product{% else %}选择商品{% endif %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="product-selection-content">
@@ -1375,7 +1375,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">选择会员</h5>
+                <h5 class="modal-title">{% if request.LANGUAGE_CODE == 'en' %}Select Member{% else %}选择会员{% endif %}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="member-selection-content">
