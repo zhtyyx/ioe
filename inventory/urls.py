@@ -130,6 +130,8 @@ urlpatterns = [
     path('system/logs/download/<str:file_name>/', system_views.download_log_file, name='download_log_file'),
     path('system/logs/delete/<str:file_name>/', system_views.delete_log_file, name='delete_log_file'),
     path('system/settings/', system_views.system_settings, name='system_settings'),
+    path('system/info/', system_views.system_info, name='system_info'),
+    path('system/store-settings/', system_views.store_settings, name='store_settings'),
     path('system/maintenance/', system_views.system_maintenance, name='system_maintenance'),
     
     # 备份相关 - 使用重构后的系统视图

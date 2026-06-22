@@ -1,0 +1,52 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}系统维护 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item active" aria-current="page">系统维护</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-4">系统维护</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">磁盘使用率：{{ disk_usage_percent }}%</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">内存使用率：{{ memory_usage_percent }}%</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">日志大小：{{ log_size_mb }} MB</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">活跃会话：{{ active_sessions }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">维护操作</div>
+        <div class="card-body">
+            <form method="post" action="{% url 'system_maintenance' %}" class="d-flex flex-wrap gap-2">
+                {% csrf_token %}
+                <button type="submit" name="operation" value="clear_sessions" class="btn btn-outline-primary">清理过期会话</button>
+                <button type="submit" name="operation" value="clear_logs" class="btn btn-outline-secondary">清理日志</button>
+                <button type="submit" name="operation" value="optimize_db" class="btn btn-outline-success">优化数据库</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
