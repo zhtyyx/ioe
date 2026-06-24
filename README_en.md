@@ -6,6 +6,11 @@
 
 _All-in-one retail inventory solution, tailored for your store_
 
+<br/>
+<p>📧 <b>zhtyyx@gmail.com</b></p>
+<p>📱 <b>WeChat</b></p>
+<img src="./asset/wxqun.png" width="20%" alt="WeChat QR Code" />
+
 </div>
 
 ## 🚀 Project Overview

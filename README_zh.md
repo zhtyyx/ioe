@@ -30,6 +30,11 @@
 
 <img src="./asset/main_page.png" width="100%" alt="IOE 系统首页预览" />
 
+<br/>
+<p>📧 <b>zhtyyx@gmail.com</b></p>
+<p>📱 <b>联系微信</b></p>
+<img src="./asset/wxqun.png" width="20%" alt="微信二维码" />
+
 </div>
 
 ## 为什么选择 IOE
