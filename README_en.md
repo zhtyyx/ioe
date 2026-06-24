@@ -6,11 +6,6 @@
 
 _All-in-one retail inventory solution, tailored for your store_
 
-<br/>
-<p>📧 <b>zhtyyx@gmail.com</b></p>
-<p>📱 <b>WeChat</b></p>
-<img src="./asset/wxqun.png" width="20%" alt="WeChat QR Code" />
-
 </div>
 
 ## 🚀 Project Overview
@@ -18,6 +13,11 @@ _All-in-one retail inventory solution, tailored for your store_
 IOE is a **comprehensive inventory management system** developed with Django, specifically designed for retail stores, small warehouses, and merchandise sales locations. The system provides complete product management, inventory tracking, sales recording, membership management, and data analysis functions to help businesses efficiently manage inventory and sales processes.
 
 <!-- Content separator -->
+
+<div align="center">
+  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 Scan to add me on WeChat</b><br/><br/>
+  <img src="./asset/wxqun.png" width="30%" alt="WeChat QR Code" />
+</div>
 
 ## ✨ Main Functional Modules
 

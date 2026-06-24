@@ -30,11 +30,6 @@
 
 <img src="./asset/ioe_dashboard_en.png" width="100%" alt="IOE English dashboard preview" />
 
-<br/>
-<p>📧 <b>zhtyyx@gmail.com</b></p>
-<p>📱 <b>WeChat</b></p>
-<img src="./asset/wxqun.png" width="20%" alt="WeChat QR Code" />
-
 </div>
 
 ## Why IOE
@@ -47,6 +42,11 @@ Use it when you need a self-hosted system for:
 - small warehouses that need stock movement and inventory counting
 - shops that use member levels, points, recharge, and account balance
 - teams that want a Django codebase they can customize and deploy themselves
+
+<div align="center">
+  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 Scan to add me on WeChat</b><br/><br/>
+  <img src="./asset/wxqun.png" width="30%" alt="WeChat QR Code" />
+</div>
 
 ## Highlights
 
