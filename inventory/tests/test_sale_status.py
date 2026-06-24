@@ -160,6 +160,34 @@ class SaleStatusTest(TestCase):
         sale.refresh_from_db()
         self.assertEqual(sale.total_amount, Decimal('20.00'))  # 删除后总额已落库
 
+    def test_sale_item_delete_requires_post(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+        self.inventory.refresh_from_db()
+        before_quantity = self.inventory.quantity
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+        self.assertTrue(SaleItem.objects.filter(pk=item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before_quantity)
+
+    def test_sale_detail_does_not_rewrite_persisted_amounts(self):
+        sale = self._make_sale(status='COMPLETED')
+        Sale.objects.filter(pk=sale.pk).update(
+            total_amount=Decimal('5.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('5.00'),
+        )
+
+        response = self.client.get(reverse('sale_detail', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('5.00'))
+        self.assertEqual(sale.final_amount, Decimal('5.00'))
+
     def test_sale_complete_page_renders_for_draft_sale(self):
         sale = self._make_sale(status='DRAFT')
 
@@ -203,3 +231,23 @@ class SaleStatusTest(TestCase):
         self.assertEqual(member.purchase_count, 0)
         self.assertEqual(member.total_spend, Decimal('0.00'))
         self.assertFalse(MemberTransaction.objects.filter(member=member).exists())
+
+    def test_sale_complete_rejects_unsupported_payment_method(self):
+        sale = self._make_sale(status='DRAFT')
+        self.inventory.refresh_from_db()
+        before_quantity = self.inventory.quantity
+
+        response = self.client.post(
+            reverse('sale_complete', args=[sale.id]),
+            {
+                'payment_method': 'credit',
+                'remark': 'unsupported payment',
+            },
+        )
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, 'DRAFT')
+        self.assertEqual(sale.payment_method, 'cash')
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before_quantity)
