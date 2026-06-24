@@ -1,0 +1,39 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}商店设置 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item active" aria-current="page">商店设置</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-4">商店设置</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{% url 'store_settings' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="store_name" class="form-label">商店名称</label>
+                    <input type="text" class="form-control" id="store_name" name="store_name" value="{{ store.name|default:'' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label">地址</label>
+                    <input type="text" class="form-control" id="address" name="address" value="{{ store.address|default:'' }}">
+                </div>
+                <div class="mb-3">
+                    <label for="phone" class="form-label">联系电话</label>
+                    <input type="text" class="form-control" id="phone" name="phone" value="{{ store.phone|default:'' }}">
+                </div>
+                <a href="{% url 'system_settings' %}" class="btn btn-outline-secondary">返回</a>
+                <button type="submit" class="btn btn-primary">保存设置</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

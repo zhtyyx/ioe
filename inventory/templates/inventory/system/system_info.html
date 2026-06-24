@@ -1,0 +1,76 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}系统信息 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb bg-white py-2">
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'system_settings' %}">系统设置</a></li>
+            <li class="breadcrumb-item active" aria-current="page">系统信息</li>
+        </ol>
+    </nav>
+
+    <h1 class="h3 mb-4">系统信息</h1>
+
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">运行环境</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">操作系统</dt>
+                        <dd class="col-sm-7">{{ system_info.os }} {{ system_info.os_version }}</dd>
+                        <dt class="col-sm-5">Python</dt>
+                        <dd class="col-sm-7">{{ system_info.python_version }}</dd>
+                        <dt class="col-sm-5">Django</dt>
+                        <dd class="col-sm-7">{{ system_info.django_version }}</dd>
+                        <dt class="col-sm-5">主机名</dt>
+                        <dd class="col-sm-7">{{ system_info.hostname }}</dd>
+                        <dt class="col-sm-5">服务器时间</dt>
+                        <dd class="col-sm-7">{{ system_info.server_time|date:"Y-m-d H:i:s" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">资源与数据</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">CPU 核心</dt>
+                        <dd class="col-sm-7">{{ system_info.cpu_count }}</dd>
+                        <dt class="col-sm-5">内存总量</dt>
+                        <dd class="col-sm-7">{{ system_info.memory_total }} GB</dd>
+                        <dt class="col-sm-5">可用内存</dt>
+                        <dd class="col-sm-7">{{ system_info.memory_available }} GB</dd>
+                        <dt class="col-sm-5">磁盘总量</dt>
+                        <dd class="col-sm-7">{{ system_info.disk_total }} GB</dd>
+                        <dt class="col-sm-5">磁盘剩余</dt>
+                        <dd class="col-sm-7">{{ system_info.disk_free }} GB</dd>
+                        <dt class="col-sm-5">媒体文件</dt>
+                        <dd class="col-sm-7">{{ media_size_mb }} MB</dd>
+                        <dt class="col-sm-5">日志文件</dt>
+                        <dd class="col-sm-7">{{ log_size_mb }} MB / {{ log_entries }} 行</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">数据库记录数</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-2 mb-2">商品：{{ db_stats.product_count }}</div>
+                <div class="col-md-2 mb-2">分类：{{ db_stats.category_count }}</div>
+                <div class="col-md-2 mb-2">库存：{{ db_stats.inventory_count }}</div>
+                <div class="col-md-2 mb-2">销售：{{ db_stats.sale_count }}</div>
+                <div class="col-md-2 mb-2">会员：{{ db_stats.member_count }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
