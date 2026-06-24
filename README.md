@@ -43,11 +43,6 @@ Use it when you need a self-hosted system for:
 - shops that use member levels, points, recharge, and account balance
 - teams that want a Django codebase they can customize and deploy themselves
 
-<div align="center">
-  <p>📧 <b>zhtyyx@gmail.com</b> &nbsp;&nbsp;|&nbsp;&nbsp; 📱 <b>WeChat</b></p>
-  <img src="./asset/wechat.jpg" width="25%" alt="WeChat QR Code" />
-</div>
-
 ## Highlights
 
 <table>

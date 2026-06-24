@@ -14,11 +14,6 @@ IOE is a **comprehensive inventory management system** developed with Django, sp
 
 <!-- Content separator -->
 
-<div align="center">
-  <p>📧 <b>zhtyyx@gmail.com</b> &nbsp;&nbsp;|&nbsp;&nbsp; 📱 <b>WeChat</b></p>
-  <img src="./asset/wechat.jpg" width="25%" alt="WeChat QR Code" />
-</div>
-
 ## ✨ Main Functional Modules
 
 ### 🏷️ Product Management
