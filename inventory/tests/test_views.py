@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from unittest import mock
 
 from django.core import management
 from django.test import TestCase, Client
@@ -321,3 +322,97 @@ class BackupViewSecurityTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+    def test_restore_backup_page_uses_template_backup_context(self):
+        backup_name = 'ui_snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('restore_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/system/restore_backup.html')
+        self.assertContains(response, backup_name)
+        self.assertContains(response, 'name="confirm_restore"')
+
+    def test_restore_backup_rolls_back_database_when_media_restore_fails(self):
+        backup_name = 'media_snapshot'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        media_root = os.path.join(self.temp_parent.name, 'media')
+        os.makedirs(backup_dir, exist_ok=True)
+        os.makedirs(media_root, exist_ok=True)
+        db_file = os.path.join(backup_dir, 'db.json')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            management.call_command(
+                'dumpdata',
+                '--exclude',
+                'auth.permission',
+                '--exclude',
+                'contenttypes',
+                '--exclude',
+                'sessions.session',
+                '--indent',
+                '4',
+                '--output',
+                db_file,
+                verbosity=0,
+            )
+
+        backup_media_dir = os.path.join(backup_dir, 'media')
+        os.makedirs(backup_media_dir, exist_ok=True)
+        with open(os.path.join(backup_media_dir, 'restored.txt'), 'w', encoding='utf-8') as media_file:
+            media_file.write('backup media')
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': True,
+                },
+                backup_info,
+            )
+
+        category = Category.objects.create(name='媒体恢复失败后应保留的分类')
+        product = Product.objects.create(
+            barcode='media-restore-product',
+            name='媒体恢复失败后应保留的商品',
+            category=category,
+            price=Decimal('10.00'),
+            cost=Decimal('5.00'),
+        )
+        current_media_file = os.path.join(media_root, 'current.txt')
+        with open(current_media_file, 'w', encoding='utf-8') as media_file:
+            media_file.write('current media')
+
+        real_move = __import__('shutil').move
+
+        def fail_when_installing_media(src, dst, *args, **kwargs):
+            if dst == media_root:
+                raise OSError('simulated media restore failure')
+            return real_move(src, dst, *args, **kwargs)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            with mock.patch('inventory.views.system.backup.shutil.move', side_effect=fail_when_installing_media):
+                response = self.client.post(
+                    reverse('restore_backup', args=[backup_name]),
+                    {'confirm_restore': 'on', 'restore_media': 'on'},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Product.objects.filter(pk=product.pk).exists())
+        self.assertTrue(os.path.exists(current_media_file))
+        with open(current_media_file, 'r', encoding='utf-8') as media_file:
+            self.assertEqual(media_file.read(), 'current media')

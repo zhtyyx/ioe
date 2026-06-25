@@ -476,16 +476,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </tr>
                             </thead>
                             <tbody id="sale-items">
-                                {% for item in sale.saleitems.all %}
+                                {% for item in items %}
                                 <tr>
                                     <td>{{ item.product.name }}</td>
                                     <td>{{ item.quantity }}</td>
                                     <td>{{ item.actual_price }}</td>
                                     <td>{{ item.subtotal }}</td>
                                     <td>
-                                        <a href="{% url 'sale_item_delete' sale.id item.id %}" class="btn btn-sm btn-outline-danger" title="删除">
+                                        <form method="post" action="{% url 'sale_item_delete' sale.id item.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="删除">
                                             <i class="bi bi-trash"></i>
-                                        </a>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                                 {% endfor %}

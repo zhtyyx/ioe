@@ -77,7 +77,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-lg-3">
         <div class="card h-100">
             <div class="card-header">
@@ -95,7 +95,7 @@
                         <h4 class="mb-0">{{ backups|length }}</h4>
                     </div>
                 </div>
-                
+
                 <div class="d-flex align-items-center mb-4">
                     <div class="flex-shrink-0 me-3">
                         <div class="bg-light rounded p-2">
@@ -113,7 +113,7 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="alert alert-info">
                     <div class="d-flex">
                         <div class="flex-shrink-0 me-2">
@@ -148,7 +148,11 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                <a href="#" id="confirm-delete-backup" class="btn btn-danger">确认删除</a>
+                <form method="post" id="confirm-delete-backup" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="confirm" value="on">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
             </div>
         </div>
     </div>
@@ -160,16 +164,16 @@
         const deleteBackupModal = new bootstrap.Modal(document.getElementById('deleteBackupModal'));
         const deleteButtons = document.querySelectorAll('.delete-backup');
         const backupNameToDelete = document.getElementById('backup-name-to-delete');
-        const confirmDeleteButton = document.getElementById('confirm-delete-backup');
-        
+        const confirmDeleteForm = document.getElementById('confirm-delete-backup');
+
         deleteButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const backupName = this.getAttribute('data-backup-name');
                 backupNameToDelete.textContent = backupName;
-                confirmDeleteButton.href = `/system/backup/delete/${backupName}/`;
+                confirmDeleteForm.action = `/system/backup/delete/${backupName}/`;
                 deleteBackupModal.show();
             });
         });
     });
 </script>
-{% endblock %} 
+{% endblock %}

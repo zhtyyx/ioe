@@ -64,6 +64,25 @@ def get_dir_size_display(dir_path):
     else:
         return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
 
+
+def get_backup_template_context(backup_name, backup_dir, backup_info):
+    created_at = None
+    try:
+        if backup_info.get('created_at'):
+            created_at = datetime.fromisoformat(backup_info['created_at'])
+    except (TypeError, ValueError):
+        created_at = None
+
+    return {
+        'backup': {
+            'name': backup_name,
+            'created_at': created_at,
+            'created_by': backup_info.get('created_by', '未知'),
+            'size': get_dir_size_display(backup_dir),
+            'includes_media': backup_info.get('includes_media', False),
+        }
+    }
+
 @login_required
 @permission_required('inventory.can_manage_backup')
 def backup_list(request):
@@ -84,12 +103,7 @@ def backup_list(request):
                     with open(backup_info_file, 'r', encoding='utf-8') as f:
                         backup_info = json.load(f)
                     
-                    backups.append({
-                        'name': backup_name,
-                        'created_at': datetime.fromisoformat(backup_info.get('created_at', '')),
-                        'created_by': backup_info.get('created_by', '未知'),
-                        'size': get_dir_size_display(backup_dir),
-                    })
+                    backups.append(get_backup_template_context(backup_name, backup_dir, backup_info)['backup'])
             except Exception as e:
                 logger.error(f"读取备份信息失败: {str(e)}")
     
@@ -210,84 +224,106 @@ def restore_backup(request, backup_name):
         with open(backup_info_file, 'r', encoding='utf-8') as f:
             backup_info = json.load(f)
     
+    context = get_backup_template_context(backup_name, backup_dir, backup_info)
+
     if request.method == 'POST':
         # 确认恢复
-        confirmed = request.POST.get('confirm') == 'on'
+        confirmed = request.POST.get('confirm_restore') == 'on' or request.POST.get('confirm') == 'on'
         if not confirmed:
             messages.error(request, "请确认您要恢复备份")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', context)
         
+        staged_media_dir = None
+        old_media_dir = None
+        media_replaced = False
         try:
             # 恢复数据库
             db_file = os.path.join(backup_dir, 'db.json')
             if not os.path.exists(db_file):
                 messages.error(request, f"备份文件 {db_file} 不存在")
                 return redirect('backup_list')
+
+            # 恢复媒体文件前先完整复制一份到临时目录，避免数据库已恢复后才发现备份媒体不可读。
+            restore_media = request.POST.get('restore_media') == 'on'
+            if restore_media and backup_info.get('includes_media', False):
+                media_dir = os.path.join(backup_dir, 'media')
+                if not os.path.exists(media_dir):
+                    raise FileNotFoundError(f"备份媒体目录 {media_dir} 不存在")
+                os.makedirs(settings.TEMP_DIR, exist_ok=True)
+                staged_media_dir = os.path.join(
+                    settings.TEMP_DIR,
+                    f"restore_media_{backup_name}_{time.time_ns()}"
+                )
+                shutil.copytree(media_dir, staged_media_dir)
             
             # 先清空数据库再加载快照；loaddata 只会 upsert，不能删除备份后新增的数据。
             with transaction.atomic():
                 management.call_command('flush', '--noinput', verbosity=0)
                 management.call_command('loaddata', db_file, verbosity=0)
-            
-            # 恢复媒体文件
-            restore_media = request.POST.get('restore_media') == 'on'
-            if restore_media and backup_info.get('includes_media', False):
-                media_dir = os.path.join(backup_dir, 'media')
-                if os.path.exists(media_dir):
-                    # 清空现有媒体目录
+
+                if staged_media_dir:
+                    old_media_dir = os.path.join(
+                        settings.TEMP_DIR,
+                        f"old_media_{backup_name}_{time.time_ns()}"
+                    )
+                    media_parent = os.path.dirname(settings.MEDIA_ROOT)
+                    os.makedirs(media_parent, exist_ok=True)
                     if os.path.exists(settings.MEDIA_ROOT):
-                        for item in os.listdir(settings.MEDIA_ROOT):
-                            item_path = os.path.join(settings.MEDIA_ROOT, item)
-                            if os.path.isdir(item_path):
-                                shutil.rmtree(item_path)
-                            else:
-                                os.remove(item_path)
-                    
-                    # 复制备份中的媒体文件
-                    for item in os.listdir(media_dir):
-                        src_path = os.path.join(media_dir, item)
-                        dst_path = os.path.join(settings.MEDIA_ROOT, item)
-                        if os.path.isdir(src_path):
-                            if os.path.exists(dst_path):
-                                shutil.rmtree(dst_path)
-                            shutil.copytree(src_path, dst_path)
-                        else:
-                            if os.path.exists(dst_path):
-                                os.remove(dst_path)
-                            shutil.copy2(src_path, dst_path)
+                        shutil.move(settings.MEDIA_ROOT, old_media_dir)
+                    try:
+                        shutil.move(staged_media_dir, settings.MEDIA_ROOT)
+                        staged_media_dir = None
+                        media_replaced = True
+                    except Exception:
+                        if os.path.exists(settings.MEDIA_ROOT):
+                            shutil.rmtree(settings.MEDIA_ROOT)
+                        if old_media_dir and os.path.exists(old_media_dir):
+                            shutil.move(old_media_dir, settings.MEDIA_ROOT)
+                            old_media_dir = None
+                        raise
             
-            # 恢复快照后，执行恢复的用户可能已不存在于当前数据库。
-            restored_user = get_user_model().objects.filter(pk=request.user.pk).first()
-            if restored_user:
-                LogEntry.objects.create(
-                    user=restored_user,
-                    action_flag=2,  # 修改
-                    content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
-                    object_id=backup_name,
-                    object_repr=f'恢复备份: {backup_name}',
-                    change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
-                )
-            else:
-                logger.warning("恢复备份后执行用户不存在，跳过管理日志记录: %s", backup_name)
+            # 恢复快照后，执行恢复的用户可能已不存在于当前数据库；日志失败不能反向破坏恢复。
+            try:
+                restored_user = get_user_model().objects.filter(pk=request.user.pk).first()
+                if restored_user:
+                    LogEntry.objects.create(
+                        user=restored_user,
+                        action_flag=2,  # 修改
+                        content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
+                        object_id=backup_name,
+                        object_repr=f'恢复备份: {backup_name}',
+                        change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
+                    )
+                else:
+                    logger.warning("恢复备份后执行用户不存在，跳过管理日志记录: %s", backup_name)
+            except Exception as log_error:
+                logger.warning("恢复备份后记录管理日志失败: %s", log_error)
+
+            if old_media_dir and os.path.exists(old_media_dir):
+                shutil.rmtree(old_media_dir)
             
             messages.success(request, f"成功恢复备份: {backup_name}")
             return redirect('system_settings')
             
         except Exception as e:
+            if staged_media_dir and os.path.exists(staged_media_dir):
+                shutil.rmtree(staged_media_dir)
+            if media_replaced:
+                if os.path.exists(settings.MEDIA_ROOT):
+                    shutil.rmtree(settings.MEDIA_ROOT)
+                if old_media_dir and os.path.exists(old_media_dir):
+                    shutil.move(old_media_dir, settings.MEDIA_ROOT)
+                    old_media_dir = None
+            elif old_media_dir and os.path.exists(old_media_dir) and not os.path.exists(settings.MEDIA_ROOT):
+                shutil.move(old_media_dir, settings.MEDIA_ROOT)
+                old_media_dir = None
+            if old_media_dir and os.path.exists(old_media_dir):
+                shutil.rmtree(old_media_dir)
             messages.error(request, f"恢复备份失败: {str(e)}")
             logger.error(f"恢复备份失败: {str(e)}")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', context)
     
-    return render(request, 'inventory/system/restore_backup.html', {
-        'backup_name': backup_name,
-        'backup_info': backup_info
-    })
+    return render(request, 'inventory/system/restore_backup.html', context)
 
 @login_required
 @permission_required('inventory.can_manage_backup')
