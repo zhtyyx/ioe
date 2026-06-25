@@ -400,7 +400,7 @@ class BackupViewSecurityTest(TestCase):
         real_move = __import__('shutil').move
 
         def fail_when_installing_media(src, dst, *args, **kwargs):
-            if dst == media_root:
+            if os.path.basename(str(src)).startswith('restore_media_') and dst == media_root:
                 raise OSError('simulated media restore failure')
             return real_move(src, dst, *args, **kwargs)
 
