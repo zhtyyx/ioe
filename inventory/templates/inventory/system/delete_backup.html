@@ -1,0 +1,35 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}删除备份 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>删除备份
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>确定要删除备份 <strong>{{ backup_name }}</strong> 吗？</p>
+                <p class="text-danger">此操作不可恢复。</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirm" name="confirm" required>
+                        <label class="form-check-label" for="confirm">
+                            我确认要删除此备份
+                        </label>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'backup_list' %}" class="btn btn-outline-secondary">取消</a>
+                        <button type="submit" class="btn btn-danger">确认删除</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -258,6 +258,21 @@ class BackupViewSecurityTest(TestCase):
         os.makedirs(self.backup_root, exist_ok=True)
         os.makedirs(self.temp_dir, exist_ok=True)
 
+    def _write_backup_info(self, backup_name, includes_media=False):
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': includes_media,
+                },
+                backup_info,
+            )
+        return backup_dir
+
     def test_delete_backup_rejects_parent_directory_traversal(self):
         sentinel_path = os.path.join(self.temp_parent.name, 'keep.txt')
         with open(sentinel_path, 'w', encoding='utf-8') as sentinel:
@@ -270,10 +285,31 @@ class BackupViewSecurityTest(TestCase):
         self.assertTrue(os.path.exists(sentinel_path))
         self.assertTrue(os.path.isdir(self.backup_root))
 
+    def test_delete_backup_confirmation_page_renders(self):
+        backup_name = 'snapshot'
+        self._write_backup_info(backup_name)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('delete_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/system/delete_backup.html')
+        self.assertContains(response, backup_name)
+
+    def test_restore_backup_page_renders_with_backup_context(self):
+        backup_name = 'snapshot'
+        self._write_backup_info(backup_name)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('restore_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/system/restore_backup.html')
+        self.assertContains(response, backup_name)
+
     def test_restore_backup_flushes_records_missing_from_snapshot(self):
         backup_name = 'snapshot'
-        backup_dir = os.path.join(self.backup_root, backup_name)
-        os.makedirs(backup_dir, exist_ok=True)
+        backup_dir = self._write_backup_info(backup_name)
         db_file = os.path.join(backup_dir, 'db.json')
 
         with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
@@ -292,17 +328,6 @@ class BackupViewSecurityTest(TestCase):
                 verbosity=0,
             )
 
-        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
-            json.dump(
-                {
-                    'name': backup_name,
-                    'created_at': '2026-05-30T11:00:00',
-                    'created_by': self.user.username,
-                    'includes_media': False,
-                },
-                backup_info,
-            )
-
         category = Category.objects.create(name='备份后分类')
         product = Product.objects.create(
             barcode='post-backup-product',
@@ -315,7 +340,7 @@ class BackupViewSecurityTest(TestCase):
         with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
             response = self.client.post(
                 reverse('restore_backup', args=[backup_name]),
-                {'confirm': 'on'},
+                {'confirm_restore': 'on'},
             )
 
         self.assertEqual(response.status_code, 302)
