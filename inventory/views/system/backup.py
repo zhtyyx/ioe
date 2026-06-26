@@ -64,6 +64,28 @@ def get_dir_size_display(dir_path):
     else:
         return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
 
+
+def build_backup_context(backup_name, backup_dir, backup_info):
+    """Build the template context shape expected by backup pages."""
+    created_at = None
+    if backup_info.get('created_at'):
+        try:
+            created_at = datetime.fromisoformat(backup_info['created_at'])
+        except (TypeError, ValueError):
+            created_at = None
+
+    return {
+        'backup': {
+            'name': backup_name,
+            'created_at': created_at,
+            'created_by': backup_info.get('created_by', '未知'),
+            'size': get_dir_size_display(backup_dir),
+            'includes_media': backup_info.get('includes_media', False),
+        },
+        'backup_name': backup_name,
+        'backup_info': backup_info,
+    }
+
 @login_required
 @permission_required('inventory.can_manage_backup')
 def backup_list(request):
@@ -209,16 +231,14 @@ def restore_backup(request, backup_name):
     if os.path.exists(backup_info_file):
         with open(backup_info_file, 'r', encoding='utf-8') as f:
             backup_info = json.load(f)
+    context = build_backup_context(backup_name, backup_dir, backup_info)
     
     if request.method == 'POST':
         # 确认恢复
-        confirmed = request.POST.get('confirm') == 'on'
+        confirmed = request.POST.get('confirm_restore') == 'on' or request.POST.get('confirm') == 'on'
         if not confirmed:
             messages.error(request, "请确认您要恢复备份")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', context)
         
         try:
             # 恢复数据库
@@ -279,15 +299,9 @@ def restore_backup(request, backup_name):
         except Exception as e:
             messages.error(request, f"恢复备份失败: {str(e)}")
             logger.error(f"恢复备份失败: {str(e)}")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
+            return render(request, 'inventory/system/restore_backup.html', context)
     
-    return render(request, 'inventory/system/restore_backup.html', {
-        'backup_name': backup_name,
-        'backup_info': backup_info
-    })
+    return render(request, 'inventory/system/restore_backup.html', context)
 
 @login_required
 @permission_required('inventory.can_manage_backup')
