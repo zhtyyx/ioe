@@ -5,6 +5,7 @@ import tempfile
 from django.core import management
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User, Permission, Group
 from decimal import Decimal
 
@@ -346,3 +347,65 @@ class BackupViewSecurityTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+
+class LogFileViewTest(TestCase):
+    """系统日志文件操作回归测试"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(
+            username='log-admin',
+            password='log-pass',
+            email='log@example.com',
+        )
+        self.client.force_login(self.user)
+
+        self.log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'logs')
+        os.makedirs(self.log_dir, exist_ok=True)
+        self.addCleanup(self._cleanup_test_logs)
+
+    def _cleanup_test_logs(self):
+        for file_name in ('download-test.log', 'delete-test.log'):
+            file_path = os.path.join(self.log_dir, file_name)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+    def _write_log_file(self, file_name):
+        file_path = os.path.join(self.log_dir, file_name)
+        with open(file_path, 'w', encoding='utf-8') as log_file:
+            log_file.write('test log line\n')
+        return file_path
+
+    def test_download_log_file_records_nullable_content_type(self):
+        self._write_log_file('download-test.log')
+
+        response = self.client.get(reverse('download_log_file', args=['download-test.log']))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('download-test.log', response['Content-Disposition'])
+        self.assertTrue(
+            LogEntry.objects.filter(
+                user=self.user,
+                object_id='download-test.log',
+                content_type__isnull=True,
+            ).exists()
+        )
+
+    def test_delete_log_file_records_nullable_content_type(self):
+        file_path = self._write_log_file('delete-test.log')
+
+        response = self.client.post(
+            reverse('delete_log_file', args=['delete-test.log']),
+            {'confirm': 'on'},
+        )
+
+        self.assertRedirects(response, reverse('log_list'))
+        self.assertFalse(os.path.exists(file_path))
+        self.assertTrue(
+            LogEntry.objects.filter(
+                user=self.user,
+                object_id='delete-test.log',
+                content_type__isnull=True,
+            ).exists()
+        )
