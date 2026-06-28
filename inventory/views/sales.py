@@ -7,7 +7,7 @@ from django.db import models, transaction, connection
 from django.utils import timezone
 from datetime import datetime, timedelta, date
 from decimal import Decimal, InvalidOperation
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseNotAllowed
 from django.template.loader import render_to_string
 from django.core.paginator import Paginator
 from django.conf import settings
@@ -18,6 +18,39 @@ from inventory.models import Sale, SaleItem, Inventory, InventoryTransaction, Me
 from inventory.forms import SaleForm, SaleItemForm
 from inventory.services import member_service
 from inventory.utils.query_utils import paginate_queryset
+
+
+VALID_PAYMENT_METHODS = {method for method, _ in Sale.PAYMENT_METHODS}
+
+
+def _normalize_payment_method(payment_method):
+    payment_method = payment_method or 'cash'
+    if payment_method == 'account':
+        payment_method = 'balance'
+    if payment_method not in VALID_PAYMENT_METHODS:
+        raise ValueError('不支持的支付方式')
+    return payment_method
+
+
+def _resolve_balance_payment_amount(request, payment_method, final_amount, member):
+    balance_amount = Decimal('0.00')
+    if payment_method == 'balance':
+        if not member:
+            raise ValueError('余额支付需要选择会员')
+        balance_amount = final_amount
+    elif payment_method == 'mixed':
+        if not member:
+            raise ValueError('混合支付需要选择会员')
+        try:
+            balance_amount = Decimal(request.POST.get('balance_amount', '0'))
+        except (ValueError, TypeError, InvalidOperation):
+            balance_amount = Decimal('0.00')
+        if balance_amount < 0:
+            raise ValueError('余额支付金额不能为负数')
+        if balance_amount > final_amount:
+            raise ValueError('余额支付金额不能超过应付金额')
+
+    return balance_amount
 
 @login_required
 def sale_list(request):
@@ -79,32 +112,7 @@ def sale_detail(request, sale_id):
     """销售单详情视图"""
     sale = get_object_or_404(Sale, pk=sale_id)
     items = SaleItem.objects.filter(sale=sale).select_related('product')
-    
-    # 确保销售单金额与商品项总和一致
-    items_total = sum(item.subtotal for item in items)
-    if items_total > 0 and (sale.total_amount == 0 or abs(sale.total_amount - items_total) > 1):
-        print(f"警告: 销售单金额({sale.total_amount})与商品项总和({items_total})不一致，正在修复")
-        # 更新销售单金额
-        discount_rate = Decimal('1.0')
-        if sale.member and sale.member.level and sale.member.level.discount:
-            try:
-                discount_rate = Decimal(str(sale.member.level.discount))
-            except:
-                discount_rate = Decimal('1.0')
-        
-        discount_amount = items_total * (Decimal('1.0') - discount_rate)
-        final_amount = items_total - discount_amount
-        
-        # 使用原始SQL直接更新数据库
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "UPDATE inventory_sale SET total_amount = %s, discount_amount = %s, final_amount = %s WHERE id = %s",
-                [items_total, discount_amount, final_amount, sale.id]
-            )
-        
-        # 重新加载销售单数据
-        sale = get_object_or_404(Sale, pk=sale_id)
-    
+
     context = {
         'sale': sale,
         'items': items,
@@ -331,11 +339,8 @@ def sale_create(request):
         
         # 最终安全检查，确保总金额大于0
         if total_amount <= 0 and valid_products_data:
-            print("警告：计算的总金额仍然为0或负数，使用固定价格作为最后的保障")
-            # 使用855.33作为固定价格，这只是一个保底措施
-            total_amount = Decimal('855.33')
-            discount_amount = Decimal('0.00')
-            final_amount = total_amount
+            messages.error(request, '销售单创建失败，商品金额无效。')
+            return redirect('sale_create')
         
         form = SaleForm(request.POST)
         if form.is_valid():
@@ -358,10 +363,11 @@ def sale_create(request):
                     pass
             
             # 设置支付方式。旧前端曾提交 account，后端统一按账户余额处理。
-            payment_method = request.POST.get('payment_method', 'cash')
-            if payment_method == 'account':
-                payment_method = 'balance'
-            sale.payment_method = payment_method
+            try:
+                sale.payment_method = _normalize_payment_method(request.POST.get('payment_method', 'cash'))
+            except ValueError as e:
+                messages.error(request, str(e))
+                return redirect('sale_create')
 
             # 收银台是一次性下单并结算，直接标记为已完成
             sale.status = 'COMPLETED'
@@ -375,22 +381,23 @@ def sale_create(request):
                     if sale.member_id:
                         sale.member = Member.objects.select_for_update().get(pk=sale.member_id)
 
-                    if sale.payment_method == 'balance':
-                        if not sale.member_id:
-                            raise ValueError('余额支付需要选择会员')
-                        if sale.member.balance < sale.final_amount:
+                    balance_amount = _resolve_balance_payment_amount(
+                        request, sale.payment_method, sale.final_amount, sale.member if sale.member_id else None
+                    )
+                    if balance_amount > 0:
+                        if sale.member.balance < balance_amount:
                             raise ValueError('会员余额不足')
-                        sale.balance_paid = sale.final_amount
+                        sale.balance_paid = balance_amount
 
                     # 保存销售单基本信息。放在事务内，后续库存或余额失败时不会留下空销售单。
                     sale.save()
 
-                    if sale.payment_method == 'balance':
-                        member_service.apply_member_balance_change(sale.member, -sale.final_amount)
+                    if balance_amount > 0:
+                        member_service.apply_member_balance_change(sale.member, -balance_amount)
                         MemberTransaction.objects.create(
                             member=sale.member,
                             transaction_type='PURCHASE',
-                            balance_change=-sale.final_amount,
+                            balance_change=-balance_amount,
                             points_change=0,
                             description=f'销售单 #{sale.id} 余额支付',
                             created_by=request.user,
@@ -646,28 +653,12 @@ def sale_complete(request, sale_id):
                     sale.final_amount = sale.total_amount - sale.discount_amount
                     sale.points_earned = int(sale.final_amount)
 
-                    payment_method = request.POST.get('payment_method') or sale.payment_method
-                    if payment_method == 'account':
-                        payment_method = 'balance'
+                    payment_method = _normalize_payment_method(request.POST.get('payment_method') or sale.payment_method)
                     sale.payment_method = payment_method
 
-                    balance_amount = Decimal('0.00')
-                    if payment_method == 'balance':
-                        if not member:
-                            raise ValueError('余额支付需要选择会员')
-                        balance_amount = sale.final_amount
-                    elif payment_method == 'mixed':
-                        if not member:
-                            raise ValueError('混合支付需要选择会员')
-                        try:
-                            balance_amount = Decimal(request.POST.get('balance_amount', 0))
-                        except (ValueError, TypeError, InvalidOperation):
-                            balance_amount = Decimal('0.00')
-                        if balance_amount < 0:
-                            raise ValueError('余额支付金额不能为负数')
-                        if balance_amount > sale.final_amount:
-                            raise ValueError('余额支付金额不能超过应付金额')
-
+                    balance_amount = _resolve_balance_payment_amount(
+                        request, payment_method, sale.final_amount, member
+                    )
                     if balance_amount > 0:
                         if member.balance < balance_amount:
                             raise ValueError('会员余额不足')
@@ -781,41 +772,50 @@ def sale_cancel(request, sale_id):
 @login_required
 def sale_delete_item(request, sale_id, item_id):
     """删除销售单商品视图"""
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+
     sale = get_object_or_404(Sale, id=sale_id)
-    item = get_object_or_404(SaleItem, id=item_id, sale=sale)
-    
-    # 检查销售单状态
-    if sale.status != 'DRAFT':
-        messages.error(request, '只有未完成的销售单可以修改商品')
-        return redirect('sale_detail', sale_id=sale.id)
-    
-    # 恢复库存
-    inventory = Inventory.objects.get(product=item.product)
-    inventory.quantity += item.quantity
-    inventory.save()
-    
-    # 创建入库交易记录
-    InventoryTransaction.objects.create(
-        product=item.product,
-        transaction_type='IN',
-        quantity=item.quantity,
-        operator=request.user,
-        notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
-    )
-    
-    # 记录操作日志
-    OperationLog.objects.create(
-        operator=request.user,
-        operation_type='SALE',
-        details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
-        related_object_id=sale.id,
-        related_content_type=ContentType.objects.get_for_model(Sale)
-    )
-    
-    # 删除商品并更新销售单总额
-    item.delete()
-    sale.update_total_amount()
-    sale.save()
+    with transaction.atomic():
+        sale = Sale.objects.select_for_update().get(id=sale.id)
+        item = get_object_or_404(
+            SaleItem.objects.select_for_update().select_related('product'),
+            id=item_id,
+            sale=sale,
+        )
+
+        # 检查销售单状态
+        if sale.status != 'DRAFT':
+            messages.error(request, '只有未完成的销售单可以修改商品')
+            return redirect('sale_detail', sale_id=sale.id)
+
+        # 恢复库存
+        inventory = Inventory.objects.select_for_update().get(product=item.product)
+        inventory.quantity += item.quantity
+        inventory.save()
+
+        # 创建入库交易记录
+        InventoryTransaction.objects.create(
+            product=item.product,
+            transaction_type='IN',
+            quantity=item.quantity,
+            operator=request.user,
+            notes=f'从销售单 #{sale.id} 中删除商品，恢复库存'
+        )
+
+        # 记录操作日志
+        OperationLog.objects.create(
+            operator=request.user,
+            operation_type='SALE',
+            details=f'从销售单 #{sale.id} 中删除商品 {item.product.name}',
+            related_object_id=sale.id,
+            related_content_type=ContentType.objects.get_for_model(Sale)
+        )
+
+        # 删除商品并更新销售单总额
+        item.delete()
+        sale.update_total_amount()
+        sale.save()
 
     messages.success(request, '商品已从销售单中删除')
     return redirect('sale_item_create', sale_id=sale.id)

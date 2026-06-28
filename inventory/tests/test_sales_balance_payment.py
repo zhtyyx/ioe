@@ -97,3 +97,48 @@ class SaleBalancePaymentTest(TestCase):
         self.assertEqual(self.member.balance, Decimal('5.00'))
         self.inventory.refresh_from_db()
         self.assertEqual(self.inventory.quantity, 10)
+
+    def test_sale_create_rejects_unsupported_credit_payment(self):
+        response = self.client.post(reverse('sale_create'), self.sale_post_data('credit'))
+
+        self.assertRedirects(response, reverse('sale_create'))
+        self.assertFalse(Sale.objects.exists())
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 10)
+
+    def test_sale_form_does_not_offer_unimplemented_credit_payment(self):
+        response = self.client.get(reverse('sale_create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'data-payment="credit"')
+        self.assertContains(response, 'data-payment="other"')
+
+    def test_sale_create_mixed_payment_deducts_balance_portion(self):
+        post_data = self.sale_post_data('mixed')
+        post_data['balance_amount'] = '15.00'
+
+        response = self.client.post(reverse('sale_create'), post_data)
+
+        sale = Sale.objects.get()
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.id]))
+        self.assertEqual(sale.payment_method, 'mixed')
+        self.assertEqual(sale.balance_paid, Decimal('15.00'))
+
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('85.00'))
+        self.assertEqual(self.member.total_spend, Decimal('20.00'))
+        self.assertEqual(self.member.purchase_count, 1)
+
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 8)
+        self.assertTrue(
+            MemberTransaction.objects.filter(
+                member=self.member,
+                transaction_type='PURCHASE',
+                balance_change=Decimal('-15.00'),
+                related_object_id=sale.id,
+                related_object_type='Sale',
+            ).exists()
+        )
