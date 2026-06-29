@@ -203,3 +203,35 @@ class SaleStatusTest(TestCase):
         self.assertEqual(member.purchase_count, 0)
         self.assertEqual(member.total_spend, Decimal('0.00'))
         self.assertFalse(MemberTransaction.objects.filter(member=member).exists())
+
+    def test_sale_complete_rejects_unsupported_credit_payment(self):
+        sale = self._make_sale(status='DRAFT')
+
+        response = self.client.post(
+            reverse('sale_complete', args=[sale.id]),
+            {
+                'payment_method': 'credit',
+                'remark': 'unsupported credit settlement',
+            },
+        )
+
+        self.assertRedirects(response, reverse('sale_complete', args=[sale.id]))
+        sale.refresh_from_db()
+        self.assertEqual(sale.status, 'DRAFT')
+        self.assertEqual(sale.payment_method, 'cash')
+        self.assertEqual(sale.balance_paid, Decimal('0.00'))
+
+    def test_sale_detail_does_not_rewrite_persisted_amounts(self):
+        sale = self._make_sale(status='COMPLETED')
+        Sale.objects.filter(pk=sale.pk).update(
+            total_amount=Decimal('1.00'),
+            discount_amount=Decimal('0.00'),
+            final_amount=Decimal('1.00'),
+        )
+
+        response = self.client.get(reverse('sale_detail', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('1.00'))
+        self.assertEqual(sale.final_amount, Decimal('1.00'))
