@@ -111,3 +111,10 @@ class SaleBalancePaymentTest(TestCase):
         self.inventory.refresh_from_db()
         self.assertEqual(self.inventory.quantity, 10)
         self.assertFalse(MemberTransaction.objects.filter(member=self.member).exists())
+
+    def test_sale_create_page_does_not_offer_unsupported_credit_payment(self):
+        response = self.client.get(reverse('sale_create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'data-payment="other"')
+        self.assertNotContains(response, 'data-payment="credit"')
