@@ -1346,9 +1346,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="bi bi-wallet2"></i>
                         {% if request.LANGUAGE_CODE == 'en' %}Balance{% else %}余额{% endif %}
                     </button>
-                    <button type="button" class="payment-btn" data-payment="credit">
-                        <i class="bi bi-journal-text"></i>
-                        {% if request.LANGUAGE_CODE == 'en' %}Credit{% else %}挂账{% endif %}
+                    <button type="button" class="payment-btn" data-payment="other">
+                        <i class="bi bi-three-dots"></i>
+                        {% if request.LANGUAGE_CODE == 'en' %}Other{% else %}其他{% endif %}
                     </button>
                 </div>
             </div>
