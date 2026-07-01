@@ -248,7 +248,7 @@ def download_log_file(request, file_name):
         LogEntry.objects.create(
             user=request.user,
             action_flag=1,
-            content_type_id=0,
+            content_type=None,
             object_id=file_name,
             object_repr=f'下载日志: {file_name}',
             change_message=f'下载了日志文件 {file_name}'
@@ -294,7 +294,7 @@ def delete_log_file(request, file_name):
             LogEntry.objects.create(
                 user=request.user,
                 action_flag=3,
-                content_type_id=0,
+                content_type=None,
                 object_id=file_name,
                 object_repr=f'删除日志: {file_name}',
                 change_message=f'删除了日志文件 {file_name}'

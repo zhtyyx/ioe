@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 
+from django.contrib.admin.models import LogEntry
 from django.core import management
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -321,3 +322,49 @@ class BackupViewSecurityTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+
+class LogFileViewTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(
+            username='log-admin',
+            password='log-pass',
+            email='log@example.com',
+        )
+        self.client.force_login(self.user)
+
+        workspace_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.log_dir = os.path.join(workspace_root, 'logs')
+        os.makedirs(self.log_dir, exist_ok=True)
+
+    def _write_log_file(self, file_name):
+        file_path = os.path.join(self.log_dir, file_name)
+        with open(file_path, 'w', encoding='utf-8') as log_file:
+            log_file.write('critical log line\n')
+        self.addCleanup(lambda: os.path.exists(file_path) and os.remove(file_path))
+        return file_path
+
+    def test_download_log_file_records_nullable_audit_entry(self):
+        file_name = 'critical-download.log'
+        self._write_log_file(file_name)
+
+        response = self.client.get(reverse('download_log_file', args=[file_name]))
+
+        self.assertEqual(response.status_code, 200)
+        entry = LogEntry.objects.get(object_id=file_name, action_flag=1)
+        self.assertIsNone(entry.content_type_id)
+
+    def test_delete_log_file_records_nullable_audit_entry(self):
+        file_name = 'critical-delete.log'
+        file_path = self._write_log_file(file_name)
+
+        response = self.client.post(
+            reverse('delete_log_file', args=[file_name]),
+            {'confirm': 'on'},
+        )
+
+        self.assertRedirects(response, reverse('log_list'))
+        self.assertFalse(os.path.exists(file_path))
+        entry = LogEntry.objects.get(object_id=file_name, action_flag=3)
+        self.assertIsNone(entry.content_type_id)
