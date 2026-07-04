@@ -1,0 +1,36 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}删除日志文件 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">删除日志文件</h1>
+
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <i class="fas fa-trash me-1"></i>
+            确认删除
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                确定要删除日志文件 <strong>{{ file_name }}</strong> 吗？此操作不可撤销。
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="confirm" name="confirm" required>
+                    <label class="form-check-label" for="confirm">
+                        我确认要删除此日志文件
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash me-1"></i> 删除
+                </button>
+                <a href="{% url 'log_list' %}" class="btn btn-outline-secondary ms-2">取消</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

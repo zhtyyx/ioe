@@ -97,3 +97,23 @@ class SaleBalancePaymentTest(TestCase):
         self.assertEqual(self.member.balance, Decimal('5.00'))
         self.inventory.refresh_from_db()
         self.assertEqual(self.inventory.quantity, 10)
+
+    def test_sale_create_rejects_unsupported_credit_payment(self):
+        response = self.client.post(reverse('sale_create'), self.sale_post_data('credit'))
+
+        self.assertRedirects(response, reverse('sale_create'))
+        self.assertFalse(Sale.objects.exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 10)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+
+    def test_sale_create_rejects_unimplemented_mixed_payment(self):
+        response = self.client.post(reverse('sale_create'), self.sale_post_data('mixed'))
+
+        self.assertRedirects(response, reverse('sale_create'))
+        self.assertFalse(Sale.objects.exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 10)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))
