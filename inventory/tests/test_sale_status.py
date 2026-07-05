@@ -127,6 +127,33 @@ class SaleStatusTest(TestCase):
         self.inventory.refresh_from_db()
         self.assertEqual(self.inventory.quantity, before)
 
+    def test_sale_detail_get_does_not_rewrite_persisted_amounts(self):
+        sale = self._make_sale(status='COMPLETED')
+        sale.total_amount = Decimal('5.00')
+        sale.discount_amount = Decimal('0.00')
+        sale.final_amount = Decimal('5.00')
+        sale.save()
+
+        response = self.client.get(reverse('sale_detail', args=[sale.id]))
+
+        self.assertEqual(response.status_code, 200)
+        sale.refresh_from_db()
+        self.assertEqual(sale.total_amount, Decimal('5.00'))
+        self.assertEqual(sale.final_amount, Decimal('5.00'))
+
+    def test_delete_item_get_is_not_destructive(self):
+        sale = self._make_sale(status='DRAFT')
+        item = sale.items.get()
+        self.inventory.refresh_from_db()
+        before = self.inventory.quantity
+
+        response = self.client.get(reverse('sale_item_delete', args=[sale.id, item.id]))
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(SaleItem.objects.filter(pk=item.pk).exists())
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, before)
+
     def test_cannot_delete_item_from_cancelled_sale(self):
         sale = self._make_sale(status='DRAFT')
         item = sale.items.get()
