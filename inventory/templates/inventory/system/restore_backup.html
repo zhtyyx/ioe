@@ -41,34 +41,34 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <h5 class="mb-3">备份详情</h5>
                 <div class="table-responsive mb-4">
                     <table class="table table-bordered">
                         <tbody>
                             <tr>
                                 <th style="width: 150px;">备份名称</th>
-                                <td>{{ backup.name }}</td>
+                                <td>{{ backup_name }}</td>
                             </tr>
                             <tr>
                                 <th>创建时间</th>
-                                <td>{{ backup.created_at|date:"Y-m-d H:i:s" }}</td>
+                                <td>{{ backup_info.created_at|default:"未知" }}</td>
                             </tr>
                             <tr>
                                 <th>创建者</th>
-                                <td>{{ backup.created_by }}</td>
+                                <td>{{ backup_info.created_by|default:"未知" }}</td>
                             </tr>
                             <tr>
                                 <th>备份大小</th>
-                                <td>{{ backup.size }}</td>
+                                <td>{{ backup_info.size|default:"未知" }}</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-                
-                <form method="post" action="{% url 'restore_backup' backup.name %}" id="restoreForm">
+
+                <form method="post" action="{% url 'restore_backup' backup_name %}" id="restoreForm">
                     {% csrf_token %}
-                    
+
                     <div class="mb-3">
                         <div class="form-check form-check-inline">
                             <input class="form-check-input" type="checkbox" id="restore_db" name="restore_db" checked disabled>
@@ -83,14 +83,14 @@
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="confirm_restore" name="confirm_restore" required>
+                            <input class="form-check-input" type="checkbox" id="confirm_restore" name="confirm" required>
                         <label class="form-check-label" for="confirm_restore">
                             <strong>我确认要恢复此备份，并且了解此操作会覆盖当前系统数据</strong>
                         </label>
                     </div>
-                    
+
                     <div class="d-flex justify-content-between mt-4">
                         <a href="{% url 'backup_list' %}" class="btn btn-outline-secondary">
                             <i class="bi bi-x-circle me-1"></i> 取消
@@ -103,7 +103,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-4">
         <div class="card h-100">
             <div class="card-header">
@@ -117,14 +117,14 @@
                     <li>备份后的新数据将丢失</li>
                     <li>当前的会话可能会失效</li>
                 </ul>
-                
+
                 <h6 class="mb-3">建议在恢复前：</h6>
                 <ul class="text-muted mb-4">
                     <li>创建当前系统的备份</li>
                     <li>通知所有用户暂停使用系统</li>
                     <li>选择系统使用较少的时间进行恢复</li>
                 </ul>
-                
+
                 <div class="alert alert-primary">
                     <i class="bi bi-info-circle-fill me-2"></i>
                     恢复完成后可能需要重新登录系统
@@ -170,7 +170,7 @@
         const confirmText = document.getElementById('confirmText');
         const finalRestoreBtn = document.getElementById('finalRestoreBtn');
         const restoreForm = document.getElementById('restoreForm');
-        
+
         if (confirmRestoreBtn && confirmText && finalRestoreBtn && restoreForm) {
             confirmRestoreBtn.addEventListener('click', function() {
                 const confirmCheckbox = document.getElementById('confirm_restore');
@@ -180,15 +180,15 @@
                     alert('请先勾选确认框');
                 }
             });
-            
+
             confirmText.addEventListener('input', function() {
                 finalRestoreBtn.disabled = this.value !== 'RESTORE';
             });
-            
+
             finalRestoreBtn.addEventListener('click', function() {
                 restoreForm.submit();
             });
         }
     });
 </script>
-{% endblock %} 
+{% endblock %}

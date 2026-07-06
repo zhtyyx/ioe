@@ -1,10 +1,13 @@
 import json
 import os
+import shutil
 import tempfile
+from unittest import mock
 
 from django.core import management
 from django.test import TestCase, Client
 from django.urls import reverse
+from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import User, Permission, Group
 from decimal import Decimal
 
@@ -321,3 +324,177 @@ class BackupViewSecurityTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+    def test_delete_backup_confirmation_page_and_post_work(self):
+        backup_name = 'snapshot_delete'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('delete_backup', args=[backup_name]))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/system/delete_backup.html')
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.post(reverse('delete_backup', args=[backup_name]), {'confirm': 'on'})
+        self.assertRedirects(response, reverse('backup_list'))
+        self.assertFalse(os.path.exists(backup_dir))
+
+    def test_restore_backup_page_uses_view_context_and_confirm_field(self):
+        backup_name = 'snapshot_restore_form'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        os.makedirs(backup_dir, exist_ok=True)
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': False,
+                },
+                backup_info,
+            )
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir):
+            response = self.client.get(reverse('restore_backup', args=[backup_name]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, backup_name)
+        self.assertContains(response, f'action="{reverse("restore_backup", args=[backup_name])}"')
+        self.assertContains(response, 'name="confirm"')
+
+    def test_restore_backup_rolls_back_db_and_media_when_media_copy_fails(self):
+        backup_name = 'snapshot_media'
+        backup_dir = os.path.join(self.backup_root, backup_name)
+        media_root = os.path.join(self.temp_parent.name, 'media')
+        os.makedirs(backup_dir, exist_ok=True)
+        os.makedirs(media_root, exist_ok=True)
+
+        db_file = os.path.join(backup_dir, 'db.json')
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            management.call_command(
+                'dumpdata',
+                '--exclude',
+                'auth.permission',
+                '--exclude',
+                'contenttypes',
+                '--exclude',
+                'sessions.session',
+                '--indent',
+                '4',
+                '--output',
+                db_file,
+                verbosity=0,
+            )
+
+        backup_media_dir = os.path.join(backup_dir, 'media')
+        os.makedirs(backup_media_dir, exist_ok=True)
+        with open(os.path.join(backup_media_dir, 'backup.txt'), 'w', encoding='utf-8') as backup_file:
+            backup_file.write('backup media')
+        with open(os.path.join(media_root, 'live.txt'), 'w', encoding='utf-8') as live_file:
+            live_file.write('live media')
+        with open(os.path.join(backup_dir, 'backup_info.json'), 'w', encoding='utf-8') as backup_info:
+            json.dump(
+                {
+                    'name': backup_name,
+                    'created_at': '2026-05-30T11:00:00',
+                    'created_by': self.user.username,
+                    'includes_media': True,
+                },
+                backup_info,
+            )
+
+        category = Category.objects.create(name='备份后媒体分类')
+        product = Product.objects.create(
+            barcode='post-backup-media-product',
+            name='备份后媒体商品',
+            category=category,
+            price=Decimal('10.00'),
+            cost=Decimal('5.00'),
+        )
+
+        real_copytree = shutil.copytree
+        failed_once = {'value': False}
+        media_root_real = os.path.realpath(media_root)
+
+        def fail_first_media_replace(src, dst, *args, **kwargs):
+            if os.path.realpath(dst) == media_root_real and not failed_once['value']:
+                failed_once['value'] = True
+                raise OSError('simulated media copy failure')
+            return real_copytree(src, dst, *args, **kwargs)
+
+        with self.settings(BACKUP_ROOT=self.backup_root, TEMP_DIR=self.temp_dir, MEDIA_ROOT=media_root):
+            with mock.patch('inventory.views.system.backup.shutil.copytree', side_effect=fail_first_media_replace):
+                response = self.client.post(
+                    reverse('restore_backup', args=[backup_name]),
+                    {'confirm': 'on', 'restore_media': 'on'},
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Product.objects.filter(pk=product.pk).exists())
+        self.assertTrue(os.path.exists(os.path.join(media_root, 'live.txt')))
+        self.assertFalse(os.path.exists(os.path.join(media_root, 'backup.txt')))
+
+
+class LogFileViewTest(TestCase):
+    """日志文件管理视图回归测试"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(
+            username='log-admin',
+            password='log-pass',
+            email='log@example.com'
+        )
+        self.client.force_login(self.user)
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.log_dir = os.path.join(project_root, 'logs')
+        os.makedirs(self.log_dir, exist_ok=True)
+
+    def write_log_file(self, file_name='test.log', content='first line\nsecond line\n'):
+        file_path = os.path.join(self.log_dir, file_name)
+        with open(file_path, 'w', encoding='utf-8') as log_file:
+            log_file.write(content)
+        self.addCleanup(lambda: os.path.exists(file_path) and os.remove(file_path))
+        return file_path
+
+    def test_log_list_ignores_malformed_query_params(self):
+        response = self.client.get(reverse('log_list'), {'action_type': 'bad', 'page_size': 'bad'})
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_view_log_file_renders_existing_file(self):
+        self.write_log_file(content='first line\n<script>alert(1)</script>\n')
+
+        response = self.client.get(reverse('view_log_file', args=['test.log']))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'inventory/system/view_log_file.html')
+        self.assertContains(response, '&lt;script&gt;alert(1)&lt;/script&gt;', html=False)
+
+    def test_download_log_file_records_nullable_content_type(self):
+        self.write_log_file()
+
+        response = self.client.get(reverse('download_log_file', args=['test.log']))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(LogEntry.objects.get(object_id='test.log', action_flag=1).content_type_id)
+
+    def test_delete_log_file_records_nullable_content_type(self):
+        file_path = self.write_log_file()
+
+        response = self.client.post(reverse('delete_log_file', args=['test.log']), {'confirm': 'on'})
+
+        self.assertRedirects(response, reverse('log_list'))
+        self.assertFalse(os.path.exists(file_path))
+        self.assertIsNone(LogEntry.objects.get(object_id='test.log', action_flag=3).content_type_id)

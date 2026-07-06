@@ -42,7 +42,11 @@ def log_list(request):
         )
     
     if action_type:
-        query = query.filter(action_flag=int(action_type))
+        try:
+            query = query.filter(action_flag=int(action_type))
+        except ValueError:
+            messages.error(request, "操作类型无效")
+            action_type = ''
     
     if date_from:
         try:
@@ -61,7 +65,13 @@ def log_list(request):
             messages.error(request, "结束日期格式无效")
     
     # 分页
-    page_size = int(request.GET.get('page_size', 50))
+    try:
+        page_size = int(request.GET.get('page_size', 50))
+    except ValueError:
+        messages.error(request, "分页大小无效")
+        page_size = 50
+    if page_size <= 0:
+        page_size = 50
     paginator = Paginator(query.order_by('-action_time'), page_size)
     page_number = request.GET.get('page', 1)
     logs = paginator.get_page(page_number)
@@ -248,7 +258,7 @@ def download_log_file(request, file_name):
         LogEntry.objects.create(
             user=request.user,
             action_flag=1,
-            content_type_id=0,
+            content_type_id=None,
             object_id=file_name,
             object_repr=f'下载日志: {file_name}',
             change_message=f'下载了日志文件 {file_name}'
@@ -294,7 +304,7 @@ def delete_log_file(request, file_name):
             LogEntry.objects.create(
                 user=request.user,
                 action_flag=3,
-                content_type_id=0,
+                content_type_id=None,
                 object_id=file_name,
                 object_repr=f'删除日志: {file_name}',
                 change_message=f'删除了日志文件 {file_name}'

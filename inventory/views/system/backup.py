@@ -20,6 +20,7 @@ import shutil
 import logging
 import re
 import zipfile
+import tempfile
 from datetime import datetime
 
 from inventory.permissions.decorators import permission_required
@@ -52,7 +53,7 @@ def get_dir_size_display(dir_path):
             fp = os.path.join(dirpath, f)
             if os.path.exists(fp):
                 total_size += os.path.getsize(fp)
-    
+
     # 转换为合适的单位
     size_bytes = total_size
     if size_bytes < 1024:
@@ -64,6 +65,25 @@ def get_dir_size_display(dir_path):
     else:
         return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
 
+
+def replace_media_root(staged_media_dir, current_media_backup=None):
+    """Atomically-enough replace MEDIA_ROOT and restore the old tree on copy failure."""
+    media_root = settings.MEDIA_ROOT
+    os.makedirs(os.path.dirname(media_root), exist_ok=True)
+
+    try:
+        if os.path.exists(media_root):
+            shutil.rmtree(media_root)
+        shutil.copytree(staged_media_dir, media_root)
+    except Exception:
+        if os.path.exists(media_root):
+            shutil.rmtree(media_root, ignore_errors=True)
+        if current_media_backup and os.path.exists(current_media_backup):
+            shutil.copytree(current_media_backup, media_root)
+        else:
+            os.makedirs(media_root, exist_ok=True)
+        raise
+
 @login_required
 @permission_required('inventory.can_manage_backup')
 def backup_list(request):
@@ -71,7 +91,7 @@ def backup_list(request):
     # 检查备份目录是否存在
     if not os.path.exists(settings.BACKUP_ROOT):
         os.makedirs(settings.BACKUP_ROOT, exist_ok=True)
-    
+
     # 获取所有备份
     backups = []
     for backup_name in os.listdir(settings.BACKUP_ROOT):
@@ -83,7 +103,7 @@ def backup_list(request):
                 if os.path.exists(backup_info_file):
                     with open(backup_info_file, 'r', encoding='utf-8') as f:
                         backup_info = json.load(f)
-                    
+
                     backups.append({
                         'name': backup_name,
                         'created_at': datetime.fromisoformat(backup_info.get('created_at', '')),
@@ -92,10 +112,10 @@ def backup_list(request):
                     })
             except Exception as e:
                 logger.error(f"读取备份信息失败: {str(e)}")
-    
+
     # 按创建时间排序
     backups.sort(key=lambda x: x['created_at'], reverse=True)
-    
+
     return render(request, 'inventory/system/backup_list.html', {'backups': backups})
 
 @login_required
@@ -105,40 +125,40 @@ def create_backup(request):
     # 生成建议的备份名称
     now = datetime.now()
     suggested_name = f"backup_{now.strftime('%Y%m%d_%H%M%S')}"
-    
+
     if request.method == 'POST':
         # 获取表单数据
         backup_name = request.POST.get('backup_name', '').strip()
         if not backup_name:
             backup_name = suggested_name
-        
+
         # 验证备份名称
         if not BACKUP_NAME_RE.fullmatch(backup_name):
             messages.error(request, "备份名称只能包含字母、数字、下划线和连字符")
             return render(request, 'inventory/system/create_backup.html', {'suggested_name': suggested_name})
-        
+
         # 检查备份是否已存在
         backup_dir = get_safe_backup_dir(backup_name)
         if os.path.exists(backup_dir):
             messages.error(request, f"备份 {backup_name} 已存在")
             return render(request, 'inventory/system/create_backup.html', {'suggested_name': suggested_name})
-        
+
         # 创建备份目录
         os.makedirs(backup_dir, exist_ok=True)
-        
+
         try:
             # 备份数据库
             db_file = os.path.join(backup_dir, 'db.json')
-            management.call_command('dumpdata', '--exclude', 'auth.permission', '--exclude', 'contenttypes', 
-                                  '--exclude', 'sessions.session', '--indent', '4', 
+            management.call_command('dumpdata', '--exclude', 'auth.permission', '--exclude', 'contenttypes',
+                                  '--exclude', 'sessions.session', '--indent', '4',
                                   '--output', db_file)
-            
+
             # 备份媒体文件
             backup_media = request.POST.get('backup_media') == 'on'
             if backup_media and os.path.exists(settings.MEDIA_ROOT):
                 media_dir = os.path.join(backup_dir, 'media')
                 os.makedirs(media_dir, exist_ok=True)
-                
+
                 # 复制媒体文件
                 for item in os.listdir(settings.MEDIA_ROOT):
                     src_path = os.path.join(settings.MEDIA_ROOT, item)
@@ -147,10 +167,10 @@ def create_backup(request):
                         shutil.copytree(src_path, dst_path)
                     else:
                         shutil.copy2(src_path, dst_path)
-            
+
             # 备份描述
             backup_description = request.POST.get('backup_description', '').strip()
-            
+
             # 保存备份信息
             backup_info = {
                 'name': backup_name,
@@ -159,11 +179,11 @@ def create_backup(request):
                 'description': backup_description,
                 'includes_media': backup_media,
             }
-            
+
             backup_info_file = os.path.join(backup_dir, 'backup_info.json')
             with open(backup_info_file, 'w', encoding='utf-8') as f:
                 json.dump(backup_info, f, indent=4, ensure_ascii=False)
-            
+
             # 记录日志
             LogEntry.objects.create(
                 user=request.user,
@@ -173,19 +193,19 @@ def create_backup(request):
                 object_repr=f'备份: {backup_name}',
                 change_message=f'创建了系统备份 {backup_name}' + (' 包含媒体文件' if backup_media else '')
             )
-            
+
             messages.success(request, f"成功创建备份: {backup_name}")
             return redirect('backup_list')
-            
+
         except Exception as e:
             # 备份失败，清理备份目录
             if os.path.exists(backup_dir):
                 shutil.rmtree(backup_dir)
-            
+
             messages.error(request, f"创建备份失败: {str(e)}")
             logger.error(f"创建备份失败: {str(e)}")
             return render(request, 'inventory/system/create_backup.html', {'suggested_name': suggested_name})
-    
+
     return render(request, 'inventory/system/create_backup.html', {'suggested_name': suggested_name})
 
 @login_required
@@ -202,63 +222,56 @@ def restore_backup(request, backup_name):
     if not os.path.exists(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
-    
+
     # 获取备份信息
     backup_info_file = os.path.join(backup_dir, 'backup_info.json')
     backup_info = {}
     if os.path.exists(backup_info_file):
         with open(backup_info_file, 'r', encoding='utf-8') as f:
             backup_info = json.load(f)
-    
+
     if request.method == 'POST':
         # 确认恢复
-        confirmed = request.POST.get('confirm') == 'on'
+        confirmed = request.POST.get('confirm') == 'on' or request.POST.get('confirm_restore') == 'on'
         if not confirmed:
             messages.error(request, "请确认您要恢复备份")
             return render(request, 'inventory/system/restore_backup.html', {
                 'backup_name': backup_name,
                 'backup_info': backup_info
             })
-        
+
+        media_restore_workspace = None
         try:
             # 恢复数据库
             db_file = os.path.join(backup_dir, 'db.json')
             if not os.path.exists(db_file):
                 messages.error(request, f"备份文件 {db_file} 不存在")
                 return redirect('backup_list')
-            
+
+            # 在改动数据库前先完整 staging 媒体文件，避免拷贝失败后系统半恢复。
+            restore_media = request.POST.get('restore_media') == 'on'
+            staged_media_dir = None
+            current_media_backup = None
+            if restore_media and backup_info.get('includes_media', False):
+                media_dir = os.path.join(backup_dir, 'media')
+                if os.path.exists(media_dir):
+                    os.makedirs(settings.TEMP_DIR, exist_ok=True)
+                    media_restore_workspace = tempfile.mkdtemp(prefix='restore_media_', dir=settings.TEMP_DIR)
+                    staged_media_dir = os.path.join(media_restore_workspace, 'media')
+                    shutil.copytree(media_dir, staged_media_dir)
+
+                    if os.path.exists(settings.MEDIA_ROOT):
+                        current_media_backup = os.path.join(media_restore_workspace, 'current_media')
+                        shutil.copytree(settings.MEDIA_ROOT, current_media_backup)
+
             # 先清空数据库再加载快照；loaddata 只会 upsert，不能删除备份后新增的数据。
             with transaction.atomic():
                 management.call_command('flush', '--noinput', verbosity=0)
                 management.call_command('loaddata', db_file, verbosity=0)
-            
-            # 恢复媒体文件
-            restore_media = request.POST.get('restore_media') == 'on'
-            if restore_media and backup_info.get('includes_media', False):
-                media_dir = os.path.join(backup_dir, 'media')
-                if os.path.exists(media_dir):
-                    # 清空现有媒体目录
-                    if os.path.exists(settings.MEDIA_ROOT):
-                        for item in os.listdir(settings.MEDIA_ROOT):
-                            item_path = os.path.join(settings.MEDIA_ROOT, item)
-                            if os.path.isdir(item_path):
-                                shutil.rmtree(item_path)
-                            else:
-                                os.remove(item_path)
-                    
-                    # 复制备份中的媒体文件
-                    for item in os.listdir(media_dir):
-                        src_path = os.path.join(media_dir, item)
-                        dst_path = os.path.join(settings.MEDIA_ROOT, item)
-                        if os.path.isdir(src_path):
-                            if os.path.exists(dst_path):
-                                shutil.rmtree(dst_path)
-                            shutil.copytree(src_path, dst_path)
-                        else:
-                            if os.path.exists(dst_path):
-                                os.remove(dst_path)
-                            shutil.copy2(src_path, dst_path)
-            
+
+                if staged_media_dir:
+                    replace_media_root(staged_media_dir, current_media_backup)
+
             # 恢复快照后，执行恢复的用户可能已不存在于当前数据库。
             restored_user = get_user_model().objects.filter(pk=request.user.pk).first()
             if restored_user:
@@ -272,10 +285,10 @@ def restore_backup(request, backup_name):
                 )
             else:
                 logger.warning("恢复备份后执行用户不存在，跳过管理日志记录: %s", backup_name)
-            
+
             messages.success(request, f"成功恢复备份: {backup_name}")
             return redirect('system_settings')
-            
+
         except Exception as e:
             messages.error(request, f"恢复备份失败: {str(e)}")
             logger.error(f"恢复备份失败: {str(e)}")
@@ -283,7 +296,10 @@ def restore_backup(request, backup_name):
                 'backup_name': backup_name,
                 'backup_info': backup_info
             })
-    
+        finally:
+            if media_restore_workspace and os.path.exists(media_restore_workspace):
+                shutil.rmtree(media_restore_workspace, ignore_errors=True)
+
     return render(request, 'inventory/system/restore_backup.html', {
         'backup_name': backup_name,
         'backup_info': backup_info
@@ -303,18 +319,18 @@ def delete_backup(request, backup_name):
     if not os.path.exists(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
-    
+
     if request.method == 'POST':
         # 确认删除
         confirmed = request.POST.get('confirm') == 'on'
         if not confirmed:
             messages.error(request, "请确认您要删除备份")
             return render(request, 'inventory/system/delete_backup.html', {'backup_name': backup_name})
-        
+
         try:
             # 删除备份目录
             shutil.rmtree(backup_dir)
-            
+
             # 记录日志
             LogEntry.objects.create(
                 user=request.user,
@@ -324,15 +340,15 @@ def delete_backup(request, backup_name):
                 object_repr=f'删除备份: {backup_name}',
                 change_message=f'删除了系统备份 {backup_name}'
             )
-            
+
             messages.success(request, f"成功删除备份: {backup_name}")
             return redirect('backup_list')
-            
+
         except Exception as e:
             messages.error(request, f"删除备份失败: {str(e)}")
             logger.error(f"删除备份失败: {str(e)}")
             return render(request, 'inventory/system/delete_backup.html', {'backup_name': backup_name})
-    
+
     return render(request, 'inventory/system/delete_backup.html', {'backup_name': backup_name})
 
 @login_required
@@ -349,10 +365,10 @@ def download_backup(request, backup_name):
     if not os.path.exists(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
-    
+
     # 创建临时ZIP文件
     temp_file = os.path.join(settings.TEMP_DIR, f"{backup_name}.zip")
-    
+
     try:
         # 创建ZIP文件
         with zipfile.ZipFile(temp_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -361,12 +377,12 @@ def download_backup(request, backup_name):
                 for file in files:
                     file_path = os.path.join(root, file)
                     zipf.write(file_path, os.path.relpath(file_path, os.path.dirname(backup_dir)))
-        
+
         # 打开文件供下载
         with open(temp_file, 'rb') as f:
             response = HttpResponse(f.read(), content_type='application/zip')
             response['Content-Disposition'] = f'attachment; filename="{backup_name}.zip"'
-            
+
             # 记录日志
             LogEntry.objects.create(
                 user=request.user,
@@ -376,9 +392,9 @@ def download_backup(request, backup_name):
                 object_repr=f'下载备份: {backup_name}',
                 change_message=f'下载了系统备份 {backup_name}'
             )
-            
+
             return response
-            
+
     except Exception as e:
         messages.error(request, f"下载备份失败: {str(e)}")
         logger.error(f"下载备份失败: {str(e)}")
@@ -409,8 +425,8 @@ def manual_backup(request):
                 'success': False,
                 'message': f'备份创建失败: {str(e)}'
             }, status=500)
-    
+
     return JsonResponse({
         'success': False,
         'message': '不支持的请求方法'
-    }, status=405) 
+    }, status=405)
