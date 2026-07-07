@@ -2,6 +2,8 @@ import json
 import os
 import tempfile
 
+from django.conf import settings
+from django.contrib.admin.models import LogEntry
 from django.core import management
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -321,3 +323,62 @@ class BackupViewSecurityTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response['Location'], reverse('system_settings'))
         self.assertFalse(Product.objects.filter(pk=product.pk).exists())
+
+
+class LogFileViewTest(TestCase):
+    """系统日志文件视图的回归测试"""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_superuser(
+            username='log-admin',
+            password='log-pass',
+            email='log@example.com',
+        )
+        self.client.force_login(self.user)
+        os.makedirs(settings.LOG_DIR, exist_ok=True)
+
+    def _write_log_file(self, file_name, content='log line\n'):
+        file_path = os.path.join(settings.LOG_DIR, file_name)
+        with open(file_path, 'w', encoding='utf-8') as log_file:
+            log_file.write(content)
+        self.addCleanup(lambda: os.path.exists(file_path) and os.remove(file_path))
+        return file_path
+
+    def test_download_log_file_records_nullable_content_type(self):
+        file_name = 'download-test.log'
+        file_path = self._write_log_file(file_name)
+
+        response = self.client.get(reverse('download_log_file', args=[file_name]))
+
+        self.assertEqual(response.status_code, 200)
+        response.close()
+        self.assertTrue(os.path.exists(file_path))
+        self.assertTrue(
+            LogEntry.objects.filter(
+                user=self.user,
+                object_id=file_name,
+                content_type__isnull=True,
+                object_repr=f'下载日志: {file_name}',
+            ).exists()
+        )
+
+    def test_delete_log_file_records_audit_and_removes_file(self):
+        file_name = 'delete-test.log'
+        file_path = self._write_log_file(file_name)
+
+        response = self.client.post(
+            reverse('delete_log_file', args=[file_name]),
+            {'confirm': 'on'},
+        )
+
+        self.assertRedirects(response, reverse('log_list'))
+        self.assertFalse(os.path.exists(file_path))
+        self.assertTrue(
+            LogEntry.objects.filter(
+                user=self.user,
+                object_id=file_name,
+                content_type__isnull=True,
+                object_repr=f'删除日志: {file_name}',
+            ).exists()
+        )
