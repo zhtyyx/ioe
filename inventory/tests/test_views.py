@@ -140,6 +140,40 @@ class InventoryViewTest(ViewTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'inventory/inventory_list.html')
         self.assertContains(response, '测试商品')
+
+    def test_inventory_list_action_links_include_product(self):
+        """库存操作按钮应连接到对应商品的操作页。"""
+        self.client.login(username='testuser', password='12345')
+
+        response = self.client.get(reverse('inventory_list'))
+
+        for view_name in ('inventory_in', 'inventory_out', 'inventory_adjust'):
+            with self.subTest(view_name=view_name):
+                expected_url = f"{reverse(view_name)}?product_id={self.product.id}"
+                self.assertContains(response, f'href="{expected_url}"')
+
+    def test_inventory_action_forms_prefill_selected_product(self):
+        """从库存列表进入操作页时应预选当前商品。"""
+        self.client.login(username='testuser', password='12345')
+
+        for view_name in ('inventory_in', 'inventory_out', 'inventory_adjust'):
+            with self.subTest(view_name=view_name):
+                response = self.client.get(
+                    reverse(view_name),
+                    {'product_id': self.product.id},
+                )
+
+                self.assertEqual(response.status_code, 200)
+                expected_template = (
+                    'inventory/inventory_adjust_form.html'
+                    if view_name == 'inventory_adjust'
+                    else 'inventory/inventory_transaction_form.html'
+                )
+                self.assertTemplateUsed(response, expected_template)
+                self.assertEqual(
+                    response.context['form'].fields['product'].initial,
+                    self.product,
+                )
         
     def test_inventory_transaction_create_view(self):
         """测试创建库存交易视图"""
