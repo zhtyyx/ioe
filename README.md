@@ -127,11 +127,11 @@ Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
 ## Star History
 
 <div align="center">
-  <a href="https://star-history.com/#zhtyyx/ioe&Date">
+  <a href="https://star-history.dera.page/#zhtyyx/ioe&Date">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date" />
-      <img alt="IOE Star History" src="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date" width="100%" />
+      <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=zhtyyx/ioe&type=Date&theme=dark" />
+      <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=zhtyyx/ioe&type=Date" />
+      <img alt="IOE Star History" src="https://star-history.dera.page/svg?repos=zhtyyx/ioe&type=Date" width="100%" />
     </picture>
   </a>
 </div>
