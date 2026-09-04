@@ -174,6 +174,11 @@ class InventoryViewTest(ViewTestCase):
                     response.context['form'].fields['product'].initial,
                     self.product,
                 )
+                if view_name == 'inventory_adjust':
+                    self.assertEqual(
+                        response.context['current_quantity'],
+                        self.inventory.quantity,
+                    )
         
     def test_inventory_transaction_create_view(self):
         """测试创建库存交易视图"""

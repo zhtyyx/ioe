@@ -316,6 +316,7 @@ def inventory_adjust(request):
         if product_id:
             try:
                 product = Product.objects.get(id=product_id)
+                form.initial['product'] = product
                 form.fields['product'].initial = product
             except Product.DoesNotExist:
                 pass
