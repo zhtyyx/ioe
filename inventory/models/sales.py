@@ -1,4 +1,5 @@
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
 from django.contrib.auth.models import User
 
 from .product import Product
@@ -84,23 +85,26 @@ class SaleItem(models.Model):
             
         # 计算小计
         self.subtotal = self.quantity * self.actual_price
-        
-        # 保存SaleItem
-        super().save(*args, **kwargs)
-        
-        # 更新Sale的总金额
-        self.sale.update_total_amount()
-        self.sale.save()
-        
-        # 更新库存
-        from .inventory import update_inventory
-        update_inventory(
-            product=self.product,
-            quantity=-self.quantity,  # 负数表示减少库存
-            transaction_type='OUT',
-            operator=self.sale.operator,
-            notes=f'销售单 #{self.sale.id}'
-        )
+
+        with transaction.atomic():
+            # 保存SaleItem
+            super().save(*args, **kwargs)
+            
+            # 更新Sale的总金额
+            self.sale.update_total_amount()
+            self.sale.save()
+            
+            # 更新库存；失败时抛错，让明细和销售金额一起回滚，避免库存未扣但销售已入账。
+            from .inventory import update_inventory
+            success, _, error = update_inventory(
+                product=self.product,
+                quantity=-self.quantity,  # 负数表示减少库存
+                transaction_type='OUT',
+                operator=self.sale.operator,
+                notes=f'销售单 #{self.sale.id}'
+            )
+            if not success:
+                raise ValidationError(error or '库存更新失败')
     
     class Meta:
         verbose_name = '销售明细'
