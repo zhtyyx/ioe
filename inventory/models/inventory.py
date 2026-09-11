@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
@@ -80,33 +80,22 @@ def check_inventory(product, quantity):
 def update_inventory(product, quantity, transaction_type, operator, notes=''):
     """更新库存并记录交易"""
     try:
-        # 获取或创建库存记录
-        inventory, created = Inventory.objects.get_or_create(
-            product=product,
-            defaults={'quantity': 0}
-        )
-        
-        # 更新库存数量
-        old_quantity = inventory.quantity
-        inventory.quantity += quantity
-        
-        # 确保库存不为负数
-        if inventory.quantity < 0:
-            raise ValidationError(f"库存不足: {product.name}, 当前库存: {old_quantity}, 请求数量: {abs(quantity)}")
-        
-        inventory.save()
-        
-        # 记录库存交易
-        transaction = InventoryTransaction.objects.create(
-            product=product,
-            transaction_type=transaction_type,
-            quantity=abs(quantity),  # 存储绝对值
-            operator=operator,
-            notes=notes
-        )
-        
-        return True, inventory, transaction
+        with transaction.atomic():
+            inventory, _ = Inventory.objects.select_for_update().get_or_create(
+                product=product, defaults={'quantity': 0}
+            )
+            new_quantity = inventory.quantity + quantity
+            if new_quantity < 0:
+                raise ValidationError(f"库存不足: {product.name}, 当前库存: {inventory.quantity}, 请求数量: {abs(quantity)}")
+            inventory.quantity = new_quantity
+            inventory.save(update_fields=['quantity', 'updated_at'])
+            entry = InventoryTransaction.objects.create(
+                product=product, transaction_type=transaction_type,
+                quantity=abs(quantity), operator=operator, notes=notes,
+            )
+        return True, inventory, entry
     except Exception as e:
+        # Catch outside atomic so both quantity and ledger are rolled back.
         return False, None, str(e)
 
 

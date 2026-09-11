@@ -9,6 +9,10 @@ from django.db.models import Q, Sum, F
 from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 
+from django.db import transaction as db_transaction
+from inventory.permissions.decorators import permission_required
+from inventory.forms.inventory_forms import InventoryAdjustmentForm
+
 from inventory.models import (
     Product, Inventory, InventoryTransaction, 
     OperationLog, StockAlert, check_inventory,
@@ -129,6 +133,8 @@ def inventory_transaction_list(request):
 
 
 @login_required
+@permission_required("inventory.change_inventory")
+@db_transaction.atomic
 def inventory_in(request):
     """入库视图"""
     if request.method == 'POST':
@@ -179,6 +185,8 @@ def inventory_in(request):
 
 
 @login_required
+@permission_required("inventory.change_inventory")
+@db_transaction.atomic
 def inventory_out(request):
     """出库视图"""
     if request.method == 'POST':
@@ -239,10 +247,12 @@ def inventory_out(request):
 
 
 @login_required
+@permission_required("inventory.change_inventory")
+@db_transaction.atomic
 def inventory_adjust(request):
     """库存调整视图"""
     if request.method == 'POST':
-        form = InventoryTransactionForm(request.POST)
+        form = InventoryAdjustmentForm(request.POST)
         if form.is_valid():
             product = form.cleaned_data['product']
             quantity = form.cleaned_data['quantity']
@@ -250,7 +260,7 @@ def inventory_adjust(request):
             
             # 获取当前库存
             try:
-                inventory = Inventory.objects.get(product=product)
+                inventory = Inventory.objects.select_for_update().get(product=product)
                 current_quantity = inventory.quantity
             except Inventory.DoesNotExist:
                 current_quantity = 0
@@ -311,7 +321,7 @@ def inventory_adjust(request):
             else:
                 messages.error(request, f'库存调整失败: {result}')
     else:
-        form = InventoryTransactionForm()
+        form = InventoryAdjustmentForm()
         product_id = request.GET.get('product_id')
         if product_id:
             try:
@@ -337,26 +347,26 @@ def inventory_adjust(request):
 
 
 @login_required
+@permission_required("inventory.change_inventory")
+@db_transaction.atomic
 def inventory_transaction_create(request):
     """创建入库交易视图"""
     if request.method == 'POST':
         form = InventoryTransactionForm(request.POST)
         if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.transaction_type = 'IN'
-            transaction.operator = request.user
-            transaction.save()
-            
-            inventory = Inventory.objects.get(product=transaction.product)
-            inventory.quantity += transaction.quantity
-            inventory.save()
-            
+            success, inventory, entry = update_inventory(
+                form.cleaned_data['product'], form.cleaned_data['quantity'], 'IN',
+                request.user, form.cleaned_data['notes'],
+            )
+            if not success:
+                messages.error(request, f'入库失败: {entry}')
+                return render(request, 'inventory/inventory_form.html', {'form': form})
             # 记录操作日志
             OperationLog.objects.create(
                 operator=request.user,
                 operation_type='INVENTORY',
-                details=f'入库操作: {transaction.product.name}, 数量: {transaction.quantity}',
-                related_object_id=transaction.id,
+                details=f'入库操作: {entry.product.name}, 数量: {entry.quantity}',
+                related_object_id=entry.id,
                 related_content_type=ContentType.objects.get_for_model(InventoryTransaction)
             )
             

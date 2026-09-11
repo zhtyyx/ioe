@@ -47,4 +47,25 @@ class InventoryTransactionForm(forms.ModelForm):
         quantity = self.cleaned_data.get('quantity')
         if quantity is not None and quantity <= 0:
             raise forms.ValidationError('数量必须大于0')
-        return quantity 
+        return quantity
+
+class InventoryAdjustmentForm(InventoryTransactionForm):
+    adjustment_action = forms.ChoiceField(choices=[
+        ('set', '设置为指定数量'), ('add', '增加指定数量'), ('subtract', '减少指定数量'),
+    ], widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['quantity'].widget.attrs['min'] = '0'
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+        if quantity is not None and quantity < 0:
+            raise forms.ValidationError('数量不能为负数')
+        return quantity
+
+    def clean(self):
+        data = super().clean()
+        if data.get('adjustment_action') in ('add', 'subtract') and data.get('quantity') == 0:
+            self.add_error('quantity', '增加或减少的数量必须大于0')
+        return data

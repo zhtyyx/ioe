@@ -17,7 +17,12 @@ def permission_required(perm):
     def decorator(view_func):
         @functools.wraps(view_func)
         def wrapper(request, *args, **kwargs):
-            if not request.user.has_perm(perm):
+            if perm == 'is_superuser':
+                allowed = request.user.is_active and request.user.is_superuser
+            else:
+                full_perm = perm if '.' in perm else f'inventory.{perm}'
+                allowed = request.user.has_perm(full_perm)
+            if not allowed:
                 error_message = f"您没有权限执行此操作: {perm}"
                 raise AuthorizationError(error_message, code="permission_denied")
             return view_func(request, *args, **kwargs)

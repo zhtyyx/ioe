@@ -30,15 +30,16 @@ def index(request):
     out_of_stock_products = Inventory.objects.filter(quantity=0).count()
     
     # 销售统计
-    total_sales = Sale.objects.count()
-    today_sales = Sale.objects.filter(created_at__date=today).count()
-    today_sales_amount = Sale.objects.filter(created_at__date=today).aggregate(
-        total=Sum('total_amount')
+    completed_sales = Sale.objects.filter(status='COMPLETED')
+    total_sales = completed_sales.count()
+    today_sales = completed_sales.filter(created_at__date=today).count()
+    today_sales_amount = completed_sales.filter(created_at__date=today).aggregate(
+        total=Sum('final_amount')
     )['total'] or 0
     
-    yesterday_sales = Sale.objects.filter(created_at__date=yesterday).count()
-    yesterday_sales_amount = Sale.objects.filter(created_at__date=yesterday).aggregate(
-        total=Sum('total_amount')
+    yesterday_sales = completed_sales.filter(created_at__date=yesterday).count()
+    yesterday_sales_amount = completed_sales.filter(created_at__date=yesterday).aggregate(
+        total=Sum('final_amount')
     )['total'] or 0
     
     # 会员统计
@@ -50,8 +51,8 @@ def index(request):
     sales_trend = []
     for i in range(7):
         date = today - timedelta(days=i)
-        daily_sales = Sale.objects.filter(created_at__date=date).aggregate(
-            total=Sum('total_amount')
+        daily_sales = completed_sales.filter(created_at__date=date).aggregate(
+            total=Sum('final_amount')
         )['total'] or 0
         sales_trend.append({
             'date': date.strftime('%m-%d'),
@@ -61,7 +62,7 @@ def index(request):
     
     # 热销商品
     top_products = SaleItem.objects.filter(
-        sale__created_at__gte=week_ago
+        sale__status='COMPLETED', sale__created_at__gte=week_ago
     ).values(
         'product__name'
     ).annotate(
