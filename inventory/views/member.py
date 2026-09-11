@@ -598,7 +598,7 @@ def member_recharge(request, pk):
             if remark:
                 description_text += f' ({remark})'
 
-            transaction = MemberTransaction.objects.create(
+            MemberTransaction.objects.create(
                 member=member,
                 transaction_type='RECHARGE',
                 balance_change=amount,
@@ -655,7 +655,7 @@ def member_balance_adjust(request, pk):
                 member = get_object_or_404(Member.objects.select_for_update(), pk=pk)
 
                 # 创建余额交易记录
-                transaction = MemberTransaction.objects.create(
+                MemberTransaction.objects.create(
                     member=member,
                     transaction_type='BALANCE_ADJUST',
                     balance_change=balance_change,

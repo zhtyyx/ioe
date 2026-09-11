@@ -1,15 +1,15 @@
 {% extends "inventory/base.html" %}
 
-{% block title %}库存盘点列表{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Stocktaking{% else %}库存盘点列表{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h2">库存盘点</h1>
+                <h1 class="h2">{% if request.LANGUAGE_CODE == 'en' %}Stocktaking{% else %}库存盘点{% endif %}</h1>
                 <a href="{% url 'inventory_check_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> 创建盘点
+                    <i class="bi bi-plus-circle"></i> {% if request.LANGUAGE_CODE == 'en' %}Create Count{% else %}创建盘点{% endif %}
                 </a>
             </div>
         </div>
@@ -19,19 +19,19 @@
     <div class="row mb-4">
         <div class="col-md-6">
             <form action="" method="get" class="d-flex">
-                <input type="text" name="q" value="{{ search_query }}" class="form-control me-2" placeholder="搜索盘点名称...">
-                <button type="submit" class="btn btn-outline-primary">搜索</button>
+                <input type="text" name="q" value="{{ search_query }}" class="form-control me-2" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Search count name...{% else %}搜索盘点名称...{% endif %}">
+                <button type="submit" class="btn btn-outline-primary">{% if request.LANGUAGE_CODE == 'en' %}Search{% else %}搜索{% endif %}</button>
             </form>
         </div>
         <div class="col-md-6">
             <form action="" method="get" class="d-flex justify-content-md-end">
                 <select name="status" class="form-select me-2" style="max-width: 200px;">
-                    <option value="">所有状态</option>
+                    <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Statuses{% else %}所有状态{% endif %}</option>
                     {% for status_value, status_name in status_choices %}
                     <option value="{{ status_value }}" {% if status_filter == status_value %}selected{% endif %}>{{ status_name }}</option>
                     {% endfor %}
                 </select>
-                <button type="submit" class="btn btn-outline-primary">筛选</button>
+                <button type="submit" class="btn btn-outline-primary">{% if request.LANGUAGE_CODE == 'en' %}Filter{% else %}筛选{% endif %}</button>
             </form>
         </div>
     </div>
@@ -44,11 +44,11 @@
                     <thead class="table-dark">
                         <tr>
                             <th>ID</th>
-                            <th>名称</th>
-                            <th>状态</th>
-                            <th>创建人</th>
-                            <th>创建时间</th>
-                            <th>操作</th>
+                            <th>{% if request.LANGUAGE_CODE == 'en' %}Name{% else %}名称{% endif %}</th>
+                            <th>{% if request.LANGUAGE_CODE == 'en' %}Status{% else %}状态{% endif %}</th>
+                            <th>{% if request.LANGUAGE_CODE == 'en' %}Created By{% else %}创建人{% endif %}</th>
+                            <th>{% if request.LANGUAGE_CODE == 'en' %}Created At{% else %}创建时间{% endif %}</th>
+                            <th>{% if request.LANGUAGE_CODE == 'en' %}Actions{% else %}操作{% endif %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,38 +73,38 @@
                             <td>{{ check.created_at|date:"Y-m-d H:i" }}</td>
                             <td>
                                 <a href="{% url 'inventory_check_detail' check_id=check.id %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i> 查看
+                                    <i class="bi bi-eye"></i> {% if request.LANGUAGE_CODE == 'en' %}View{% else %}查看{% endif %}
                                 </a>
                                 
                                 {% if check.status == 'draft' %}
                                 <a href="{% url 'inventory_check_start' check_id=check.id %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-play-fill"></i> 开始盘点
+                                    <i class="bi bi-play-fill"></i> {% if request.LANGUAGE_CODE == 'en' %}Start{% else %}开始盘点{% endif %}
                                 </a>
                                 {% endif %}
                                 
                                 {% if check.status == 'in_progress' %}
                                 <a href="{% url 'inventory_check_complete' check_id=check.id %}" class="btn btn-sm btn-outline-success">
-                                    <i class="bi bi-check-circle"></i> 完成盘点
+                                    <i class="bi bi-check-circle"></i> {% if request.LANGUAGE_CODE == 'en' %}Complete{% else %}完成盘点{% endif %}
                                 </a>
                                 {% endif %}
                                 
                                 {% if check.status == 'completed' %}
                                 <a href="{% url 'inventory_check_approve' check_id=check.id %}" class="btn btn-sm btn-outline-info">
-                                    <i class="bi bi-shield-check"></i> 审核
+                                    <i class="bi bi-shield-check"></i> {% if request.LANGUAGE_CODE == 'en' %}Approve{% else %}审核{% endif %}
                                 </a>
                                 {% endif %}
                                 
                                 {% if check.status != 'approved' and check.status != 'cancelled' %}
                                 <a href="{% url 'inventory_check_cancel' check_id=check.id %}" class="btn btn-sm btn-outline-danger" 
-                                   onclick="return confirm('确定要取消此盘点吗？')">
-                                    <i class="bi bi-x-circle"></i> 取消
+                                   onclick="return confirm('{% if request.LANGUAGE_CODE == 'en' %}Cancel this count?{% else %}确定要取消此盘点吗？{% endif %}')">
+                                    <i class="bi bi-x-circle"></i> {% if request.LANGUAGE_CODE == 'en' %}Cancel{% else %}取消{% endif %}
                                 </a>
                                 {% endif %}
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4">没有找到库存盘点记录</td>
+                            <td colspan="6" class="text-center py-4">{% if request.LANGUAGE_CODE == 'en' %}No stocktaking records found{% else %}没有找到库存盘点记录{% endif %}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -113,4 +113,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

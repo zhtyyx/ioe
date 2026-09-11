@@ -1,7 +1,7 @@
 {% extends 'inventory/base.html' %}
 {% load static %}
 
-{% block title %}首页 - {{ block.super }}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Dashboard{% else %}首页{% endif %} - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,7 +12,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-0">今日销售额</h6>
+                            <h6 class="mb-0">{% if request.LANGUAGE_CODE == 'en' %}Today Sales{% else %}今日销售额{% endif %}</h6>
                             <h3 class="mb-0">¥{{ today_sales_amount|floatformat:2 }}</h3>
                         </div>
                         <div class="fs-1 opacity-50">
@@ -21,7 +21,7 @@
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">今日订单数: {{ today_sales }}</a>
+                    <a class="small text-white stretched-link" href="#">{% if request.LANGUAGE_CODE == 'en' %}Orders Today{% else %}今日订单数{% endif %}: {{ today_sales }}</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -31,7 +31,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-0">商品总数</h6>
+                            <h6 class="mb-0">{% if request.LANGUAGE_CODE == 'en' %}Products{% else %}商品总数{% endif %}</h6>
                             <h3 class="mb-0">{{ total_products }}</h3>
                         </div>
                         <div class="fs-1 opacity-50">
@@ -40,7 +40,7 @@
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">库存不足: {{ low_stock_products }}</a>
+                    <a class="small text-white stretched-link" href="#">{% if request.LANGUAGE_CODE == 'en' %}Low Stock{% else %}库存不足{% endif %}: {{ low_stock_products }}</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-0">会员总数</h6>
+                            <h6 class="mb-0">{% if request.LANGUAGE_CODE == 'en' %}Members{% else %}会员总数{% endif %}</h6>
                             <h3 class="mb-0">{{ total_members }}</h3>
                         </div>
                         <div class="fs-1 opacity-50">
@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">本月新增: {{ new_members_month }}</a>
+                    <a class="small text-white stretched-link" href="#">{% if request.LANGUAGE_CODE == 'en' %}New This Month{% else %}本月新增{% endif %}: {{ new_members_month }}</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -69,7 +69,7 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="mb-0">销售总数</h6>
+                            <h6 class="mb-0">{% if request.LANGUAGE_CODE == 'en' %}Total Sales{% else %}销售总数{% endif %}</h6>
                             <h3 class="mb-0">{{ total_sales }}</h3>
                         </div>
                         <div class="fs-1 opacity-50">
@@ -78,7 +78,7 @@
                     </div>
                 </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">昨日销售: {{ yesterday_sales }}</a>
+                    <a class="small text-white stretched-link" href="#">{% if request.LANGUAGE_CODE == 'en' %}Yesterday Sales{% else %}昨日销售{% endif %}: {{ yesterday_sales }}</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
@@ -91,7 +91,7 @@
             <!-- 销售趋势图 -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="card-title mb-0">最近7天销售趋势</h5>
+                    <h5 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Sales Trend{% else %}最近7天销售趋势{% endif %}</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="salesChart" height="200"></canvas>
@@ -105,8 +105,8 @@
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">{{ current_month }}月 生日会员</h5>
-                        <a href="{% url 'birthday_members_report' %}" class="btn btn-light btn-sm">查看全部</a>
+                        <h5 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Birthday Members in Month {{ current_month }}{% else %}{{ current_month }}月 生日会员{% endif %}</h5>
+                        <a href="{% url 'birthday_members_report' %}" class="btn btn-light btn-sm">{% if request.LANGUAGE_CODE == 'en' %}View All{% else %}查看全部{% endif %}</a>
                     </div>
                 </div>
                 <div class="card-body card-scrollable p-0">
@@ -127,7 +127,7 @@
                                 <div class="badge bg-primary">{{ member.birthday|date:"m-d" }}</div>
                                 <div>
                                     <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-sm btn-outline-primary mt-1">
-                                        <i class="fas fa-user me-1"></i> 详情
+                                        <i class="fas fa-user me-1"></i> {% if request.LANGUAGE_CODE == 'en' %}Details{% else %}详情{% endif %}
                                     </a>
                                 </div>
                             </div>
@@ -136,7 +136,7 @@
                     </div>
                     {% else %}
                     <div class="alert alert-info m-3">
-                        <i class="fas fa-info-circle me-2"></i> 本月没有会员生日
+                        <i class="fas fa-info-circle me-2"></i> {% if request.LANGUAGE_CODE == 'en' %}No member birthdays this month{% else %}本月没有会员生日{% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -150,7 +150,7 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header bg-success text-white">
-                    <h5 class="card-title mb-0">热销商品</h5>
+                    <h5 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Top Products{% else %}热销商品{% endif %}</h5>
                 </div>
                 <div class="card-body card-scrollable">
                     {% if top_products %}
@@ -161,12 +161,12 @@
                                 <h6 class="mb-0">{{ product.product__name }}</h6>
                                 <span class="badge bg-primary rounded-pill">{{ product.total_qty }}</span>
                             </div>
-                            <small class="text-muted">销售额: ¥{{ product.total_amount|floatformat:2 }}</small>
+                            <small class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Sales Amount{% else %}销售额{% endif %}: ¥{{ product.total_amount|floatformat:2 }}</small>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">暂无销售数据</p>
+                    <p class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}No sales data yet{% else %}暂无销售数据{% endif %}</p>
                     {% endif %}
                 </div>
             </div>
@@ -176,17 +176,17 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="card-title mb-0">库存预警</h5>
+                    <h5 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Inventory Alerts{% else %}库存预警{% endif %}</h5>
                 </div>
                 <div class="card-body card-scrollable">
                     {% if low_stock_products > 0 %}
                     <div class="alert alert-warning mb-3">
-                        <strong>注意：</strong> 有 {{ low_stock_products }} 个商品库存不足，其中 {{ out_of_stock_products }} 个商品已无库存！
+                        {% if request.LANGUAGE_CODE == 'en' %}<strong>Notice:</strong> {{ low_stock_products }} products are low in stock, including {{ out_of_stock_products }} out of stock.{% else %}<strong>注意：</strong> 有 {{ low_stock_products }} 个商品库存不足，其中 {{ out_of_stock_products }} 个商品已无库存！{% endif %}
                     </div>
-                    <a href="#" class="btn btn-danger btn-sm">查看库存不足商品</a>
+                    <a href="#" class="btn btn-danger btn-sm">{% if request.LANGUAGE_CODE == 'en' %}View Low Stock Products{% else %}查看库存不足商品{% endif %}</a>
                     {% else %}
                     <div class="alert alert-success mb-0">
-                        <i class="fas fa-check-circle me-2"></i> 所有商品库存充足
+                        <i class="fas fa-check-circle me-2"></i> {% if request.LANGUAGE_CODE == 'en' %}All products have sufficient stock{% else %}所有商品库存充足{% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -197,7 +197,7 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header bg-secondary text-white">
-                    <h5 class="card-title mb-0">最近操作</h5>
+                    <h5 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Recent Activity{% else %}最近操作{% endif %}</h5>
                 </div>
                 <div class="card-body card-scrollable p-0">
                     {% if recent_logs %}
@@ -222,7 +222,7 @@
                     </div>
                     {% else %}
                     <div class="alert alert-info m-3">
-                        <i class="fas fa-info-circle me-2"></i> 暂无操作记录
+                        <i class="fas fa-info-circle me-2"></i> {% if request.LANGUAGE_CODE == 'en' %}No recent activity{% else %}暂无操作记录{% endif %}
                     </div>
                     {% endif %}
                 </div>
@@ -288,7 +288,7 @@
             data: {
                 labels: [{% for day in sales_trend %}'{{ day.date }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
                 datasets: [{
-                    label: '销售额',
+                    label: '{% if request.LANGUAGE_CODE == "en" %}Sales Amount{% else %}销售额{% endif %}',
                     data: [{% for day in sales_trend %}{{ day.amount }}{% if not forloop.last %}, {% endif %}{% endfor %}],
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     borderColor: 'rgba(54, 162, 235, 1)',
@@ -311,7 +311,7 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return '销售额: ¥' + context.parsed.y;
+                                return '{% if request.LANGUAGE_CODE == "en" %}Sales Amount{% else %}销售额{% endif %}: ¥' + context.parsed.y;
                             }
                         }
                     }

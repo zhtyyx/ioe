@@ -1,13 +1,13 @@
 {% extends "inventory/base.html" %}
 
-{% block title %}报表中心{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Reports{% else %}报表中心{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="row mb-4">
         <div class="col-12">
-            <h1 class="h2">报表中心</h1>
-            <p class="text-muted">查看各种统计报表和数据分析</p>
+            <h1 class="h2">{% if request.LANGUAGE_CODE == 'en' %}Reports{% else %}报表中心{% endif %}</h1>
+            <p class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Review store analytics and performance reports{% else %}查看各种统计报表和数据分析{% endif %}</p>
         </div>
     </div>
 
@@ -15,11 +15,11 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">销售趋势</h5>
-                    <p class="card-text">分析销售额、订单量随时间的变化趋势</p>
+                    <h5 class="card-title">{% if request.LANGUAGE_CODE == 'en' %}Sales Trend{% else %}销售趋势{% endif %}</h5>
+                    <p class="card-text">{% if request.LANGUAGE_CODE == 'en' %}Analyze sales and order trends over time{% else %}分析销售额、订单量随时间的变化趋势{% endif %}</p>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="{% url 'sales_trend_report' %}" class="btn btn-primary">查看报表</a>
+                    <a href="{% url 'sales_trend_report' %}" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}View Report{% else %}查看报表{% endif %}</a>
                 </div>
             </div>
         </div>
@@ -27,11 +27,11 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">热销商品</h5>
-                    <p class="card-text">查看销量最高的商品及其销售数据</p>
+                    <h5 class="card-title">{% if request.LANGUAGE_CODE == 'en' %}Top Products{% else %}热销商品{% endif %}</h5>
+                    <p class="card-text">{% if request.LANGUAGE_CODE == 'en' %}Review best-selling products and sales data{% else %}查看销量最高的商品及其销售数据{% endif %}</p>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="{% url 'top_products_report' %}" class="btn btn-primary">查看报表</a>
+                    <a href="{% url 'top_products_report' %}" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}View Report{% else %}查看报表{% endif %}</a>
                 </div>
             </div>
         </div>
@@ -39,11 +39,11 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">库存周转</h5>
-                    <p class="card-text">分析商品的库存周转率与滞销风险</p>
+                    <h5 class="card-title">{% if request.LANGUAGE_CODE == 'en' %}Inventory Turnover{% else %}库存周转{% endif %}</h5>
+                    <p class="card-text">{% if request.LANGUAGE_CODE == 'en' %}Analyze turnover rate and slow-moving stock risk{% else %}分析商品的库存周转率与滞销风险{% endif %}</p>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="{% url 'inventory_turnover_report' %}" class="btn btn-primary">查看报表</a>
+                    <a href="{% url 'inventory_turnover_report' %}" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}View Report{% else %}查看报表{% endif %}</a>
                 </div>
             </div>
         </div>
@@ -51,11 +51,11 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">利润报表</h5>
-                    <p class="card-text">查看销售利润与毛利率分析</p>
+                    <h5 class="card-title">{% if request.LANGUAGE_CODE == 'en' %}Profit Report{% else %}利润报表{% endif %}</h5>
+                    <p class="card-text">{% if request.LANGUAGE_CODE == 'en' %}Review profit and gross margin analysis{% else %}查看销售利润与毛利率分析{% endif %}</p>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="{% url 'profit_report' %}" class="btn btn-primary">查看报表</a>
+                    <a href="{% url 'profit_report' %}" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}View Report{% else %}查看报表{% endif %}</a>
                 </div>
             </div>
         </div>
@@ -63,14 +63,14 @@
         <div class="col-md-6 col-lg-3 mb-4">
             <div class="card h-100">
                 <div class="card-body">
-                    <h5 class="card-title">会员分析</h5>
-                    <p class="card-text">分析会员等级分布与消费行为</p>
+                    <h5 class="card-title">{% if request.LANGUAGE_CODE == 'en' %}Member Analysis{% else %}会员分析{% endif %}</h5>
+                    <p class="card-text">{% if request.LANGUAGE_CODE == 'en' %}Analyze member levels and purchase behavior{% else %}分析会员等级分布与消费行为{% endif %}</p>
                 </div>
                 <div class="card-footer text-center">
-                    <a href="{% url 'member_analysis_report' %}" class="btn btn-primary">查看报表</a>
+                    <a href="{% url 'member_analysis_report' %}" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}View Report{% else %}查看报表{% endif %}</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

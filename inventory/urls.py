@@ -39,6 +39,7 @@ from .views import system as system_views  # 导入重构后的系统视图模�
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('i18n/', include('django.conf.urls.i18n')),
     path('', core_views.index, name='index'),
     path('products/', product_views.product_list, name='product_list'),
     path('inventory/', inventory_views.inventory_list, name='inventory_list'),

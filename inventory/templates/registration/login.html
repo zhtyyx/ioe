@@ -1,31 +1,31 @@
 {% extends 'inventory/base.html' %}
 
-{% block title %}登录 - {{ block.super }}{% endblock %}
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Login{% else %}登录{% endif %} - {{ block.super }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h4 class="card-title mb-0">用户登录</h4>
+                <h4 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}User Login{% else %}用户登录{% endif %}</h4>
             </div>
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="id_username" class="form-label">用户名</label>
+                        <label for="id_username" class="form-label">{% if request.LANGUAGE_CODE == 'en' %}Username{% else %}用户名{% endif %}</label>
                         <input type="text" name="username" class="form-control" id="id_username" required>
                     </div>
                     <div class="mb-3">
-                        <label for="id_password" class="form-label">密码</label>
+                        <label for="id_password" class="form-label">{% if request.LANGUAGE_CODE == 'en' %}Password{% else %}密码{% endif %}</label>
                         <input type="password" name="password" class="form-control" id="id_password" required>
                     </div>
                     {% if form.errors %}
                     <div class="alert alert-danger">
-                        用户名或密码错误，请重试。
+                        {% if request.LANGUAGE_CODE == 'en' %}Invalid username or password. Please try again.{% else %}用户名或密码错误，请重试。{% endif %}
                     </div>
                     {% endif %}
-                    <button type="submit" class="btn btn-primary">登录</button>
+                    <button type="submit" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}Log in{% else %}登录{% endif %}</button>
                 </form>
             </div>
         </div>
