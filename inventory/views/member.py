@@ -10,6 +10,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.paginator import Paginator
 from decimal import Decimal, InvalidOperation
 
+from inventory.permissions.decorators import permission_required
+
 # 从新的模型结构导入
 from ..models import Member, MemberLevel, RechargeRecord, OperationLog, Sale, MemberTransaction
 from ..forms import MemberForm, MemberLevelForm, RechargeForm, MemberImportForm
@@ -522,6 +524,7 @@ def member_export(request):
 
 
 @login_required
+@permission_required("inventory.change_member")
 def member_points_adjust(request, pk):
     """调整会员积分视图"""
     member = get_object_or_404(Member, pk=pk)
@@ -561,6 +564,7 @@ def member_points_adjust(request, pk):
 
 
 @login_required
+@permission_required("inventory.change_member")
 def member_recharge(request, pk):
     """会员充值视图"""
     member = get_object_or_404(Member, pk=pk)
@@ -576,10 +580,16 @@ def member_recharge(request, pk):
         payment_method = request.POST.get('payment_method', 'cash')
         remark = request.POST.get('remark', '')
         
-        if amount <= 0:
-            messages.error(request, '充值金额必须大于0')
+        if (not amount.is_finite() or not actual_amount.is_finite()
+                or actual_amount < 0 or amount <= 0
+                or amount.as_tuple().exponent < -2 or actual_amount.as_tuple().exponent < -2
+                or amount >= Decimal('100000000') or actual_amount >= Decimal('100000000')):
+            messages.error(request, '充值金额必须为正数，实收金额不能为负数，且最多保留两位小数')
             return redirect('member_recharge', pk=pk)
-        
+        if payment_method not in dict(RechargeRecord.PAYMENT_METHODS):
+            messages.error(request, '不支持的支付方式')
+            return redirect('member_recharge', pk=pk)
+
         with transaction.atomic():
             member = get_object_or_404(Member.objects.select_for_update(), pk=pk)
 
@@ -640,6 +650,7 @@ def member_recharge_records(request, pk):
 
 
 @login_required
+@permission_required("inventory.change_member")
 def member_balance_adjust(request, pk):
     """调整会员余额视图"""
     member = get_object_or_404(Member, pk=pk)
@@ -650,6 +661,8 @@ def member_balance_adjust(request, pk):
         
         try:
             balance_change = Decimal(balance_change)
+            if not balance_change.is_finite():
+                raise ValueError('余额必须是有限金额')
             
             with transaction.atomic():
                 member = get_object_or_404(Member.objects.select_for_update(), pk=pk)

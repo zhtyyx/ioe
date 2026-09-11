@@ -79,33 +79,41 @@ class SaleItem(models.Model):
             raise ValidationError('数量必须大于0')
     
     def save(self, *args, **kwargs):
-        # 如果实际价格没有设置，默认使用标准价格
-        if self.actual_price is None:
-            self.actual_price = self.price
-            
-        # 计算小计
-        self.subtotal = self.quantity * self.actual_price
-
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None and not update_fields:
+            return
         with transaction.atomic():
-            # 保存SaleItem
+            sale = Sale.objects.select_for_update().get(pk=self.sale_id)
+            previous = type(self).objects.select_for_update().filter(pk=self.pk).first() if self.pk else None
+            if previous and (previous.sale_id != self.sale_id or previous.product_id != self.product_id):
+                raise ValidationError('已保存的销售明细不能更换销售单或商品')
+            if previous and update_fields is not None:
+                # Unselected fields on the instance must not change persisted stock or totals.
+                for field in ('quantity', 'price', 'actual_price'):
+                    if field not in update_fields:
+                        setattr(self, field, getattr(previous, field))
+            if self.quantity <= 0:
+                raise ValidationError('数量必须大于0')
+            if self.actual_price is None:
+                self.actual_price = self.price
+            self.subtotal = self.quantity * self.actual_price
+            if update_fields is not None:
+                kwargs['update_fields'] = set(update_fields) | {'subtotal'}
+            delta = self.quantity - (previous.quantity if previous else 0)
             super().save(*args, **kwargs)
-            
-            # 更新Sale的总金额
-            self.sale.update_total_amount()
-            self.sale.save()
-            
-            # 更新库存；失败时抛错，让明细和销售金额一起回滚，避免库存未扣但销售已入账。
-            from .inventory import update_inventory
-            success, _, error = update_inventory(
-                product=self.product,
-                quantity=-self.quantity,  # 负数表示减少库存
-                transaction_type='OUT',
-                operator=self.sale.operator,
-                notes=f'销售单 #{self.sale.id}'
-            )
-            if not success:
-                raise ValidationError(error or '库存更新失败')
-    
+            if delta:
+                from .inventory import update_inventory
+                success, _, error = update_inventory(
+                    product=self.product, quantity=-delta,
+                    transaction_type='OUT' if delta > 0 else 'IN',
+                    operator=sale.operator, notes=f'销售单 #{sale.id}',
+                )
+                if not success:
+                    raise ValidationError(error or '库存更新失败')
+            sale.update_total_amount()
+            sale.save()
+            self.sale = sale
+
     class Meta:
         verbose_name = '销售明细'
         verbose_name_plural = '销售明细'

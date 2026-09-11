@@ -127,7 +127,13 @@ class ProductViewTest(ViewTestCase):
 
 class InventoryViewTest(ViewTestCase):
     """测试库存相关视图"""
-    
+
+    def setUp(self):
+        super().setUp()
+        self.user.user_permissions.add(Permission.objects.get(
+            codename='change_inventory', content_type__app_label='inventory'
+        ))
+
     def test_inventory_list_view(self):
         """测试库存列表视图"""
         # 登录

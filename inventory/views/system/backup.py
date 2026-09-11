@@ -22,6 +22,7 @@ import re
 import zipfile
 from datetime import datetime
 
+from inventory.utils.media_restore import MediaRestore
 from inventory.permissions.decorators import permission_required
 from inventory.utils.logging import log_view_access
 from inventory.services.backup_service import BackupService
@@ -191,103 +192,77 @@ def create_backup(request):
 @login_required
 @permission_required('inventory.can_manage_backup')
 def restore_backup(request, backup_name):
-    """恢复备份视图"""
-    # 检查备份是否存在
+    """Restore a snapshot, rolling media back if the database cannot commit."""
     try:
         backup_dir = get_safe_backup_dir(backup_name)
     except ValueError:
         messages.error(request, "无效的备份名称")
         return redirect('backup_list')
-
-    if not os.path.exists(backup_dir):
+    if not os.path.isdir(backup_dir):
         messages.error(request, f"备份 {backup_name} 不存在")
         return redirect('backup_list')
-    
-    # 获取备份信息
-    backup_info_file = os.path.join(backup_dir, 'backup_info.json')
+
+    info_file = os.path.join(backup_dir, 'backup_info.json')
     backup_info = {}
-    if os.path.exists(backup_info_file):
-        with open(backup_info_file, 'r', encoding='utf-8') as f:
-            backup_info = json.load(f)
-    
-    if request.method == 'POST':
-        # 确认恢复
-        confirmed = request.POST.get('confirm') == 'on'
-        if not confirmed:
-            messages.error(request, "请确认您要恢复备份")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
-        
-        try:
-            # 恢复数据库
-            db_file = os.path.join(backup_dir, 'db.json')
-            if not os.path.exists(db_file):
-                messages.error(request, f"备份文件 {db_file} 不存在")
-                return redirect('backup_list')
-            
-            # 先清空数据库再加载快照；loaddata 只会 upsert，不能删除备份后新增的数据。
-            with transaction.atomic():
-                management.call_command('flush', '--noinput', verbosity=0)
-                management.call_command('loaddata', db_file, verbosity=0)
-            
-            # 恢复媒体文件
-            restore_media = request.POST.get('restore_media') == 'on'
-            if restore_media and backup_info.get('includes_media', False):
-                media_dir = os.path.join(backup_dir, 'media')
-                if os.path.exists(media_dir):
-                    # 清空现有媒体目录
-                    if os.path.exists(settings.MEDIA_ROOT):
-                        for item in os.listdir(settings.MEDIA_ROOT):
-                            item_path = os.path.join(settings.MEDIA_ROOT, item)
-                            if os.path.isdir(item_path):
-                                shutil.rmtree(item_path)
-                            else:
-                                os.remove(item_path)
-                    
-                    # 复制备份中的媒体文件
-                    for item in os.listdir(media_dir):
-                        src_path = os.path.join(media_dir, item)
-                        dst_path = os.path.join(settings.MEDIA_ROOT, item)
-                        if os.path.isdir(src_path):
-                            if os.path.exists(dst_path):
-                                shutil.rmtree(dst_path)
-                            shutil.copytree(src_path, dst_path)
-                        else:
-                            if os.path.exists(dst_path):
-                                os.remove(dst_path)
-                            shutil.copy2(src_path, dst_path)
-            
-            # 恢复快照后，执行恢复的用户可能已不存在于当前数据库。
+    if os.path.exists(info_file):
+        with open(info_file, encoding='utf-8') as stream:
+            backup_info = json.load(stream)
+    try:
+        created_at = datetime.fromisoformat(backup_info.get('created_at', ''))
+    except (TypeError, ValueError):
+        created_at = None
+    context = {
+        'backup_name': backup_name,
+        'backup_info': backup_info,
+        'backup': {
+            'name': backup_name, 'created_at': created_at,
+            'created_by': backup_info.get('created_by', '未知'),
+            'size': get_dir_size_display(backup_dir),
+        },
+    }
+    if request.method != 'POST':
+        return render(request, 'inventory/system/restore_backup.html', context)
+    if not any(request.POST.get(field) == 'on' for field in ('confirm_restore', 'confirm')):
+        messages.error(request, "请确认您要恢复备份")
+        return render(request, 'inventory/system/restore_backup.html', context)
+
+    db_file = os.path.join(backup_dir, 'db.json')
+    if not os.path.isfile(db_file):
+        messages.error(request, '数据库备份文件不存在')
+        return redirect('backup_list')
+    restore_media = request.POST.get('restore_media') == 'on' and backup_info.get('includes_media', False)
+    media = None
+    try:
+        if restore_media:
+            # Both copies must be complete before either database or live media changes.
+            media = MediaRestore(os.path.join(backup_dir, 'media'), settings.MEDIA_ROOT, settings.TEMP_DIR)
+        with transaction.atomic():
+            management.call_command('flush', '--noinput', verbosity=0)
+            management.call_command('loaddata', db_file, verbosity=0)
             restored_user = get_user_model().objects.filter(pk=request.user.pk).first()
             if restored_user:
                 LogEntry.objects.create(
-                    user=restored_user,
-                    action_flag=2,  # 修改
-                    content_type_id=None,  # 自定义日志，无关联内容类型（id=0 会违反外键约束）
-                    object_id=backup_name,
-                    object_repr=f'恢复备份: {backup_name}',
-                    change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else '')
+                    user=restored_user, action_flag=2, content_type_id=None,
+                    object_id=backup_name, object_repr=f'恢复备份: {backup_name}',
+                    change_message=f'恢复了系统备份 {backup_name}' + (' 包含媒体文件' if restore_media else ''),
                 )
-            else:
-                logger.warning("恢复备份后执行用户不存在，跳过管理日志记录: %s", backup_name)
-            
-            messages.success(request, f"成功恢复备份: {backup_name}")
-            return redirect('system_settings')
-            
-        except Exception as e:
-            messages.error(request, f"恢复备份失败: {str(e)}")
-            logger.error(f"恢复备份失败: {str(e)}")
-            return render(request, 'inventory/system/restore_backup.html', {
-                'backup_name': backup_name,
-                'backup_info': backup_info
-            })
-    
-    return render(request, 'inventory/system/restore_backup.html', {
-        'backup_name': backup_name,
-        'backup_info': backup_info
-    })
+            if media:
+                media.apply()
+    except Exception as exc:
+        if media:
+            try:
+                media.rollback()
+            except Exception:
+                messages.error(request, f'媒体回滚失败，原文件副本保留在 {media.original}，请联系管理员恢复')
+        logger.exception('恢复备份失败: %s', backup_name)
+        messages.error(request, f'恢复备份失败: {exc}')
+        return render(request, 'inventory/system/restore_backup.html', context)
+    finally:
+        if media:
+            media.cleanup()
+
+    messages.success(request, f"成功恢复备份: {backup_name}")
+    return redirect('system_settings')
 
 @login_required
 @permission_required('inventory.can_manage_backup')

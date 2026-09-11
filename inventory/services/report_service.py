@@ -41,20 +41,24 @@ class ReportService:
         else:
             trunc_func = TruncDay('created_at')
             
-        # Query sales data
-        sales_data = Sale.objects.filter(
-            created_at__range=(start_date, end_date)
-        ).annotate(
-            period=trunc_func
-        ).values(
-            'period'
-        ).annotate(
-            total_sales=Sum('final_amount'),
-            total_cost=Sum(F('items__quantity') * F('items__product__cost')),
-            order_count=Count('id', distinct=True),
-            item_count=Count('items')
-        ).order_by('period')
-        
+        # Aggregate order revenue separately from item costs: joining the item
+        # table while summing final_amount repeats revenue for every line item.
+        orders = Sale.objects.filter(status='COMPLETED', created_at__range=(start_date, end_date))
+        sales_data = list(orders.annotate(period=trunc_func).values('period').annotate(
+            total_sales=Sum('final_amount'), order_count=Count('id'),
+        ).order_by('period'))
+        item_period = {'day': TruncDay, 'week': TruncWeek, 'month': TruncMonth}.get(period, TruncDay)
+        item_data = SaleItem.objects.filter(sale__in=orders).annotate(
+            period=item_period('sale__created_at')
+        ).values('period').annotate(
+            total_cost=Sum(F('quantity') * F('product__cost')), item_count=Count('id'),
+        )
+        costs = {row['period']: row for row in item_data}
+        for row in sales_data:
+            cost = costs.get(row['period'], {})
+            row['total_cost'] = cost.get('total_cost') or Decimal('0')
+            row['item_count'] = cost.get('item_count', 0)
+
         # Calculate profit
         for data in sales_data:
             data['profit'] = data['total_sales'] - (data['total_cost'] or 0)

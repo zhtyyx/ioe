@@ -1,7 +1,7 @@
 from decimal import Decimal
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Permission
 from django.test import TestCase
 from django.urls import reverse
 
@@ -17,6 +17,7 @@ class MemberBalanceTransactionTests(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(username="operator", password="secret")
+        self.user.user_permissions.add(Permission.objects.get(codename='change_member', content_type__app_label='inventory'))
         level = MemberLevel.objects.create(
             name="Standard", discount=Decimal("1.00"), points_threshold=0
         )
