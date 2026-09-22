@@ -1,0 +1,143 @@
+{% extends 'inventory/base.html' %}
+
+{% block title %}{{ product.name }} - {% if request.LANGUAGE_CODE == 'en' %}Product Details{% else %}商品详情{% endif %}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="h3 mb-1">{{ product.name }}</h1>
+        <span class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Barcode{% else %}商品条码{% endif %}: {{ product.barcode }}</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">{% if request.LANGUAGE_CODE == 'en' %}Back to Products{% else %}返回商品列表{% endif %}</a>
+        <a href="{% url 'product_edit' product.pk %}" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}Edit Product{% else %}编辑商品{% endif %}</a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <section class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Product Information{% else %}基本信息{% endif %}</h2></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Category{% else %}商品分类{% endif %}</dt>
+                    <dd class="col-sm-8">{{ product.category.name }}</dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Price{% else %}售价{% endif %}</dt>
+                    <dd class="col-sm-8">¥{{ product.price|floatformat:2 }}</dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Cost{% else %}成本价{% endif %}</dt>
+                    <dd class="col-sm-8">¥{{ product.cost|floatformat:2 }}</dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Specification{% else %}规格{% endif %}</dt>
+                    <dd class="col-sm-8">{{ product.specification|default:'—' }}</dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Manufacturer{% else %}制造商{% endif %}</dt>
+                    <dd class="col-sm-8">{{ product.manufacturer|default:'—' }}</dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Color / Size{% else %}颜色 / 尺码{% endif %}</dt>
+                    <dd class="col-sm-8">{% if product.color %}{{ product.get_color_display }}{% else %}—{% endif %} / {% if product.size %}{{ product.get_size_display }}{% else %}—{% endif %}</dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Status{% else %}状态{% endif %}</dt>
+                    <dd class="col-sm-8">
+                        {% if product.is_active %}
+                        <span class="badge bg-success">{% if request.LANGUAGE_CODE == 'en' %}Active{% else %}已启用{% endif %}</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{% if request.LANGUAGE_CODE == 'en' %}Inactive{% else %}已停用{% endif %}</span>
+                        {% endif %}
+                    </dd>
+                    <dt class="col-sm-4">{% if request.LANGUAGE_CODE == 'en' %}Description{% else %}商品描述{% endif %}</dt>
+                    <dd class="col-sm-8 text-break">{{ product.description|default:'—'|linebreaksbr }}</dd>
+                </dl>
+            </div>
+        </section>
+    </div>
+    <div class="col-lg-4">
+        <section class="card h-100">
+            <div class="card-header"><h2 class="h5 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Inventory{% else %}库存信息{% endif %}</h2></div>
+            <div class="card-body">
+                {% if inventory %}
+                <p class="mb-1">{% if request.LANGUAGE_CODE == 'en' %}Current Stock{% else %}当前库存{% endif %}</p>
+                <p class="display-6">{{ inventory.quantity }}</p>
+                <p class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}Warning Level{% else %}预警数量{% endif %}: {{ inventory.warning_level }}</p>
+                {% if inventory.is_low_stock %}
+                <p class="text-danger"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Low stock{% else %}库存不足，请及时补货{% endif %}</p>
+                {% endif %}
+                {% else %}
+                <p class="text-muted">{% if request.LANGUAGE_CODE == 'en' %}No inventory record yet{% else %}暂无库存记录{% endif %}</p>
+                {% endif %}
+                {% if perms.inventory.change_inventory %}
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'inventory_in' %}?product_id={{ product.pk }}" class="btn btn-outline-success btn-sm">{% if request.LANGUAGE_CODE == 'en' %}Stock In{% else %}入库{% endif %}</a>
+                    <a href="{% url 'inventory_out' %}?product_id={{ product.pk }}" class="btn btn-outline-danger btn-sm">{% if request.LANGUAGE_CODE == 'en' %}Stock Out{% else %}出库{% endif %}</a>
+                    <a href="{% url 'inventory_adjust' %}?product_id={{ product.pk }}" class="btn btn-outline-primary btn-sm">{% if request.LANGUAGE_CODE == 'en' %}Adjust Stock{% else %}调整库存{% endif %}</a>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+
+<section class="card mb-4">
+    <div class="card-header"><h2 class="h5 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Product Images{% else %}商品图片{% endif %}</h2></div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% if product.image %}
+            <div class="col-6 col-md-3"><img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-thumbnail w-100" style="height: 180px; object-fit: contain;" loading="lazy"></div>
+            {% endif %}
+            {% for photo in images %}
+            {% if photo.image %}
+            <div class="col-6 col-md-3"><img src="{{ photo.image.url }}" alt="{{ photo.alt_text|default:product.name }}" class="img-thumbnail w-100" style="height: 180px; object-fit: contain;" loading="lazy"></div>
+            {% endif %}
+            {% empty %}
+            {% if not product.image %}<p class="text-muted mb-0">{% if request.LANGUAGE_CODE == 'en' %}No product images yet{% else %}暂无商品图片{% endif %}</p>{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="card mb-4">
+    <div class="card-header"><h2 class="h5 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Product Batches{% else %}商品批次{% endif %}</h2></div>
+    <div class="card-body">
+        {% if batches %}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Batch Number{% else %}批次号{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Quantity{% else %}数量{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Production Date{% else %}生产日期{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Expiry Date{% else %}过期日期{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Supplier{% else %}供应商{% endif %}</th>
+                </tr></thead>
+                <tbody>{% for batch in batches %}<tr>
+                    <td>{{ batch.batch_number }}</td><td>{{ batch.quantity }}</td>
+                    <td>{{ batch.production_date|date:'Y-m-d'|default:'—' }}</td>
+                    <td>{{ batch.expiry_date|date:'Y-m-d'|default:'—' }}</td>
+                    <td>{{ batch.supplier.name|default:'—' }}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% else %}<p class="text-muted mb-0">{% if request.LANGUAGE_CODE == 'en' %}No product batches yet{% else %}暂无商品批次{% endif %}</p>{% endif %}
+    </div>
+</section>
+
+<section class="card mb-4">
+    <div class="card-header"><h2 class="h5 mb-0">{% if request.LANGUAGE_CODE == 'en' %}Recent Sales (up to 10){% else %}最近销售记录（最多 10 条）{% endif %}</h2></div>
+    <div class="card-body">
+        {% if sales_history %}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Sale{% else %}销售单{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Date{% else %}时间{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Status{% else %}状态{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Quantity{% else %}数量{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Actual Price{% else %}实际售价{% endif %}</th>
+                    <th scope="col">{% if request.LANGUAGE_CODE == 'en' %}Subtotal{% else %}小计{% endif %}</th>
+                </tr></thead>
+                <tbody>{% for item in sales_history %}<tr>
+                    <td><a href="{% url 'sale_detail' item.sale_id %}">#{{ item.sale_id }}</a></td>
+                    <td class="text-nowrap">{{ item.sale.created_at|date:'Y-m-d H:i' }}</td>
+                    <td>{{ item.sale.get_status_display }}</td>
+                    <td>{{ item.quantity }}</td><td>¥{{ item.actual_price|floatformat:2 }}</td><td>¥{{ item.subtotal|floatformat:2 }}</td>
+                </tr>{% endfor %}</tbody>
+            </table>
+        </div>
+        {% else %}<p class="text-muted mb-0">{% if request.LANGUAGE_CODE == 'en' %}No sales records yet{% else %}暂无销售记录{% endif %}</p>{% endif %}
+    </div>
+</section>
+{% endblock %}
