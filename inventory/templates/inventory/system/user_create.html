@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- 面包屑导航 -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-white py-2">
             <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
@@ -15,7 +14,6 @@
         </ol>
     </nav>
     
-    <!-- 页面标题 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">创建新用户</h1>
         <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
@@ -23,7 +21,6 @@
         </a>
     </div>
     
-    <!-- 创建用户表单 -->
     <div class="row">
         <div class="col-lg-8">
             <div class="card mb-4">
@@ -34,7 +31,6 @@
                     <form method="post" id="userForm">
                         {% csrf_token %}
                         
-                        <!-- 基本信息 -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="username" class="form-label">用户名 <span class="text-danger">*</span></label>
@@ -58,7 +54,6 @@
                             </div>
                         </div>
                         
-                        <!-- 密码设置 -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="password" class="form-label">密码 <span class="text-danger">*</span></label>
@@ -71,14 +66,13 @@
                             </div>
                         </div>
                         
-                        <!-- 用户组和权限 -->
                         <div class="mb-3">
                             <label class="form-label">用户角色</label>
                             <div class="row">
                                 {% for group in groups %}
                                 <div class="col-md-4 mb-2">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="groups" id="group_{{ group.id }}" value="{{ group.id }}" 
+                                        <input class="form-check-input" type="checkbox" name="groups" {% if not request.user.is_superuser %}disabled{% endif %} id="group_{{ group.id }}" value="{{ group.id }}"
                                                {% if form_data.groups and group.id|stringformat:"i" in form_data.groups %}checked{% endif %}>
                                         <label class="form-check-label" for="group_{{ group.id }}">
                                             {{ group.name }}
@@ -89,7 +83,6 @@
                             </div>
                         </div>
                         
-                        <!-- 状态控制 -->
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <div class="form-check">
@@ -101,7 +94,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_staff" id="is_staff" checked>
+                                    <input class="form-check-input" type="checkbox" name="is_staff" {% if not request.user.is_superuser %}disabled{% endif %} id="is_staff" {% if request.user.is_superuser %}checked{% endif %}>
                                     <label class="form-check-label" for="is_staff">
                                         可登录后台
                                     </label>
@@ -109,7 +102,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_superuser" id="is_superuser">
+                                    <input class="form-check-input" type="checkbox" name="is_superuser" {% if not request.user.is_superuser %}disabled{% endif %} id="is_superuser">
                                     <label class="form-check-label" for="is_superuser">
                                         超级管理员
                                     </label>
@@ -117,7 +110,6 @@
                             </div>
                         </div>
                         
-                        <!-- 提交按钮 -->
                         <div class="text-end">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i> 创建用户
@@ -165,7 +157,6 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 密码一致性检查
         const password = document.getElementById('password');
         const passwordConfirm = document.getElementById('password_confirm');
         const form = document.getElementById('userForm');
@@ -178,32 +169,26 @@
             }
         });
         
-        // 快速创建销售员按钮
         const createSalesBtn = document.getElementById('createSalesBtn');
         if (createSalesBtn) {
             createSalesBtn.addEventListener('click', function() {
-                // 清除所有选中的用户组
                 document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
                     checkbox.checked = false;
                 });
                 
-                // 选中销售员组
                 const salesGroupCheckbox = document.querySelector('input[name="groups"][id$="group_' + findSalesGroupId() + '"]');
                 if (salesGroupCheckbox) {
                     salesGroupCheckbox.checked = true;
                 }
                 
-                // 设置基本权限
                 document.getElementById('is_active').checked = true;
                 document.getElementById('is_staff').checked = true;
                 document.getElementById('is_superuser').checked = false;
                 
-                // 设置焦点到用户名字段
                 document.getElementById('username').focus();
             });
         }
         
-        // 查找销售员组ID
         function findSalesGroupId() {
             const groups = document.querySelectorAll('input[name="groups"]');
             for (let i = 0; i < groups.length; i++) {
@@ -217,4 +202,4 @@
     });
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

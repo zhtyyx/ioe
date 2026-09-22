@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
@@ -67,7 +68,6 @@ class InventoryTransaction(models.Model):
         return f'{self.product.name} - {self.get_transaction_type_display()} - {self.quantity}'
 
 
-# 添加库存工具函数
 def check_inventory(product, quantity):
     """检查库存是否足够"""
     try:
@@ -81,19 +81,34 @@ def update_inventory(product, quantity, transaction_type, operator, notes=''):
     """更新库存并记录交易"""
     try:
         with transaction.atomic():
-            inventory, _ = Inventory.objects.select_for_update().get_or_create(
-                product=product, defaults={'quantity': 0}
+            stock = Inventory.objects.filter(product=product)
+            if quantity < 0:
+                stock = stock.filter(quantity__gte=-quantity)
+
+            # 用同一条 UPDATE 校验并修改库存；SQLite 下也不会覆盖并发变更。
+            changes = {
+                'quantity': models.F('quantity') + quantity,
+                'updated_at': timezone.now(),
+            }
+            if not stock.update(**changes):
+                inventory, _ = Inventory.objects.get_or_create(
+                    product=product, defaults={'quantity': 0}
+                )
+                if not stock.update(**changes):
+                    raise ValidationError(
+                        f"库存不足: {product.name}, 当前库存: {inventory.quantity}, "
+                        f"请求数量: {abs(quantity)}"
+                    )
+
+            inventory = Inventory.objects.get(product=product)
+            record = InventoryTransaction.objects.create(
+                product=product,
+                transaction_type=transaction_type,
+                quantity=abs(quantity),
+                operator=operator,
+                notes=notes
             )
-            new_quantity = inventory.quantity + quantity
-            if new_quantity < 0:
-                raise ValidationError(f"库存不足: {product.name}, 当前库存: {inventory.quantity}, 请求数量: {abs(quantity)}")
-            inventory.quantity = new_quantity
-            inventory.save(update_fields=['quantity', 'updated_at'])
-            entry = InventoryTransaction.objects.create(
-                product=product, transaction_type=transaction_type,
-                quantity=abs(quantity), operator=operator, notes=notes,
-            )
-        return True, inventory, entry
+        return True, inventory, record
     except Exception as e:
         # Catch outside atomic so both quantity and ledger are rolled back.
         return False, None, str(e)
@@ -120,4 +135,4 @@ class StockAlert(models.Model):
         verbose_name_plural = '库存预警'
         
     def __str__(self):
-        return f'{self.product.name} - {self.get_alert_type_display()}' 
+        return f'{self.product.name} - {self.get_alert_type_display()}'

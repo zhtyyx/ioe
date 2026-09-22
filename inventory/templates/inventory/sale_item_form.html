@@ -8,7 +8,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const saleId = JSON.parse(document.getElementById('sale-id').textContent); // 安全地获取 saleId
-    // 统一ID命名，避免冲突
     const barcodeInput = document.getElementById('item-product-barcode-input');
     const searchProductBtn = document.getElementById('item-search-product-btn');
     const memberSearchInput = document.getElementById('item-member-search-input');
@@ -30,7 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             lastInputTime = currentTime;
             
-            // 当按下回车键时处理条码
             if (event.key === 'Enter') {
                 event.preventDefault();
                 if (inputBuffer.length > 0) {
@@ -42,7 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 商品搜索按钮点击事件
     if (searchProductBtn) {
         searchProductBtn.addEventListener('click', function() {
             if (barcodeInput && barcodeInput.value.trim()) {
@@ -53,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 会员搜索输入事件 - 移除字符数限制
     if (memberSearchInput) {
         memberSearchInput.addEventListener('input', function() {
             const query = this.value.trim();
@@ -63,7 +59,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 通过条码搜索商品
     function searchProductByBarcode(barcode) {
         console.log('搜索商品，条码:', barcode);
         
@@ -79,10 +74,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.success) {
                     if (data.multiple_matches && data.products && data.products.length > 0) {
-                        // 多个商品匹配，显示选择模态框
                         showProductSelectionModal(data.products);
                     } else if (data.product) {
-                        // 单个商品结果，填充表单
                         fillProductForm(data.product);
                     }
                 } else {
@@ -95,32 +88,26 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 填充商品表单
     function fillProductForm(product) {
-        // 设置商品ID
         const productSelect = document.querySelector('[name="product"]');
         if (productSelect) {
             productSelect.value = product.id;
         }
         
-        // 设置实际价格
         const priceInput = document.querySelector('[name="actual_price"]');
         if (priceInput) {
             priceInput.value = parseFloat(product.price).toFixed(2);
         }
         
-        // 设置数量为1
         const quantityInput = document.querySelector('[name="quantity"]');
         if (quantityInput) {
             quantityInput.value = 1;
         }
         
-        // 显示库存信息
         if (document.getElementById('current-stock')) {
             const stock = parseInt(product.stock) || 0;
             document.getElementById('current-stock').textContent = stock;
             
-            // 检查库存状态
             const inventoryAlert = document.getElementById('inventory-alert');
             if (inventoryAlert) {
                 if (stock <= 0) {
@@ -132,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // 聚焦到数量输入框
         if (quantityInput) {
             setTimeout(() => {
                 quantityInput.focus();
@@ -143,7 +129,6 @@ document.addEventListener('DOMContentLoaded', function() {
         showAlert('success', `已选择商品: ${product.name}`);
     }
     
-    // 通过手机号搜索会员 - 支持模糊匹配
     function searchMemberByPhone(query) {
         console.log('搜索会员，查询:', query);
         
@@ -159,14 +144,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (data.success) {
                     if (data.multiple_matches && data.members && data.members.length > 0) {
-                        // 多个会员匹配，显示选择模态框
                         showMemberSelectionModal(data.members);
                     } else if (data.member_id) {
-                        // 单个会员结果，直接选择
                         selectMember(data.member_id, data.member_name, data.discount_rate);
                     }
                 } else {
-                    // 无匹配结果
                     document.getElementById('member-details').classList.add('d-none');
                     document.getElementById('no-member-message').classList.remove('d-none');
                     showAlert('info', data.message || '未找到会员');
@@ -178,14 +160,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 选择会员
     function selectMember(memberId, memberName, discountRate) {
-        // 发送会员选择请求
         if (saleId === null || saleId === undefined) {
              showAlert('error', '销售单ID无效，无法选择会员');
              return;
         }
-        // 使用 Django URL tag 或确保 ID 简单可以直接拼接
         const selectMemberUrl = `/sale/${saleId}/select-member/`;
 
         fetch(selectMemberUrl, { // 使用构造好的 URL
@@ -199,12 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(result => {
             if (result.success) {
-                // 更新UI显示
                 document.getElementById('member-name-display').textContent = memberName;
                 document.getElementById('member-details').classList.remove('d-none');
                 document.getElementById('no-member-message').classList.add('d-none');
                 
-                // 显示折扣信息
                 if (document.getElementById('member-discount')) {
                     const discountText = discountRate < 1 ? 
                         `${(discountRate * 10).toFixed(1)}折` : '无折扣';
@@ -213,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 showAlert('success', '已选择会员');
                 
-                // 刷新页面以更新价格 - 考虑是否真的需要刷新，或者可以通过JS更新
                 if (result.refresh_needed) {
                     showAlert('info', '会员折扣已应用，正在更新...');
                     setTimeout(() => {
@@ -230,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 显示商品选择模态框
     function showProductSelectionModal(products) {
         const modalContent = document.getElementById('productSelectionContent');
         if (!modalContent) return;
@@ -254,7 +229,6 @@ document.addEventListener('DOMContentLoaded', function() {
             modalContent.appendChild(productDiv);
         });
         
-        // 给选择按钮添加事件
         document.querySelectorAll('.select-product').forEach(button => {
             button.addEventListener('click', function() {
                 const productData = {
@@ -266,18 +240,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 fillProductForm(productData);
                 
-                // 关闭模态框
                 const modal = bootstrap.Modal.getInstance(document.getElementById('productSelectionModal'));
                 if (modal) modal.hide();
             });
         });
         
-        // 显示模态框
         const productModal = new bootstrap.Modal(document.getElementById('productSelectionModal'));
         productModal.show();
     }
     
-    // 显示会员选择模态框
     function showMemberSelectionModal(members) {
         const modalContent = document.getElementById('memberSelectionContent');
         if (!modalContent) return;
@@ -301,7 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
             modalContent.appendChild(memberDiv);
         });
         
-        // 给选择按钮添加事件
         document.querySelectorAll('.select-member').forEach(button => {
             button.addEventListener('click', function() {
                 const memberId = this.getAttribute('data-id');
@@ -310,18 +280,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 selectMember(memberId, memberName, discountRate);
                 
-                // 关闭模态框
                 const modal = bootstrap.Modal.getInstance(document.getElementById('memberSelectionModal'));
                 if (modal) modal.hide();
             });
         });
         
-        // 显示模态框
         const memberModal = new bootstrap.Modal(document.getElementById('memberSelectionModal'));
         memberModal.show();
     }
     
-    // 显示消息通知
     function showAlert(type, message) {
         const Toast = Swal.mixin({
             toast: true,
@@ -336,7 +303,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // 库存验证
     function validateStock() {
         const quantityInput = document.querySelector('[name="quantity"]');
         const stockSpan = document.getElementById('current-stock');
@@ -345,14 +311,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const quantity = parseInt(quantityInput.value) || 0;
             const stock = parseInt(stockSpan.textContent) || 0;
             
-            // 数量为0或负数
             if (quantity <= 0) {
                 document.getElementById('inventory-alert').textContent = '错误: 数量必须大于0!';
                 document.getElementById('inventory-alert').classList.remove('d-none');
                 return false;
             }
             
-            // 数量超过库存
             if (quantity > stock) {
                 document.getElementById('inventory-alert').textContent = '错误: 添加数量不能超过库存数量!';
                 document.getElementById('inventory-alert').classList.remove('d-none');
@@ -365,7 +329,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return true;
     }
     
-    // 绑定表单提交验证
     const saleForm = document.getElementById('sale-form');
     if (saleForm) {
         saleForm.addEventListener('submit', function(event) {
@@ -406,7 +369,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // 将取消会员选择的逻辑移到这里
     const cancelMemberButton = document.getElementById('cancel-member-selection-btn');
     if (cancelMemberButton && saleId !== null && saleId !== undefined) {
         cancelMemberButton.addEventListener('click', function(event) {
@@ -539,14 +501,12 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
         
-        <!-- 右侧会员信息区域 -->
         <div class="col-md-4">
             <div class="card shadow mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">会员信息</h5>
                 </div>
                 <div class="card-body">
-                    <!-- 会员搜索 -->
                     <div class="mb-3">
                         <label for="item-member-search-input" class="form-label">会员查找</label>
                         <div class="input-group">
@@ -559,7 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <small class="form-text text-muted">输入手机号或姓名即时搜索，支持模糊匹配</small>
                     </div>
                     
-                    <!-- 会员详情区域 -->
                     <div id="member-details" class="{% if not sale.member %}d-none{% endif %}">
                         <div class="card bg-light mb-3">
                             <div class="card-body">
@@ -584,14 +543,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
                     
-                    <!-- 无会员提示 -->
                     <div id="no-member-message" class="{% if sale.member %}d-none{% endif %}">
                         <div class="alert alert-info" role="alert">
                             <i class="bi bi-info-circle me-2"></i> 搜索并选择会员以应用折扣
                         </div>
                     </div>
                     
-                    <!-- 销售汇总信息 -->
                     <div class="card mt-3">
                         <div class="card-header bg-secondary text-white">
                             <h6 class="mb-0">快捷操作</h6>
@@ -619,7 +576,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- 添加会员模态框 -->
 <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -658,7 +614,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- 商品选择模态框 -->
 <div class="modal fade" id="productSelectionModal" tabindex="-1" aria-labelledby="productSelectionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -668,7 +623,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-body">
                 <div id="productSelectionContent">
-                    <!-- 动态生成的商品列表 -->
                 </div>
             </div>
             <div class="modal-footer">
@@ -678,7 +632,6 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 </div>
 
-<!-- 会员选择模态框 -->
 <div class="modal fade" id="memberSelectionModal" tabindex="-1" aria-labelledby="memberSelectionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -688,7 +641,6 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-body">
                 <div id="memberSelectionContent">
-                    <!-- 动态生成的会员列表 -->
                 </div>
             </div>
             <div class="modal-footer">
