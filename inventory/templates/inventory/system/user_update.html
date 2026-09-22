@@ -5,7 +5,6 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- 面包屑导航 -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-white py-2">
             <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
@@ -15,7 +14,6 @@
         </ol>
     </nav>
     
-    <!-- 页面标题 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">编辑用户 - {{ user.username }}</h1>
         <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
@@ -23,7 +21,6 @@
         </a>
     </div>
     
-    <!-- 编辑用户表单 -->
     <div class="row">
         <div class="col-lg-8">
             <div class="card mb-4">
@@ -34,7 +31,6 @@
                     <form method="post" id="userForm">
                         {% csrf_token %}
                         
-                        <!-- 基本信息 -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="username" class="form-label">用户名</label>
@@ -58,7 +54,6 @@
                             </div>
                         </div>
                         
-                        <!-- 密码设置 -->
                         <div class="card mb-3 bg-light">
                             <div class="card-header">
                                 <h6 class="mb-0">密码修改</h6>
@@ -79,14 +74,13 @@
                             </div>
                         </div>
                         
-                        <!-- 用户组和权限 -->
                         <div class="mb-3">
                             <label class="form-label">用户角色</label>
                             <div class="row">
                                 {% for group in groups %}
                                 <div class="col-md-4 mb-2">
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="groups" id="group_{{ group.id }}" value="{{ group.id }}" 
+                                        <input class="form-check-input" type="checkbox" name="groups" {% if not request.user.is_superuser %}disabled{% endif %} id="group_{{ group.id }}" value="{{ group.id }}"
                                                {% if group in user.groups.all %}checked{% endif %}
                                                {% if form_data.groups and group.id|stringformat:"i" in form_data.groups %}checked{% endif %}>
                                         <label class="form-check-label" for="group_{{ group.id }}">
@@ -98,7 +92,6 @@
                             </div>
                         </div>
                         
-                        <!-- 状态控制 -->
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <div class="form-check">
@@ -111,7 +104,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_staff" id="is_staff" 
+                                    <input class="form-check-input" type="checkbox" name="is_staff" {% if not request.user.is_superuser %}disabled{% endif %} id="is_staff"
                                            {% if form_data.is_staff|default:user.is_staff %}checked{% endif %}>
                                     <label class="form-check-label" for="is_staff">
                                         可登录后台
@@ -120,7 +113,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="is_superuser" id="is_superuser" 
+                                    <input class="form-check-input" type="checkbox" name="is_superuser" {% if not request.user.is_superuser %}disabled{% endif %} id="is_superuser"
                                            {% if form_data.is_superuser|default:user.is_superuser %}checked{% endif %}>
                                     <label class="form-check-label" for="is_superuser">
                                         超级管理员
@@ -129,7 +122,6 @@
                             </div>
                         </div>
                         
-                        <!-- 提交按钮 -->
                         <div class="text-end">
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save me-1"></i> 保存修改
@@ -198,7 +190,6 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // 密码一致性检查
         const password = document.getElementById('new_password');
         const passwordConfirm = document.getElementById('new_password_confirm');
         const form = document.getElementById('userForm');
@@ -211,48 +202,40 @@
             }
         });
         
-        // 快速设置用户角色
         const salesBtn = document.getElementById('salesBtn');
         const warehouseBtn = document.getElementById('warehouseBtn');
         const financeBtn = document.getElementById('financeBtn');
         const adminBtn = document.getElementById('adminBtn');
         
-        // 设置为销售员
         if (salesBtn) {
             salesBtn.addEventListener('click', function() {
                 setUserRole('销售员');
             });
         }
         
-        // 设置为仓库管理员
         if (warehouseBtn) {
             warehouseBtn.addEventListener('click', function() {
                 setUserRole('仓库管理员');
             });
         }
         
-        // 设置为财务人员
         if (financeBtn) {
             financeBtn.addEventListener('click', function() {
                 setUserRole('财务人员');
             });
         }
         
-        // 设置为管理员
         if (adminBtn) {
             adminBtn.addEventListener('click', function() {
                 setUserRole('管理员');
             });
         }
         
-        // 设置用户角色函数
         function setUserRole(roleName) {
-            // 清除所有选中的用户组
             document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
                 checkbox.checked = false;
             });
             
-            // 选中指定角色组
             document.querySelectorAll('input[name="groups"]').forEach(checkbox => {
                 const label = checkbox.nextElementSibling;
                 if (label && label.textContent.trim() === roleName) {
@@ -260,7 +243,6 @@
                 }
             });
             
-            // 设置基本权限
             document.getElementById('is_active').checked = true;
             document.getElementById('is_staff').checked = true;
             document.getElementById('is_superuser').checked = (roleName === '管理员');
@@ -268,4 +250,4 @@
     });
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

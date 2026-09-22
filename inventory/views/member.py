@@ -12,7 +12,6 @@ from decimal import Decimal, InvalidOperation
 
 from inventory.permissions.decorators import permission_required
 
-# 从新的模型结构导入
 from ..models import Member, MemberLevel, RechargeRecord, OperationLog, Sale, MemberTransaction
 from ..forms import MemberForm, MemberLevelForm, RechargeForm, MemberImportForm
 from ..utils import validate_csv
@@ -56,7 +55,6 @@ def member_search_by_phone(request, phone):
         ).order_by('phone')[:5]  # 限制返回数量
         
         if members.exists():
-            # 如果只有一个匹配结果
             if members.count() == 1:
                 member = members.first()
                 return JsonResponse({
@@ -74,7 +72,6 @@ def member_search_by_phone(request, phone):
                     'member_total_spend': float(member.total_spend),
                     'member_purchase_count': member.purchase_count
                 })
-            # 如果有多个匹配结果
             else:
                 member_list = []
                 for member in members:
@@ -99,16 +96,13 @@ def member_search_by_phone(request, phone):
 @login_required
 def member_list(request):
     """会员列表视图"""
-    # 获取筛选参数
     search_query = request.GET.get('search', '')
     level_id = request.GET.get('level', '')
     status = request.GET.get('status', '')
     sort_by = request.GET.get('sort', 'name')
     
-    # 基本查询集
     members = Member.objects.select_related('level').all()
     
-    # 应用筛选
     if search_query:
         members = members.filter(
             Q(name__icontains=search_query) | 
@@ -125,7 +119,6 @@ def member_list(request):
     elif status == 'inactive':
         members = members.filter(is_active=False)
     
-    # 排序
     if sort_by == 'name':
         members = members.order_by('name')
     elif sort_by == 'points':
@@ -135,15 +128,12 @@ def member_list(request):
     elif sort_by == 'created':
         members = members.order_by('-created_at')
     
-    # 分页
     paginator = Paginator(members, 15)  # 每页15个会员
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
     
-    # 获取会员等级列表用于筛选
     levels = MemberLevel.objects.filter(is_active=True).order_by('priority')
     
-    # 计算统计数据
     total_members = Member.objects.count()
     active_members = Member.objects.filter(is_active=True).count()
     
@@ -166,17 +156,13 @@ def member_detail(request, pk):
     """会员详情视图"""
     member = get_object_or_404(Member, pk=pk)
     
-    # 获取会员交易记录
     transactions = MemberTransaction.objects.filter(member=member).order_by('-created_at')[:20]
     
-    # 获取会员购买记录
     sales = Sale.objects.filter(member=member).order_by('-created_at')[:20]
     
-    # 计算统计数据
     total_spent = Sale.objects.filter(member=member).aggregate(total=Sum('total_amount'))['total'] or 0
     visit_count = Sale.objects.filter(member=member).count()
     
-    # 最近30天的统计
     thirty_days_ago = timezone.now() - timedelta(days=30)
     recent_spent = Sale.objects.filter(member=member, created_at__gte=thirty_days_ago).aggregate(total=Sum('total_amount'))['total'] or 0
     recent_visit_count = Sale.objects.filter(member=member, created_at__gte=thirty_days_ago).count()
@@ -200,10 +186,8 @@ def member_create(request):
     if request.method == 'POST':
         form = MemberForm(request.POST)
         if form.is_valid():
-            # 保存会员数据
             member = form.save(commit=False)
             
-            # 如果没有设置会员ID，生成一个
             if not member.member_id:
                 current_date = datetime.now().strftime('%Y%m%d')
                 random_suffix = str(uuid.uuid4().int)[:6]  # 使用UUID的前6位数字
@@ -214,7 +198,6 @@ def member_create(request):
             
             messages.success(request, f'会员 {member.name} 创建成功')
             
-            # 如果需要继续添加
             if 'save_and_add' in request.POST:
                 return redirect('member_create')
             
@@ -222,14 +205,12 @@ def member_create(request):
     else:
         form = MemberForm()
         
-        # 生成默认会员ID
         current_date = datetime.now().strftime('%Y%m%d')
         random_suffix = str(uuid.uuid4().int)[:6]  # 使用UUID的前6位数字
         default_member_id = f'M{current_date}{random_suffix}'
         
         form.fields['member_id'].initial = default_member_id
         
-        # 设置默认会员等级
         try:
             default_level = MemberLevel.objects.filter(is_active=True, is_default=True).first()
             if default_level:
@@ -254,7 +235,6 @@ def member_update(request, pk):
     if request.method == 'POST':
         form = MemberForm(request.POST, instance=member)
         if form.is_valid():
-            # 保存会员数据
             member = form.save(commit=False)
             member.updated_at = timezone.now()
             member.updated_by = request.user
@@ -300,10 +280,8 @@ def member_delete(request, pk):
 @login_required
 def member_level_list(request):
     """会员等级列表视图"""
-    # 获取会员等级
     levels = MemberLevel.objects.all().order_by('priority')
     
-    # 添加会员数量统计
     levels = levels.annotate(member_count=Count('member'))
     
     context = {
@@ -323,7 +301,6 @@ def member_level_create(request):
             messages.success(request, f'会员等级 {level.name} 创建成功')
             return redirect('member_level_list')
     else:
-        # 获取最大优先级
         max_priority = MemberLevel.objects.aggregate(max_priority=Count('priority'))['max_priority'] or 0
         
         form = MemberLevelForm(initial={'priority': max_priority + 1})
@@ -366,10 +343,8 @@ def member_level_delete(request, pk):
     """删除会员等级视图"""
     level = get_object_or_404(MemberLevel, pk=pk)
     
-    # 检查是否有会员使用此等级
     member_count = Member.objects.filter(level=level).count()
     
-    # 检查是否为默认等级
     is_default = level.is_default
     
     if request.method == 'POST':
@@ -395,7 +370,6 @@ def member_level_delete(request, pk):
             if default_level:
                 Member.objects.filter(level=level).update(level=default_level)
         
-        # 删除等级
         level.delete()
         
         messages.success(request, f'会员等级 {level_name} 已删除')
@@ -418,7 +392,6 @@ def member_import(request):
         if form.is_valid():
             csv_file = request.FILES['csv_file']
             
-            # 验证CSV文件
             validation_result = validate_csv(csv_file, 
                                             required_headers=['name', 'phone'],
                                             expected_headers=['name', 'phone', 'email', 
@@ -429,7 +402,6 @@ def member_import(request):
                 messages.error(request, f"CSV文件验证失败: {validation_result['errors']}")
                 return render(request, 'inventory/member/member_import.html', {'form': form})
             
-            # 处理CSV文件
             try:
                 result = member_service.import_members_from_csv(csv_file, request.user)
                 
@@ -455,14 +427,12 @@ def member_import(request):
     else:
         form = MemberImportForm()
     
-    # 生成样例CSV数据
     sample_data = [
         ['name', 'phone', 'email', 'member_id', 'level', 'points', 'birthday', 'address'],
         ['张三', '13800138000', 'zhangsan@example.com', 'M202401001', '普通会员', '100', '1990-01-01', '北京市朝阳区'],
         ['李四', '13900139000', 'lisi@example.com', 'M202401002', '金卡会员', '500', '1985-05-05', '上海市浦东新区'],
     ]
     
-    # 创建内存中的CSV
     sample_csv = io.StringIO()
     writer = csv.writer(sample_csv)
     for row in sample_data:
@@ -481,14 +451,11 @@ def member_import(request):
 @login_required
 def member_export(request):
     """导出会员视图"""
-    # 获取筛选参数
     level_id = request.GET.get('level', '')
     status = request.GET.get('status', '')
     
-    # 基本查询集
     members = Member.objects.select_related('level').all()
     
-    # 应用筛选
     if level_id:
         members = members.filter(level_id=level_id)
     
@@ -497,11 +464,9 @@ def member_export(request):
     elif status == 'inactive':
         members = members.filter(is_active=False)
     
-    # 创建CSV响应
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="members_export.csv"'
     
-    # 写入CSV
     writer = csv.writer(response)
     writer.writerow(['ID', '会员号', '姓名', '手机', '邮箱', '会员等级', '积分', '生日', '地址', '备注', '状态'])
     
@@ -536,8 +501,7 @@ def member_points_adjust(request, pk):
         try:
             points_change = int(points_change)
             
-            # 创建积分交易记录
-            transaction = MemberTransaction.objects.create(
+            MemberTransaction.objects.create(
                 member=member,
                 transaction_type='POINTS_ADJUST',
                 points_change=points_change,
@@ -545,11 +509,9 @@ def member_points_adjust(request, pk):
                 created_by=request.user
             )
             
-            # 更新会员积分
             member.points += points_change
             member.save()
             
-            # 检查是否需要升级会员等级
             member_service.check_and_update_member_level(member)
             
             messages.success(request, f'会员积分已调整: {points_change:+d}')
@@ -593,7 +555,6 @@ def member_recharge(request, pk):
         with transaction.atomic():
             member = get_object_or_404(Member.objects.select_for_update(), pk=pk)
 
-            # 创建充值记录
             recharge = RechargeRecord.objects.create(
                 member=member,
                 amount=amount,
@@ -603,7 +564,6 @@ def member_recharge(request, pk):
                 remark=remark
             )
 
-            # 创建余额交易记录
             description_text = f'会员充值 - {dict(RechargeRecord.PAYMENT_METHODS).get(payment_method, "未知")}'
             if remark:
                 description_text += f' ({remark})'
@@ -617,10 +577,8 @@ def member_recharge(request, pk):
                 created_by=request.user
             )
 
-            # 更新会员余额和状态
             member_service.apply_member_balance_change(member, amount, mark_recharged=True)
 
-            # 记录操作日志
             OperationLog.objects.create(
                 operator=request.user,
                 operation_type='MEMBER',
@@ -667,7 +625,6 @@ def member_balance_adjust(request, pk):
             with transaction.atomic():
                 member = get_object_or_404(Member.objects.select_for_update(), pk=pk)
 
-                # 创建余额交易记录
                 MemberTransaction.objects.create(
                     member=member,
                     transaction_type='BALANCE_ADJUST',
@@ -676,7 +633,6 @@ def member_balance_adjust(request, pk):
                     created_by=request.user
                 )
 
-                # 更新会员余额
                 member_service.apply_member_balance_change(member, balance_change)
             
             messages.success(request, f'会员余额已调整: {balance_change:+.2f}')
@@ -698,7 +654,6 @@ def member_edit(request, pk):
     return member_update(request, pk)
 
 
-# 添加更多别名函数和缺失的功能
 def member_details(request, pk):
     """
     member_detail的别名函数，用于保持向后兼容性
@@ -722,26 +677,21 @@ def member_add_ajax(request):
         phone = request.POST.get('phone')
         email = request.POST.get('email', '')
         
-        # 基本验证
         if not name or not phone:
             return JsonResponse({'success': False, 'message': '姓名和手机号必须填写'})
         
-        # 验证手机号是否已存在
         if Member.objects.filter(phone=phone).exists():
             return JsonResponse({'success': False, 'message': f'手机号{phone}已被使用'})
         
         try:
-            # 生成会员ID
             current_date = datetime.now().strftime('%Y%m%d')
             random_suffix = str(uuid.uuid4().int)[:6]
             member_id = f'M{current_date}{random_suffix}'
             
-            # 获取默认会员等级
             default_level = MemberLevel.objects.filter(is_active=True, is_default=True).first()
             if not default_level:
                 default_level = MemberLevel.objects.filter(is_active=True).first()
             
-            # 创建会员
             member = Member.objects.create(
                 name=name,
                 phone=phone,
@@ -764,4 +714,4 @@ def member_add_ajax(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'创建会员失败: {str(e)}'})
     
-    return JsonResponse({'success': False, 'message': '只支持POST请求'}) 
+    return JsonResponse({'success': False, 'message': '只支持POST请求'})

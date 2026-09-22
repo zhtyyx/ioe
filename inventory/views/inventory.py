@@ -24,16 +24,13 @@ from inventory.forms import InventoryTransactionForm
 @login_required
 def inventory_list(request):
     """库存列表视图"""
-    # 获取筛选参数
     category_id = request.GET.get('category', '')
     color = request.GET.get('color', '')
     size = request.GET.get('size', '')
     search_query = request.GET.get('search', '')
     
-    # 基础查询
     inventory_items = Inventory.objects.select_related('product', 'product__category').all()
     
-    # 应用筛选条件
     if category_id:
         inventory_items = inventory_items.filter(product__category_id=category_id)
     
@@ -49,10 +46,8 @@ def inventory_list(request):
             Q(product__barcode__icontains=search_query)
         )
     
-    # 获取所有分类
     categories = Category.objects.all()
     
-    # 获取所有可用的颜色和尺码
     colors = Product.COLOR_CHOICES
     sizes = Product.SIZE_CHOICES
     
@@ -73,17 +68,14 @@ def inventory_list(request):
 @login_required
 def inventory_transaction_list(request):
     """库存交易记录列表，显示所有入库、出库和调整记录"""
-    # 获取筛选参数
     transaction_type = request.GET.get('type', '')
     product_id = request.GET.get('product_id', '')
     search_query = request.GET.get('search', '')
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
     
-    # 基础查询
     transactions = InventoryTransaction.objects.select_related('product', 'operator').all()
     
-    # 应用筛选条件
     if transaction_type:
         transactions = transactions.filter(transaction_type=transaction_type)
     
@@ -113,10 +105,8 @@ def inventory_transaction_list(request):
         except (ValueError, TypeError):
             pass
     
-    # 排序
     transactions = transactions.order_by('-created_at')
     
-    # 分页
     paginator = Paginator(transactions, 20)  # 每页20条记录
     page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
@@ -144,7 +134,6 @@ def inventory_in(request):
             quantity = form.cleaned_data['quantity']
             notes = form.cleaned_data['notes']
             
-            # 使用工具函数更新库存
             success, inventory, result = update_inventory(
                 product=product,
                 quantity=quantity,  # 正数表示入库
@@ -154,7 +143,6 @@ def inventory_in(request):
             )
             
             if success:
-                # 记录操作日志
                 OperationLog.objects.create(
                     operator=request.user,
                     operation_type='INVENTORY',
@@ -196,7 +184,6 @@ def inventory_out(request):
             quantity = form.cleaned_data['quantity']
             notes = form.cleaned_data['notes']
             
-            # 先检查库存是否足够
             if not check_inventory(product, quantity):
                 messages.error(request, f'出库失败: {product.name} 当前库存不足')
                 return render(request, 'inventory/inventory_transaction_form.html', {
@@ -206,7 +193,6 @@ def inventory_out(request):
                     'transaction_type': 'OUT'
                 })
             
-            # 使用工具函数更新库存
             success, inventory, result = update_inventory(
                 product=product,
                 quantity=-quantity,  # 负数表示出库
@@ -216,7 +202,6 @@ def inventory_out(request):
             )
             
             if success:
-                # 记录操作日志
                 OperationLog.objects.create(
                     operator=request.user,
                     operation_type='INVENTORY',
@@ -258,17 +243,14 @@ def inventory_adjust(request):
             quantity = form.cleaned_data['quantity']
             notes = form.cleaned_data['notes']
             
-            # 获取当前库存
             try:
                 inventory = Inventory.objects.select_for_update().get(product=product)
                 current_quantity = inventory.quantity
             except Inventory.DoesNotExist:
                 current_quantity = 0
             
-            # 计算调整值
             adjustment_action = request.POST.get('adjustment_action')
             if adjustment_action == 'set':
-                # 设置为指定数量
                 if quantity < 0:
                     messages.error(request, '库存数量不能为负数')
                     return render(request, 'inventory/inventory_adjust_form.html', {
@@ -278,10 +260,8 @@ def inventory_adjust(request):
                 
                 adjustment_value = quantity - current_quantity
             elif adjustment_action == 'add':
-                # 增加指定数量
                 adjustment_value = quantity
             elif adjustment_action == 'subtract':
-                # 减少指定数量
                 if quantity > current_quantity:
                     messages.error(request, f'减少的数量({quantity})超过了当前库存({current_quantity})')
                     return render(request, 'inventory/inventory_adjust_form.html', {
@@ -297,7 +277,6 @@ def inventory_adjust(request):
                     'current_quantity': current_quantity
                 })
             
-            # 使用工具函数更新库存
             success, inventory, result = update_inventory(
                 product=product,
                 quantity=adjustment_value,
@@ -307,7 +286,6 @@ def inventory_adjust(request):
             )
             
             if success:
-                # 记录操作日志
                 OperationLog.objects.create(
                     operator=request.user,
                     operation_type='INVENTORY',
@@ -331,7 +309,6 @@ def inventory_adjust(request):
             except Product.DoesNotExist:
                 pass
     
-    # 获取当前库存（如果已选择商品）
     current_quantity = 0
     if form.initial.get('product'):
         try:
@@ -361,7 +338,7 @@ def inventory_transaction_create(request):
             if not success:
                 messages.error(request, f'入库失败: {entry}')
                 return render(request, 'inventory/inventory_form.html', {'form': form})
-            # 记录操作日志
+
             OperationLog.objects.create(
                 operator=request.user,
                 operation_type='INVENTORY',
