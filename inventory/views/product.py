@@ -162,23 +162,19 @@ def product_list(request):
 @login_required
 def product_detail(request, pk):
     """商品详情视图"""
-    product = get_object_or_404(Product, pk=pk)
+    product = get_object_or_404(Product.objects.select_related('category'), pk=pk)
     
-    # 获取商品库存信息
     try:
         inventory = Inventory.objects.get(product=product)
     except Inventory.DoesNotExist:
         inventory = None
     
-    # 获取商品批次信息
-    batches = ProductBatch.objects.filter(product=product).order_by('-created_at')
+    batches = ProductBatch.objects.filter(product=product).select_related('supplier').order_by('-created_at')
     
-    # 获取商品图片
     images = ProductImage.objects.filter(product=product).order_by('order')
     
-    # 获取销售记录
     from inventory.models import SaleItem
-    sales_history = SaleItem.objects.filter(product=product).order_by('-sale__created_at')[:10]
+    sales_history = SaleItem.objects.filter(product=product).select_related('sale').order_by('-sale__created_at', '-pk')[:10]
     
     context = {
         'product': product,
@@ -732,4 +728,4 @@ def product_edit(request, pk):
     """
     product_update的别名函数，用于保持向后兼容性
     """
-    return product_update(request, pk) 
+    return product_update(request, pk)
