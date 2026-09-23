@@ -1,181 +1,87 @@
-<div align="center">
-
 # IOE 库存管理系统
 
-**面向零售门店、小型仓库和销售场景的 Django 库存、收银、会员与报表系统。**
+[English](README.md) · [Docker 部署指南](README.docker_zh.md) · [问题反馈](https://github.com/zhtyyx/ioe/issues)
 
-<p>
-  <a href="README.md">English</a> | <b>简体中文</b>
-</p>
+IOE 是面向小型零售门店的 Django 应用，用于管理商品、库存、销售、会员和报表。默认使用 SQLite，本地启动不需要单独安装数据库服务。
 
-<p>
-  <a href="https://www.djangoproject.com/"><img src="https://img.shields.io/badge/Django-4.2+-0C4B33?style=for-the-badge&logo=django&logoColor=white" alt="Django" /></a>
-  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" /></a>
-  <a href="README.docker_zh.md"><img src="https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-F6C915?style=for-the-badge" alt="MIT License" /></a>
-</p>
+![IOE 系统首页](asset/main_page.png)
 
-<p>
-  <a href="https://github.com/zhtyyx/ioe/stargazers"><img src="https://img.shields.io/github/stars/zhtyyx/ioe?style=social" alt="GitHub stars" /></a>
-  <a href="https://github.com/zhtyyx/ioe/fork"><img src="https://img.shields.io/github/forks/zhtyyx/ioe?style=social" alt="GitHub forks" /></a>
-  <a href="https://github.com/zhtyyx/ioe/issues"><img src="https://img.shields.io/github/issues/zhtyyx/ioe" alt="GitHub issues" /></a>
-</p>
+## 当前支持的功能
 
-<p>
-  <a href="#快速开始"><b>快速开始</b></a> ·
-  <a href="#系统截图"><b>系统截图</b></a> ·
-  <a href="#star-趋势"><b>Star 趋势</b></a> ·
-  <a href="README.docker_zh.md"><b>Docker 部署</b></a>
-</p>
+| 模块 | 功能 |
+| --- | --- |
+| 商品 | 分类、条码、价格、预设颜色与尺码、图片、详情页 |
+| 库存 | 入库、出库、调整、低库存提醒、库存流水、盘点 |
+| 销售 | 收银、支付方式、会员折扣、余额支付、销售记录 |
+| 会员 | 等级、充值、余额与积分管理、生日提醒、会员导入导出 |
+| 管理 | 报表、用户权限、操作日志、备份管理 |
 
-<img src="./asset/main_page.png" width="100%" alt="IOE 系统首页预览" />
+[issue #34](https://github.com/zhtyyx/ioe/issues/34) 中的商品批量导入导出、自定义颜色与尺码、已完成订单退货仍待实现。未完成的销售单可以取消，但取消不等于退货或退款。
 
-</div>
+## 页面截图
 
-## 为什么选择 IOE
+![库存列表](asset/库存列表.png)
 
-IOE 不是单纯的商品表 CRUD，而是围绕真实门店流程设计的一套库存管理系统。它把商品资料、库存变动、收银销售、会员余额、积分、库存盘点、经营报表、操作日志和备份工具放在一个 Django 应用里，便于自部署和二次开发。
+![收银台](asset/收银台-添加商品.png)
 
-适合这些场景：
+![销售记录](asset/销售记录.png)
 
-- 零售门店需要统一管理商品、库存和收银
-- 小型仓库需要入库、出库、调整和盘点
-- 店铺需要会员等级、积分、充值和余额消费
-- 团队希望拥有可定制、可私有部署的 Django 代码库
+## 本地运行
 
-<div align="center">
-  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 扫码添加我的微信</b><br/><br/>
-  <img src="./asset/wxqun.png" width="30%" alt="微信二维码" />
-</div>
+建议使用 Python 3.10 或更高版本；Docker 镜像使用 Python 3.10。
 
-## 核心能力
+1. 克隆仓库并创建虚拟环境：
 
-<table>
-  <tr>
-    <td><b>商品资料</b></td>
-    <td>商品、分类、条码、图片、规格、制造商和价格管理。</td>
-  </tr>
-  <tr>
-    <td><b>库存控制</b></td>
-    <td>入库、出库、调整、低库存预警、库存流水和库存盘点。</td>
-  </tr>
-  <tr>
-    <td><b>销售收银</b></td>
-    <td>销售单、支付方式、会员折扣、余额支付、积分、取消和退货流程。</td>
-  </tr>
-  <tr>
-    <td><b>会员运营</b></td>
-    <td>会员资料、会员等级、生日提醒、充值记录、余额、积分和消费历史。</td>
-  </tr>
-  <tr>
-    <td><b>报表与系统工具</b></td>
-    <td>销售趋势、商品表现、库存健康、利润分析、操作日志和系统备份。</td>
-  </tr>
-</table>
+   ```bash
+   git clone https://github.com/zhtyyx/ioe.git
+   cd ioe
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 
-## 系统截图
+   以上命令适用于 POSIX shell。Windows 用户可用 `.venv\Scripts\activate` 激活环境，并在迁移前创建 `db` 目录。
 
-<div align="center">
-  <img src="./asset/库存列表.png" width="100%" alt="库存列表" /><br/><br/>
-  <img src="./asset/收银台-添加商品.png" width="100%" alt="收银台" /><br/><br/>
-  <img src="./asset/销售记录.png" width="100%" alt="销售记录" /><br/><br/>
-  <img src="./asset/报表中心.png" width="100%" alt="报表中心" /><br/><br/>
-  <img src="./asset/库存盘点.png" width="100%" alt="库存盘点" /><br/><br/>
-</div>
+2. 安装依赖并初始化 SQLite：
 
-## 快速开始
+   ```bash
+   python -m pip install -r requirements.txt
+   mkdir -p db
+   python manage.py migrate
+   python manage.py createsuperuser
+   ```
 
-### 1. 安装依赖
+3. 启动开发服务：
+
+   ```bash
+   python manage.py runserver
+   ```
+
+打开 <http://127.0.0.1:8000/>，使用刚创建的账号登录。数据库文件位于 `db/db.sqlite3`，上传文件位于 `media/`。
+
+`runserver` 仅用于本地开发。容器启动、环境变量和部署限制见 [Docker 部署指南](README.docker_zh.md)。
+
+## 运行测试
 
 ```bash
-pip install -r requirements.txt
+python manage.py test inventory.tests
 ```
 
-### 2. 初始化数据库
-
-系统默认使用 SQLite，本地运行无需额外安装数据库服务。
-
-```bash
-python manage.py migrate
-```
-
-生产环境可以在 `inventory/settings.py` 的 `DATABASES` 中切换到 PostgreSQL。项目已包含 `psycopg2` 依赖。
-
-### 3. 创建管理员账户
-
-```bash
-python manage.py createsuperuser
-```
-
-### 4. 启动开发服务
-
-```bash
-python manage.py runserver
-```
-
-然后在浏览器中打开 [http://127.0.0.1:8000/](http://127.0.0.1:8000/)。
-
-## Docker 部署
-
-- [Docker 部署指南](README.docker_zh.md)
-- [Docker Deployment Guide](README.docker_en.md)
-
-## Star 趋势
-
-<div align="center">
-  <a href="https://star-history.com/#zhtyyx/ioe&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date&theme=dark" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date" />
-      <img alt="IOE Star 趋势图" src="https://api.star-history.com/svg?repos=zhtyyx/ioe&type=Date" width="100%" />
-    </picture>
-  </a>
-</div>
+当前测试集有 4 项旧的集成/视图测试失败；排查完整测试结果时，请先核对这些测试的断言。
 
 ## 项目结构
 
 ```text
-.
-├── inventory/        # 主要 Django 应用
-├── project/          # Django 项目配置
-├── asset/            # 截图和 README 素材
-├── requirements.txt  # Python 依赖
-├── Dockerfile
-├── docker-compose.yml
-└── manage.py
+inventory/            Django 配置、模型、视图、模板和测试
+asset/                文档截图
+Dockerfile            容器镜像
+docker-compose.yml    本地 Compose 配置
+docker-compose.prod.yml  生产配置示例
+requirements.txt       Python 依赖
+manage.py              Django 管理命令
 ```
 
 ## 参与贡献
 
-欢迎提交 issue 和 pull request。为了保持主分支稳定，建议：
+发现问题或提出新功能，请创建 [issue](https://github.com/zhtyyx/ioe/issues)。PR 尽量只处理一个主题；修改库存、销售、余额、备份时请附测试，修改页面时请附截图。
 
-- 一个 PR 只修一个问题
-- 一个 PR 只做一个功能域
-- 涉及库存、销售、余额、备份的改动请补测试
-- UI 改动请附截图说明
-
-较大的功能建议先开 issue 讨论范围，再开始实现。
-
-## 支持项目
-
-如果这个项目对你有帮助，可以通过以下方式支持后续维护：
-
-<div align="center">
-  <img src="./asset/buyme.jpg" width="30%" alt="支持项目二维码" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" alt="微信二维码" />
-</div>
-
-## 联系方式
-
-- 问题反馈：[GitHub Issues](https://github.com/zhtyyx/ioe/issues)
-- 邮箱：[zhtyyx@gmail.com](mailto:zhtyyx@gmail.com)
-
-## 许可证
-
-本项目采用 [MIT License](LICENSE)。
-
----
-
-<div align="center">
-  软件著作权已登记，如有疑问请联系项目维护者。<br/>
-  Copyright (c) 2025-2026 IOE Team. All rights reserved.
-</div>
+项目采用 [MIT License](LICENSE)。

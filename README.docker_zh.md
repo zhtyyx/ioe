@@ -1,92 +1,56 @@
-# Docker部署指南
+# Docker 部署指南
 
-本文档提供了使用Docker部署本应用的详细说明。
+[English](README.docker_en.md) · [返回项目说明](README_zh.md)
 
-## 前提条件
+仓库提供 `docker-compose.yml` 和 `docker-compose.prod.yml`。两者都运行同一个 Django 容器，默认使用 SQLite；`prod` 文件主要把 `DEBUG` 默认值设为 `False`，不是一套完整的生产环境方案。
 
-- 安装 [Docker](https://docs.docker.com/get-docker/)
-- 安装 [Docker Compose](https://docs.docker.com/compose/install/)
+## 准备
 
-## 开发环境部署
-
-1. 克隆代码库
+需要安装 Docker 和 Docker Compose 插件（命令为 `docker compose`）。在仓库根目录执行：
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/zhtyyx/ioe.git
 cd ioe
-```
-
-2. 创建环境变量文件
-
-```bash
 cp .env.template .env
-# 编辑.env文件，填入正确的配置信息
+python3 -c 'import secrets; print(secrets.token_urlsafe(50))'
 ```
 
-3. 构建并启动容器
+把最后一条命令生成的随机值填入 `.env` 的 `SECRET_KEY`。不要沿用模板中的占位值，也不要提交 `.env`。把 `ALLOWED_HOSTS` 改为实际访问的域名或地址，多个值用逗号分隔。本地调试可将 `DEBUG` 改为 `True`；对外部署保持 `False`。
+
+目前 Compose 只向 Django 传入 `DEBUG`、`SECRET_KEY` 和 `ALLOWED_HOSTS`。数据库固定为 SQLite，`.env` 中的其他配置不会自动切换数据库或邮件服务。
+
+## 启动
+
+本地运行：
 
 ```bash
-docker-compose up --build
+docker compose up -d --build
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+docker compose exec web python manage.py createsuperuser
 ```
 
-4. 访问应用
+打开 <http://localhost:8000/> 并登录。`createsuperuser` 只需为新环境执行一次；以后更新代码或首次挂载新数据卷时，应重新运行 `migrate`。Dockerfile 虽在镜像构建时运行迁移和静态文件收集，运行中的数据库和静态目录使用挂载卷，因此仍需执行上面的运行时命令。
 
-打开浏览器，访问 http://localhost:8000
+如果要使用生产配置示例，把上述命令中的 `docker compose` 全部替换为 `docker compose -f docker-compose.prod.yml`，并在启动前确认 `.env` 中 `DEBUG=False`、`ALLOWED_HOSTS` 和随机 `SECRET_KEY`。该配置仍直接暴露 8000 端口、挂载仓库目录，缺少 HTTPS 反向代理等生产防护；不能仅凭文件名把它当作已经加固的公网部署。
 
-## 生产环境部署
+## 数据与运维
 
-1. 克隆代码库
+| 位置 | 内容 |
+| --- | --- |
+| `db_volume` | SQLite 数据库，容器内路径 `/app/db` |
+| `media_volume` | 上传的图片，容器内路径 `/app/media` |
+| `static_volume` | 收集后的静态资源，容器内路径 `/app/staticfiles` |
+| 仓库中的 `logs/` | 运行日志，通过绑定挂载写回宿主机 |
+
+常用命令：
 
 ```bash
-git clone <repository-url>
-cd ioe
+docker compose logs -f web
+docker compose exec web python manage.py check
+docker compose down
 ```
 
-2. 创建环境变量文件
+`docker compose down` 不会删除上述命名卷；不要在需要保留数据时使用 `down -v`。备份时同时保存数据库卷和媒体卷。若使用生产配置示例，常用命令也要加 `-f docker-compose.prod.yml`。
 
-```bash
-cp .env.template .env
-# 编辑.env文件，填入正确的配置信息，特别是SECRET_KEY和ALLOWED_HOSTS
-```
-
-3. 使用生产配置启动容器
-
-```bash
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-4. 创建超级用户（如果需要）
-
-```bash
-docker-compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
-```
-
-## 数据持久化
-
-在生产环境中，数据存储在Docker卷中：
-
-- `static_volume`: 静态文件
-- `media_volume`: 媒体文件（如上传的图片）
-- `db_volume`: 数据库文件
-
-## 常用命令
-
-- 查看日志：`docker-compose logs -f`
-- 停止服务：`docker-compose down`
-- 重启服务：`docker-compose restart`
-- 执行Django管理命令：`docker-compose exec web python manage.py <command>`
-
-## 自定义配置
-
-如需自定义Docker配置，可以编辑以下文件：
-
-- `Dockerfile`: 修改应用环境
-- `docker-compose.yml`: 修改开发环境服务配置
-- `docker-compose.prod.yml`: 修改生产环境服务配置
-
-## 注意事项
-
-1. 生产环境中，请确保设置了安全的SECRET_KEY
-2. 更新ALLOWED_HOSTS以包含您的域名
-3. 考虑使用外部数据库服务（如PostgreSQL）替代SQLite以获得更好的性能
-4. 定期备份数据卷中的数据
+镜像构建期间，Dockerfile 已为 apt 和 pip 配置清华镜像源；它们只影响镜像构建时的依赖下载。
