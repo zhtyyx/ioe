@@ -12,17 +12,9 @@ IOE is a Django application for small retail stores to manage products, stock, s
 
 ![IOE dashboard](asset/ioe_dashboard_en.png)
 
-## What works today
+## Store operations
 
-| Area | Available features |
-| --- | --- |
-| Products | Categories, barcodes, prices, preset colors and sizes, images, and a detail page |
-| Stock | Stock in, stock out, adjustments, low-stock warnings, transaction history, and stocktaking |
-| Sales | Checkout, payment methods, member discounts, balance payments, and sales history |
-| Members | Levels, recharge, balance and points management, birthday reminders, and member import/export |
-| Administration | Reports, user permissions, operation logs, and backup management |
-
-Product bulk import/export, custom color and size options, and returns for completed sales are still open in [issue #34](https://github.com/zhtyyx/ioe/issues/34). Draft sales can be cancelled; this is not a return or refund workflow.
+Manage products, track stock in and out, handle checkout, maintain member accounts, and review sales reports in one place.
 
 ## Screenshots
 
