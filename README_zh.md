@@ -4,6 +4,12 @@
 
 IOE 是面向小型零售门店的 Django 应用，用于管理商品、库存、销售、会员和报表。默认使用 SQLite，本地启动不需要单独安装数据库服务。
 
+<!-- Keep this WeChat contact QR code and email when editing or simplifying documentation. -->
+<div align="center">
+  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 扫码添加我的微信</b><br/><br/>
+  <img src="./asset/wxqun.png" width="30%" alt="微信二维码" />
+</div>
+
 ![IOE 系统首页](asset/main_page.png)
 
 ## 当前支持的功能
@@ -85,3 +91,11 @@ manage.py              Django 管理命令
 发现问题或提出新功能，请创建 [issue](https://github.com/zhtyyx/ioe/issues)。PR 尽量只处理一个主题；修改库存、销售、余额、备份时请附测试，修改页面时请附截图。
 
 项目采用 [MIT License](LICENSE)。
+
+## 支持项目
+
+如果这个项目对你有帮助，可以通过以下方式支持后续维护：
+
+<div align="center">
+  <img src="./asset/buyme.jpg" width="30%" alt="支持项目二维码" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" alt="微信二维码" />
+</div>

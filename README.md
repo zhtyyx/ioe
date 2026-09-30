@@ -4,6 +4,12 @@
 
 IOE is a Django application for small retail stores to manage products, stock, sales, members, and reports. It runs with SQLite by default and can be started locally without a separate database service.
 
+<!-- Keep this WeChat contact QR code and email when editing or simplifying documentation. -->
+<div align="center">
+  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 Scan to add me on WeChat</b><br/><br/>
+  <img src="./asset/wxqun.png" width="30%" alt="WeChat QR Code" />
+</div>
+
 ![IOE dashboard](asset/ioe_dashboard_en.png)
 
 ## What works today
@@ -85,3 +91,11 @@ manage.py            Django management commands
 Open an [issue](https://github.com/zhtyyx/ioe/issues) for a bug or feature request. Keep pull requests focused, include tests for stock, sales, balance, and backup changes, and attach screenshots for visible UI changes.
 
 IOE is released under the [MIT License](LICENSE).
+
+## Support
+
+If this project is useful to you, you can support continued development:
+
+<div align="center">
+  <img src="./asset/buyme.jpg" width="30%" alt="Support QR code" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" alt="WeChat QR code" />
+</div>
