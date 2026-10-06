@@ -1,5 +1,6 @@
 import re
 from django import forms
+from django.utils.translation import gettext as _
 from django.forms import inlineformset_factory
 from inventory.models import Product, Category, ProductImage, ProductBatch, Supplier
 
@@ -50,6 +51,23 @@ class ProductForm(forms.ModelForm):
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input', 'aria-label': '是否启用'}),
         }
         
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        labels = {'barcode': '商品条码', 'name': '商品名称', 'category': '商品分类',
+                  'color': '颜色', 'size': '尺码', 'description': '商品描述',
+                  'price': '售价', 'cost': '成本价', 'image': '商品图片',
+                  'specification': '规格', 'manufacturer': '制造商',
+                  'is_active': '是否启用', 'warning_level': '预警库存'}
+        for name, field in self.fields.items():
+            field.label = _(labels.get(name, str(field.label)))
+            field.help_text = _(str(field.help_text))
+            for attr in ('placeholder', 'aria-label', 'title'):
+                if attr in field.widget.attrs:
+                    field.widget.attrs[attr] = _(field.widget.attrs[attr])
+            if name in ('color', 'size'):
+                field.choices = [(value, _(str(label))) for value, label in field.choices]
+        self.fields['category'].empty_label = _('请选择分类')
+
     def clean_barcode(self):
         barcode = self.cleaned_data.get('barcode')
         if barcode:

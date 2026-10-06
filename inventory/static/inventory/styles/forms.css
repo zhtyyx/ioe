@@ -1,0 +1,196 @@
+/* HeroUI editor fields: one field rhythm and one action footer. */
+.hero-form {
+    min-width: 0;
+}
+
+.editor-card {
+    padding: 0;
+    gap: 0;
+}
+
+.editor-card > .card__content {
+    padding: 16px;
+}
+
+.editor-grid {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 12px 16px;
+    align-items: start;
+}
+
+.editor-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.editor-field .label {
+    font-size: 12px;
+    font-weight: 550;
+    color: var(--foreground);
+}
+
+.field-required {
+    color: var(--danger-text);
+}
+
+.editor-field .description {
+    font-size: 11px;
+    line-height: 16px;
+    color: var(--muted);
+}
+
+.editor-field .field-error {
+    font-size: 12px;
+    color: var(--danger-text);
+}
+
+.hero-form :is(input.form-control,.select__trigger) {
+    height: 36px !important;
+    min-height: 36px;
+    font-size: 13px !important;
+    padding: 7px 10px !important;
+    line-height: 20px;
+    border-radius: 8px;
+    margin: 0 !important;
+}
+
+.hero-form textarea.form-control {
+    min-height: 72px;
+    height: 72px !important;
+    padding: 8px 10px;
+    font-size: 13px !important;
+    resize: vertical;
+    margin: 0 !important;
+}
+
+.editor-wide {
+    grid-column: 1 / -1;
+}
+
+.editor-checkbox {
+    flex-direction: row;
+    align-items: center;
+    min-height: 36px;
+    gap: 8px;
+    align-self: end;
+}
+
+.editor-checkbox .label {
+    order: 1;
+}
+
+.product-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 240px;
+    gap: 20px;
+}
+
+.editor-media {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.editor-media .image-preview {
+    display: grid;
+    place-items: center;
+    min-height: 140px;
+    border: 1px dashed var(--separator);
+    border-radius: 8px;
+    background: var(--field-background);
+    color: var(--muted);
+    overflow: hidden;
+}
+
+.editor-media .image-preview img {
+    max-width: 100%;
+    max-height: 160px;
+    object-fit: contain;
+}
+
+.editor-media .image-preview > i {
+    font-size: 28px;
+}
+
+.hero-form input[type=file] {
+    height: auto !important;
+    padding: 6px !important;
+    font-size: 11px !important;
+}
+
+.hero-form input[type=file]::file-selector-button {
+    border: 0;
+    border-radius: 5px;
+    background: var(--default);
+    color: var(--foreground);
+    padding: 6px 8px;
+    margin: 0 8px 0 0;
+    font: inherit;
+    cursor: pointer;
+}
+
+.editor-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--separator);
+    margin-top: 16px;
+}
+
+.editor-card > .editor-actions {
+    margin-top: 0;
+}
+
+.inventory-editor {
+    width: 100%;
+    max-width: 900px;
+}
+
+@media(max-width:767px) {
+    .product-editor-grid,.editor-grid {
+        grid-template-columns: minmax(0,1fr);
+    }
+    .editor-media .image-preview {
+        min-height: 100px;
+    }
+    .editor-card > .card__content {
+        padding: 12px;
+    }
+}
+
+.editor-upload {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 7px;
+    border: 1px solid var(--separator);
+    border-radius: 8px;
+    background: var(--field-background);
+}
+
+.editor-upload input[type=file] {
+    position: absolute;
+    width: 1px;
+    height: 1px !important;
+    opacity: 0;
+    clip-path: inset(50%);
+    padding: 0 !important;
+}
+
+.editor-upload:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.editor-upload [data-file-name] {
+    font-size: 11px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+    min-width: 0;
+}

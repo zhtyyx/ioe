@@ -1,0 +1,3 @@
+{% extends 'inventory/base.html' %}
+{% block title %}停用商品 - {{ block.super }}{% endblock %}
+{% block content %}{% include 'inventory/includes/deactivate_confirmation.html' with entity=product entity_type='商品' return_route='product_list' %}{% endblock %}

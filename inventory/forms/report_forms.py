@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta, datetime, date
 
@@ -9,13 +10,13 @@ class DateRangeForm(forms.Form):
     """通用日期范围表单，用于所有报表"""
     
     PERIOD_CHOICES = [
-        ('day', '按日'),
-        ('week', '按周'),
-        ('month', '按月'),
-        ('quarter', '按季度'),
-        ('year', '按年'),
-        ('hour', '按小时'),  # 新增按小时统计选项
-        ('minute', '按分钟'),  # 新增按分钟统计选项，适用于实时监控
+        ('day', _('按日')),
+        ('week', _('按周')),
+        ('month', _('按月')),
+        ('quarter', _('按季度')),
+        ('year', _('按年')),
+        ('hour', _('按小时')),  # 新增按小时统计选项
+        ('minute', _('按分钟')),  # 新增按分钟统计选项，适用于实时监控
     ]
     
     CACHE_PRESETS = [
@@ -73,39 +74,39 @@ class DateRangeForm(forms.Form):
     )
     
     start_date = forms.DateField(
-        label='开始日期',
+        label=_('开始日期'),
         widget=forms.DateInput(attrs={
             'type': 'date', 
             'class': 'form-control',
-            'aria-label': '开始日期',
+            'aria-label': _('开始日期'),
             'style': 'height: 48px; font-size: 16px;',  # 增大触摸区域和字体
             'data-bs-toggle': 'tooltip',
-            'title': '报表开始日期'
+            'title': _('报表开始日期')
         }),
-        initial=timezone.now().date() - timedelta(days=30)
+        initial=lambda: timezone.now().date() - timedelta(days=30)
     )
     
     end_date = forms.DateField(
-        label='结束日期',
+        label=_('结束日期'),
         widget=forms.DateInput(attrs={
             'type': 'date', 
             'class': 'form-control',
-            'aria-label': '结束日期',
+            'aria-label': _('结束日期'),
             'style': 'height: 48px; font-size: 16px;',  # 增大触摸区域和字体
             'data-bs-toggle': 'tooltip',
-            'title': '报表结束日期'
+            'title': _('报表结束日期')
         }),
-        initial=timezone.now().date()
+        initial=lambda: timezone.now().date()
     )
     
     period = forms.ChoiceField(
-        label='时间周期',
+        label=_('时间周期'),
         choices=PERIOD_CHOICES,
         initial='day',
         required=False,
         widget=forms.Select(attrs={
             'class': 'form-control form-select',
-            'aria-label': '时间周期'
+            'aria-label': _('时间周期')
         })
     )
     
@@ -171,12 +172,12 @@ class DateRangeForm(forms.Form):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 添加响应式布局的辅助类
+        # Keep report controls compact and native date values locale-independent.
         for field in self.fields.values():
-            field.widget.attrs.update({
-                'class': field.widget.attrs.get('class', '') + ' mb-2',  # 添加下边距
-            })
-    
+            field.widget.attrs.pop('style', None)
+            if isinstance(field.widget, forms.DateInput):
+                field.widget.format = '%Y-%m-%d'
+
     def _get_date_range_from_preset(self, preset):
         """根据预设值获取日期范围"""
         today = timezone.now().date()
@@ -282,7 +283,7 @@ class DateRangeForm(forms.Form):
                 
         # 确保开始日期不大于结束日期
         if start_date and end_date and start_date > end_date:
-            self.add_error('start_date', '开始日期不能晚于结束日期')
+            self.add_error('start_date', _('开始日期不能晚于结束日期'))
             
         # 如果设置了预设缓存时间，更新缓存超时
         cache_preset = cleaned_data.get('cache_preset')
@@ -328,7 +329,7 @@ class DateRangeForm(forms.Form):
 class TopProductsForm(DateRangeForm):
     """用于热销商品报表的表单"""
     limit = forms.IntegerField(
-        label='显示数量',
+        label=_('显示数量'),
         initial=10,
         min_value=1,
         max_value=100,
@@ -340,8 +341,9 @@ class InventoryTurnoverForm(DateRangeForm):
     """用于库存周转报表的表单"""
     category = forms.ModelChoiceField(
         queryset=Category.objects.all(),
+        label=_("分类"),
         required=False,
-        empty_label="所有分类",
+        empty_label=_("所有分类"),
         widget=forms.Select(attrs={'class': 'form-control form-select'})
     )
 
@@ -352,7 +354,7 @@ class ReportFilterForm(DateRangeForm):
     category = forms.ModelChoiceField(
         queryset=Category.objects.filter(is_active=True),
         required=False,
-        empty_label="所有分类",
+        empty_label=_("所有分类"),
         widget=forms.Select(attrs={
             'class': 'form-control form-select',
             'aria-label': '商品分类',
@@ -496,6 +498,6 @@ class SalesReportForm(ReportFilterForm):
         
         # 验证最小金额不大于最大金额
         if min_amount and max_amount and min_amount > max_amount:
-            self.add_error('min_amount', '最小金额不能大于最大金额')
+            self.add_error('min_amount', _('最小金额不能大于最大金额'))
             
         return cleaned_data 

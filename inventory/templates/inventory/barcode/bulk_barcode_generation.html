@@ -7,7 +7,7 @@
 <div class="container mt-4">
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">批量生成商品条码</h5>
+            <h5 class="page-title visually-hidden mb-0">批量生成商品条码</h5>
         </div>
         <div class="card-body">
             <form method="post" id="bulk-barcode-form">
@@ -203,10 +203,12 @@
         }
         
         // 增强分类选择器
-        $('#category-filter').select2({
-            placeholder: '选择分类',
-            allowClear: true
-        });
+        if ($.fn.select2) {
+            $('#category-filter').select2({
+                placeholder: '选择分类',
+                allowClear: true
+            });
+        }
         
         // 初始禁用生成按钮
         $('#generate-btn').prop('disabled', true);

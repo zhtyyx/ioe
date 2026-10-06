@@ -1,34 +1,15 @@
 {% extends 'inventory/base.html' %}
-
 {% block title %}{% if request.LANGUAGE_CODE == 'en' %}Login{% else %}登录{% endif %} - {{ block.super }}{% endblock %}
-
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}User Login{% else %}用户登录{% endif %}</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label">{% if request.LANGUAGE_CODE == 'en' %}Username{% else %}用户名{% endif %}</label>
-                        <input type="text" name="username" class="form-control" id="id_username" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="id_password" class="form-label">{% if request.LANGUAGE_CODE == 'en' %}Password{% else %}密码{% endif %}</label>
-                        <input type="password" name="password" class="form-control" id="id_password" required>
-                    </div>
-                    {% if form.errors %}
-                    <div class="alert alert-danger">
-                        {% if request.LANGUAGE_CODE == 'en' %}Invalid username or password. Please try again.{% else %}用户名或密码错误，请重试。{% endif %}
-                    </div>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary">{% if request.LANGUAGE_CODE == 'en' %}Log in{% else %}登录{% endif %}</button>
-                </form>
-            </div>
-        </div>
-    </div>
+<div class="login-layout">
+    <section class="login-intro"><span class="eyebrow">YOUR EVERYDAY WORKSPACE</span><h1>{% if request.LANGUAGE_CODE == 'en' %}Less busywork.<br>More business.{% else %}经营有序，<br>生意有数。{% endif %}</h1><p>{% if request.LANGUAGE_CODE == 'en' %}Products, inventory, checkout and members. Everything you need to run your store, in one place.{% else %}从一件商品到每一笔订单，<br>把门店日常交给 ioe，把时间留给顾客。{% endif %}</p><div class="login-features"><span><i class="bi bi-box-seam" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Inventory{% else %}库存管理{% endif %}</span><span><i class="bi bi-basket2" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Checkout{% else %}快捷收银{% endif %}</span><span><i class="bi bi-bar-chart" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Insights{% else %}经营分析{% endif %}</span></div></section>
+    <section class="card login-card"><h2>{% if request.LANGUAGE_CODE == 'en' %}User Login{% else %}欢迎回到 ioe{% endif %}</h2><p>{% if request.LANGUAGE_CODE == 'en' %}Sign in to your store workspace.{% else %}登录账户，开始今天的门店管理。{% endif %}</p>
+        <form method="post">{% csrf_token %}<input type="hidden" name="next" value="{{ next }}">
+            <div class="mb-4"><label for="id_username" class="form-label">{% if request.LANGUAGE_CODE == 'en' %}Username{% else %}用户名{% endif %}</label><input type="text" name="username" class="form-control" id="id_username" autocomplete="username" value="{{ form.username.value|default:'' }}" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Enter your username{% else %}请输入用户名{% endif %}" required autofocus></div>
+            <div class="mb-4"><label for="id_password" class="form-label">{% if request.LANGUAGE_CODE == 'en' %}Password{% else %}密码{% endif %}</label><input type="password" name="password" class="form-control" id="id_password" autocomplete="current-password" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Enter your password{% else %}请输入密码{% endif %}" required></div>
+            {% if form.errors %}<div class="alert alert-danger" role="alert">{% if request.LANGUAGE_CODE == 'en' %}Invalid username or password. Please try again.{% else %}用户名或密码错误，请重试。{% endif %}</div>{% endif %}
+            <button type="submit" class="button button--primary">{% if request.LANGUAGE_CODE == 'en' %}Log in{% else %}登录工作台{% endif %}<i class="bi bi-arrow-right" aria-hidden="true"></i></button>
+        </form><div class="login-note"><i class="bi bi-shield-check" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Your store. Your workspace.{% else %}专属于你的门店工作空间{% endif %}</div>
+    </section>
 </div>
 {% endblock %}

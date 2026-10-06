@@ -191,7 +191,7 @@ def product_detail(request, pk):
 def product_create(request):
     """创建商品视图"""
     if request.method == 'POST':
-        form = ProductForm(request.POST)
+        form = ProductForm(request.POST, request.FILES)
         image_formset = ProductImageFormSet(request.POST, request.FILES, prefix='images')
         
         # 修改验证逻辑，只检查表单是否有效，不强制检查图片表单集
@@ -274,7 +274,7 @@ def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk)
     
     if request.method == 'POST':
-        form = ProductForm(request.POST, instance=product)
+        form = ProductForm(request.POST, request.FILES, instance=product)
         image_formset = ProductImageFormSet(request.POST, request.FILES, prefix='images', instance=product)
         
         # 修改验证逻辑，只检查表单是否有效，不强制检查图片表单集

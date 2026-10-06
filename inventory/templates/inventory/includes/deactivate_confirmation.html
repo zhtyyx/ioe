@@ -1,0 +1,5 @@
+<div class="page-heading"><h1 class="page-title visually-hidden mb-0">停用{{ entity_type }}</h1><a class="button button--secondary" href="{% url return_route %}">返回列表</a></div>
+<section class="card"><div class="card-body">
+    <p>确认停用{{ entity_type }} <strong>{{ entity.name }}</strong>？历史记录会保留。</p>
+    <form method="post">{% csrf_token %}<div class="form-actions"><a class="button button--secondary" href="{% url return_route %}">取消</a><button class="button button--danger" type="submit">确认停用</button></div></form>
+</div></section>

@@ -1,0 +1,10 @@
+{% load i18n %}
+<div class="text-field editor-field {% if field.field.widget.input_type == 'checkbox' %}editor-checkbox{% endif %} {% if field.name == 'description' or field.name == 'notes' %}editor-wide{% endif %}">
+    <label class="label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="field-required" aria-hidden="true"> *</span>{% endif %}</label>
+    {% if field.field.widget.input_type == 'file' %}
+    <div class="editor-upload">{{ field }}<label class="button button--secondary button--sm" for="{{ field.id_for_label }}">{% translate '选择图片' %}</label><span data-file-name>{% translate '未选择图片' %}</span></div>
+    {% else %}{{ field }}{% endif %}
+    {% if field.name == 'barcode' %}<button class="button button--tertiary button--sm" type="button" id="generate-barcode">{% translate '自动生成条码' %}</button>{% endif %}
+    {% for error in field.errors %}<div class="field-error" role="alert">{{ error }}</div>{% endfor %}
+    {% if field.help_text %}<div class="description">{{ field.help_text }}</div>{% endif %}
+</div>

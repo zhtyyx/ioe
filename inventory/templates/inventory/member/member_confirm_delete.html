@@ -1,0 +1,3 @@
+{% extends 'inventory/base.html' %}
+{% block title %}停用会员 - {{ block.super }}{% endblock %}
+{% block content %}{% include 'inventory/includes/deactivate_confirmation.html' with entity=member entity_type='会员' return_route='member_list' %}{% endblock %}

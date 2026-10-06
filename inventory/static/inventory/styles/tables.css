@@ -1,0 +1,148 @@
+/* One compact list format across products, inventory, members, orders and reports. */
+.page-intro-empty {
+    display: contents !important;
+}
+
+.main-content .breadcrumb.page-intro-empty, .main-content nav.page-intro-empty {
+    display: none !important;
+}
+
+.main-content .page-action-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    min-height: 0;
+    padding: 0;
+}
+
+.page-heading:has(.page-title), .member-page-heading:has(.page-title) {
+    min-height: 0;
+    margin-bottom: 12px;
+}
+
+.page-action-bar > [class*="col-"] {
+    width: auto;
+    flex: 0 1 auto;
+}
+
+.page-action-bar .heading-actions {
+    flex-wrap: wrap;
+    width: auto;
+}
+
+.page-action-bar .heading-actions > .button {
+    margin-left: 0;
+}
+
+.main-content > .container-fluid {
+    padding-inline: 0 !important;
+}
+
+.table.data-table {
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.table.data-table > :not(caption) > * > * {
+    padding: 9px 12px;
+    vertical-align: middle;
+    border-color: var(--separator);
+}
+
+.table.data-table > thead > tr {
+    height: 36px;
+}
+
+.table.data-table > thead > tr > th {
+    background: var(--field-background);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 18px;
+    padding-block: 8px;
+    white-space: nowrap;
+}
+
+.table.data-table > tbody > tr {
+    height: 44px;
+}
+
+.table.data-table > tbody > tr > td {
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.table.data-table td :is(h1,h2,h3,h4,h5,h6,.h1,.h2,.h3,.h4,.h5,.h6,.fs-1,.fs-2,.fs-3,.fs-4,.fs-5,.fs-6) {
+    font-size: 12px !important;
+    line-height: 18px;
+    margin-bottom: 0 !important;
+}
+
+.table.data-table td :is(strong,b,.fw-bold) {
+    font-weight: 600 !important;
+}
+
+.table.data-table td small {
+    font-size: 11px;
+    line-height: 16px;
+}
+
+.table.data-table :is(th,td).data-number {
+    text-align: right !important;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.table.data-table :is(th,td).data-date {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.table.data-table :is(th,td).data-actions {
+    text-align: right !important;
+    white-space: nowrap;
+}
+
+.table.data-table .data-actions :is(.btn-group,.d-flex) {
+    justify-content: flex-end;
+}
+
+.table.data-table .data-actions .button {
+    min-height: 28px;
+    font-size: 12px;
+    padding: 5px 8px;
+}
+
+.table.data-table .data-actions .button--icon-only {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    padding: 0;
+}
+
+.table.data-table td[colspan] {
+    text-align: center;
+    padding-block: 24px;
+}
+
+.table.data-table .badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 7px;
+}
+
+.list-panel > .card-body > .mb-4, .list-panel > .card-body > .row.mb-4 {
+    margin-bottom: 12px !important;
+}
+
+.list-panel > .card-body > .row {
+    --bs-gutter-x: 12px;
+    --bs-gutter-y: 12px;
+}
+
+.list-panel > .card-body > .row:has(form) {
+    align-items: center;
+}

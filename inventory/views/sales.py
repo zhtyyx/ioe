@@ -760,9 +760,12 @@ def member_purchases(request):
     member_id = request.GET.get('member_id')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    search_query = request.GET.get('search', '').strip()
     
     sales = Sale.objects.filter(member__isnull=False)
     member = None
+    if search_query:
+        sales = sales.filter(Q(member__name__icontains=search_query) | Q(member__phone__icontains=search_query))
     
     if member_id:
         try:
@@ -789,16 +792,17 @@ def member_purchases(request):
         member_stats = sales.values(
             'member__id', 'member__name', 'member__phone'
         ).annotate(
-            total_amount=Sum('total_amount'),
+            purchase_total=Sum('total_amount'),
             total_sales=Count('id'),
             avg_amount=Avg('total_amount'),
             last_purchase=Max('created_at')
-        ).order_by('-total_amount')
+        ).order_by('-purchase_total')
         
         context = {
             'member_stats': member_stats,
             'start_date': start_date,
-            'end_date': end_date
+            'end_date': end_date,
+            'search_query': search_query
         }
         return render(request, 'inventory/member_purchases.html', context)
     

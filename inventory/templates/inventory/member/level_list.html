@@ -5,11 +5,11 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
+        <div class="card page-header-card">
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h2 class="card-title mb-0">会员等级管理</h2>
+                        <h2 class="page-title visually-hidden card-title mb-0">会员等级管理</h2>
                         <p class="text-muted mb-md-0">管理会员等级、折扣及升级条件</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
@@ -31,7 +31,7 @@
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover align-middle">
+                    <table class="table table-striped table-hover align-middle member-level-table">
                         <thead class="table-light">
                             <tr>
                                 <th>等级名称</th>
@@ -48,19 +48,19 @@
                             {% for level in levels %}
                             <tr>
                                 <td>
-                                    <span class="fs-5 d-flex align-items-center">
-                                        <i class="bi bi-award text-{{ level.color|default:'primary' }} me-2"></i>
+                                    <span class="member-level-name">
+                                        <i class="bi bi-award text-{{ level.color|default:'primary' }}" aria-hidden="true"></i>
                                         {{ level.name }}
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-success">{{ level.discount|floatformat:2 }}</span>
+                                    <span class="member-level-number">{{ level.discount|floatformat:2 }}</span>
                                 </td>
                                 <td>
-                                    <span class="fw-bold">{{ level.points_threshold }} 分</span>
+                                    <span class="member-level-number">{{ level.points_threshold }} 分</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">{{ level.member_count }} 名</span>
+                                    <span class="member-level-number">{{ level.member_count }} 名</span>
                                 </td>
                                 <td>
                                     {% if level.is_default %}
@@ -77,7 +77,7 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <small>{{ level.created_at|date:"Y-m-d" }}</small>
+                                    <span class="member-level-number text-muted">{{ level.created_at|date:"Y-m-d" }}</span>
                                 </td>
                                 <td>
                                     <div class="btn-group">
@@ -108,4 +108,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

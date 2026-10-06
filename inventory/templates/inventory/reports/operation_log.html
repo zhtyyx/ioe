@@ -1,24 +1,27 @@
 {% extends "inventory/base.html" %}
+{% load i18n %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}操作日志报表{% endblock %}
+{% block title %}{% translate "操作日志报表" %}{% endblock %}
 
-{% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block head %}
+<script src="{% static 'inventory/vendor/chart.umd.js' %}"></script>
 {% endblock %}
 
 {% block content %}
+<div class="report-page">
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1 class="h2">操作日志报表</h1>
+            <h1 class="page-title visually-hidden h2">{% translate "操作日志报表" %}</h1>
             <p class="text-muted">
-                日期范围: {{ start_date|date:"Y-m-d" }} 至 {{ end_date|date:"Y-m-d" }}
+                {% translate "日期范围" %}: {{ start_date|date:"Y-m-d" }} {% translate "至" %} {{ end_date|date:"Y-m-d" }}
             </p>
         </div>
         <div class="col-md-4 text-md-end">
-            <a href="{% url 'reports_index' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> 返回报表中心
+            <a href="{% url 'reports_index' %}" class="button button--secondary">
+                <i class="bi bi-arrow-left me-1"></i> {% translate "返回报表中心" %}
             </a>
         </div>
     </div>
@@ -26,12 +29,12 @@
     <!-- 搜索表单 -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="h5 mb-0">设置报表参数</h3>
+            <div class="card report-panel">
+                <div class="card-header card__header">
+                    <h3 class="h5 mb-0">{% translate "设置报表参数" %}</h3>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div class="card-body card__content">
+                    <form method="post" data-report-filter>
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-5">
@@ -41,7 +44,7 @@
                                 {{ form.end_date|as_crispy_field }}
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">查询</button>
+                                <button type="submit" class="button button--primary w-100">{% translate "查询" %}</button>
                             </div>
                         </div>
                     </form>
@@ -53,22 +56,22 @@
     <!-- 图表 -->
     <div class="row mb-4">
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h3 class="h5 mb-0">操作类型统计</h3>
+            <div class="card h-100 report-panel">
+                <div class="card-header card__header">
+                    <h3 class="h5 mb-0">{% translate "操作类型统计" %}</h3>
                 </div>
-                <div class="card-body">
-                    <canvas id="operationTypeChart" height="250"></canvas>
+                <div class="card-body card__content">
+                    <div class="report-chart">{% if log_data.operation_type_stats %}<canvas id="operationTypeChart" height="250"></canvas>{% else %}<div class="report-empty" role="status"><i class="bi bi-bar-chart" aria-hidden="true"></i><span>{% translate "当前筛选范围暂无数据" %}</span></div>{% endif %}</div>
                 </div>
             </div>
         </div>
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h3 class="h5 mb-0">操作员统计</h3>
+            <div class="card h-100 report-panel">
+                <div class="card-header card__header">
+                    <h3 class="h5 mb-0">{% translate "操作员统计" %}</h3>
                 </div>
-                <div class="card-body">
-                    <canvas id="operatorChart" height="250"></canvas>
+                <div class="card-body card__content">
+                    <div class="report-chart">{% if log_data.operation_type_stats %}<canvas id="operatorChart" height="250"></canvas>{% else %}<div class="report-empty" role="status"><i class="bi bi-bar-chart" aria-hidden="true"></i><span>{% translate "当前筛选范围暂无数据" %}</span></div>{% endif %}</div>
                 </div>
             </div>
         </div>
@@ -77,21 +80,21 @@
     <!-- 操作日志列表 -->
     <div class="row">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="h5 mb-0">操作日志列表</h3>
-                    <span class="badge bg-info">{{ log_data.logs|length }} 条记录</span>
+            <div class="card report-panel">
+                <div class="card-header d-flex justify-content-between align-items-center card__header">
+                    <h3 class="h5 mb-0">{% translate "操作日志列表" %}</h3>
+                    <span class="badge bg-info">{{ log_data.logs|length }} {% translate "条记录" %}</span>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0 card__content">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>操作时间</th>
-                                    <th>操作员</th>
-                                    <th>操作类型</th>
-                                    <th>关联对象</th>
-                                    <th>详情</th>
+                                    <th>{% translate "操作时间" %}</th>
+                                    <th>{% translate "操作员" %}</th>
+                                    <th>{% translate "操作类型" %}</th>
+                                    <th>{% translate "关联对象" %}</th>
+                                    <th>{% translate "详情" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -101,22 +104,22 @@
                                     <td>{{ log.operator.username }}</td>
                                     <td>
                                         {% if log.operation_type == 'INVENTORY' %}
-                                        <span class="badge bg-primary">库存操作</span>
+                                        <span class="badge bg-primary">{% translate "库存操作" %}</span>
                                         {% elif log.operation_type == 'SALE' %}
-                                        <span class="badge bg-success">销售操作</span>
+                                        <span class="badge bg-success">{% translate "销售操作" %}</span>
                                         {% elif log.operation_type == 'MEMBER' %}
-                                        <span class="badge bg-info">会员操作</span>
+                                        <span class="badge bg-info">{% translate "会员操作" %}</span>
                                         {% elif log.operation_type == 'INVENTORY_CHECK' %}
-                                        <span class="badge bg-warning">库存盘点</span>
+                                        <span class="badge bg-warning">{% translate "库存盘点" %}</span>
                                         {% else %}
-                                        <span class="badge bg-secondary">其他操作</span>
+                                        <span class="badge bg-secondary">{% translate "其他操作" %}</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {{ log.related_content_type.name }} #{{ log.related_object_id }}
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                        <button type="button" class="button button--sm button--secondary"
                                                 data-bs-toggle="tooltip" data-bs-placement="left" 
                                                 title="{{ log.details }}">
                                             <i class="bi bi-info-circle"></i>
@@ -125,7 +128,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">没有操作日志数据</td>
+                                    <td colspan="5" class="text-center py-4">{% translate "没有操作日志数据" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -146,7 +149,7 @@
         // 准备数据
         const typeLabels = [
             {% for type_stat in log_data.operation_type_stats %}
-                '{{ type_stat.operation_type }}',
+                '{% translate type_stat.operation_type %}',
             {% endfor %}
         ];
         
@@ -175,6 +178,7 @@
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         position: 'right'
@@ -208,7 +212,7 @@
             data: {
                 labels: opLabels,
                 datasets: [{
-                    label: '操作次数',
+                    label: '{% translate "操作次数" %}',
                     data: opCounts,
                     backgroundColor: 'rgba(13, 202, 240, 0.7)',
                     borderColor: 'rgba(13, 202, 240, 1)',
@@ -218,6 +222,7 @@
             options: {
                 indexAxis: 'y',
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                     legend: {
                         display: false
@@ -242,4 +247,5 @@
     });
 </script>
 {% endif %}
+</div>
 {% endblock %} 

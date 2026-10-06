@@ -10,7 +10,7 @@ IOE is a Django application for small retail stores to manage products, stock, s
   <img src="./asset/wxqun.png" width="30%" alt="WeChat QR Code" />
 </div>
 
-![IOE dashboard](asset/ioe_dashboard_en.png)
+![IOE sales trends](asset/ioe_sales_trend_en.png)
 
 ## Store operations
 
@@ -18,11 +18,56 @@ Manage products, track stock in and out, handle checkout, maintain member accoun
 
 ## Screenshots
 
-![Product list](asset/ioe_products_en.png)
+Screenshots using local demo data, showing reports and daily store workflows.
 
-![Inventory list](asset/ioe_inventory_en.png)
+### Sales trends
 
-![Sales checkout](asset/ioe_checkout_en.png)
+<img src="./asset/ioe_sales_trend_en.png" width="100%" alt="Sales trends" />
+
+### Inventory turnover
+
+<img src="./asset/ioe_inventory_turnover_en.png" width="100%" alt="Inventory turnover" />
+
+### Report center
+
+<img src="./asset/ioe_reports_en.png" width="100%" alt="Report center" />
+
+### Business overview
+
+<img src="./asset/ioe_dashboard_en.png" width="100%" alt="Business overview" />
+
+### Checkout
+
+<img src="./asset/ioe_checkout_en.png" width="100%" alt="Checkout" />
+
+<details>
+<summary>More screenshots: products, inventory, members, and stocktaking</summary>
+
+### Product catalog
+
+<img src="./asset/ioe_products_en.png" width="100%" alt="Product catalog" />
+
+### Product editor
+
+<img src="./asset/ioe_product_form_en.png" width="100%" alt="Product editor" />
+
+### Inventory
+
+<img src="./asset/ioe_inventory_en.png" width="100%" alt="Inventory" />
+
+### Members
+
+<img src="./asset/ioe_members_en.png" width="100%" alt="Members" />
+
+### Membership levels
+
+<img src="./asset/ioe_member_levels_en.png" width="100%" alt="Membership levels" />
+
+### Stocktaking
+
+<img src="./asset/ioe_stocktaking_en.png" width="100%" alt="Stocktaking" />
+
+</details>
 
 ## Run locally
 

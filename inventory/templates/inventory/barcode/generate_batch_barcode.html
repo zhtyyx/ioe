@@ -7,7 +7,7 @@
 <div class="container mt-4">
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">生成批次条码</h5>
+            <h5 class="page-title visually-hidden mb-0">生成批次条码</h5>
         </div>
         <div class="card-body">
             <form method="post" id="batch-barcode-form">
@@ -107,16 +107,20 @@
 <script>
     $(document).ready(function() {
         // 增强商品选择器
-        $('#product-select').select2({
-            placeholder: '请选择商品',
-            allowClear: true
-        });
+        if ($.fn.select2) {
+            $('#product-select').select2({
+                placeholder: '请选择商品',
+                allowClear: true
+            });
+        }
         
         // 增强批次选择器
-        $('#batch-select').select2({
-            placeholder: '选择批次',
-            allowClear: true
-        });
+        if ($.fn.select2) {
+            $('#batch-select').select2({
+                placeholder: '选择批次',
+                allowClear: true
+            });
+        }
         
         // 当选择商品时加载批次
         $('#product-select').change(function() {

@@ -1,0 +1,191 @@
+/* Report pages use the same HeroUI surfaces and compact control spacing. */
+.report-page {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.report-page > .container, .report-page > .container-fluid {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+}
+
+.report-page .row {
+    --bs-gutter-x: 12px;
+    --bs-gutter-y: 12px;
+}
+
+.report-page .row.mb-4 {
+    margin-bottom: 12px !important;
+}
+
+.report-page .report-panel {
+    height: 100%;
+    padding: 0;
+    gap: 0;
+    background: var(--surface) !important;
+    color: var(--foreground) !important;
+    border: 1px solid var(--separator);
+    border-radius: 9px;
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.report-page .card__header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    min-height: 0;
+    padding: 11px 14px;
+    background: transparent !important;
+    color: var(--foreground) !important;
+    border-bottom: 1px solid var(--separator);
+}
+
+.report-page .card__header :is(h3,h4,h5,h6) {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.report-page .card__content {
+    padding: 14px;
+}
+
+.report-page .card__header:has(+ .card__content [data-report-filter]) {
+    display: none;
+}
+
+.report-page [data-report-filter] .form-label {
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+.report-page [data-report-filter] .mb-3 {
+    margin-bottom: 0 !important;
+}
+
+.report-page [data-report-filter] .button {
+    min-height: 34px;
+}
+
+.report-page [data-report-filter] .row, .report-page form.row[data-report-filter] {
+    align-items: end;
+}
+
+.report-page .card__content:has(>h3) :is(h3) {
+    font-size: 23px;
+    font-weight: 600;
+    letter-spacing: -.4px;
+    line-height: 30px;
+    font-variant-numeric: tabular-nums;
+}
+
+.report-page .card__content:has(>h3) h6 {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 6px;
+}
+
+.report-page .report-panel:is(.bg-primary,.bg-success,.bg-info,.bg-warning) .bi {
+    font-size: 22px !important;
+    color: var(--accent);
+}
+
+.report-page .report-panel:is(.bg-primary,.bg-success,.bg-info,.bg-warning) h5 {
+    font-size: 23px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.report-page .report-panel:is(.bg-primary,.bg-success,.bg-info,.bg-warning) .small {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.report-chart {
+    height: 250px;
+    position: relative;
+    min-width: 0;
+}
+
+.report-chart canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.report-entry {
+    padding: 16px;
+    gap: 8px;
+    border: 1px solid var(--separator);
+    box-shadow: none;
+}
+
+.report-entry .stat-icon {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 0;
+    border-radius: 7px;
+    font-size: 16px;
+}
+
+.report-entry .card__title {
+    font-size: 14px;
+    line-height: 20px;
+    margin: 0;
+}
+
+.report-entry p {
+    font-size: 12px;
+    line-height: 20px;
+    margin: 0;
+    min-height: 0;
+}
+
+.report-entry .report-card-footer {
+    padding-top: 8px;
+    margin-top: 0;
+}
+
+@media(max-width:767px) {
+    .report-chart {
+        height: 220px;
+    }
+    .report-page .card__content {
+        padding: 12px;
+    }
+    .report-page .page-action-bar {
+        margin-bottom: 12px;
+    }
+}
+
+.report-page [data-report-filter] :is(input.form-control,select.form-select,.select__trigger) {
+    height: 34px !important;
+    min-height: 34px;
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    line-height: 20px;
+}
+
+.report-page .card__content:has(>h3) h5 {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.report-chart:has(.report-empty) {
+    height: 120px;
+}
+
+.report-empty {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 12px;
+}

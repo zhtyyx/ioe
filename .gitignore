@@ -85,3 +85,5 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
+# Ship the compiled app translations; regenerate with django compilemessages.
+!inventory/locale/**/django.mo

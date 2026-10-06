@@ -1,0 +1,6 @@
+<a class="card report-card report-entry" href="{% url route %}">
+    <span class="stat-icon {{ tone }}"><i class="bi {{ icon }}" aria-hidden="true"></i></span>
+    <h2 class="card__title">{% if request.LANGUAGE_CODE == 'en' %}{{ title_en }}{% else %}{{ title_zh }}{% endif %}</h2>
+    <p>{% if request.LANGUAGE_CODE == 'en' %}{{ description_en }}{% else %}{{ description_zh }}{% endif %}</p>
+    <span class="report-card-footer"><span>{% if request.LANGUAGE_CODE == 'en' %}{{ action_en|default:'View report' }}{% else %}{{ action_zh|default:'查看报表' }}{% endif %}</span><i class="bi bi-arrow-up-right" aria-hidden="true"></i></span>
+</a>

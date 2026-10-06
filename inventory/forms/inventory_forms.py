@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.translation import gettext as _
 
 from inventory.models import InventoryTransaction, Product
 
@@ -37,16 +38,19 @@ class InventoryTransactionForm(forms.ModelForm):
         # 使用select_related优化查询
         self.fields['product'].queryset = Product.objects.all().select_related('category')
         
-        # 添加响应式布局的辅助类
-        for field in self.fields.values():
-            field.widget.attrs.update({
-                'class': field.widget.attrs.get('class', '') + ' mb-2',  # 添加下边距
-            })
-    
+        self.fields['product'].empty_label = _('请选择商品')
+        labels = {'product': '商品', 'quantity': '数量', 'notes': '备注', 'adjustment_action': '调整方式'}
+        for name, field in self.fields.items():
+            field.label = _(labels.get(name, field.label or name))
+            field.widget.attrs.pop('style', None)
+            for attr in ('placeholder', 'aria-label'):
+                if attr in field.widget.attrs:
+                    field.widget.attrs[attr] = _(field.widget.attrs[attr])
+
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
         if quantity is not None and quantity <= 0:
-            raise forms.ValidationError('数量必须大于0')
+            raise forms.ValidationError(_('数量必须大于0'))
         return quantity
 
 class InventoryAdjustmentForm(InventoryTransactionForm):

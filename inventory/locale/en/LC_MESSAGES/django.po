@@ -1,0 +1,683 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: IOE\n"
+"PO-Revision-Date: 2026-10-07 00:00+0800\n"
+"Last-Translator: IOE contributors\n"
+"Language-Team: English\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "一月"
+msgstr "January"
+
+msgid "七月"
+msgstr "July"
+
+msgid "三月"
+msgstr "March"
+
+msgid "中号"
+msgstr "Medium"
+
+msgid "为生日会员提供专属生日礼包，包含优惠券、积分奖励等生日特权。"
+msgstr "Offer a birthday gift with coupons or bonus points."
+
+msgid "主页"
+msgstr "Home"
+
+msgid "九月"
+msgstr "September"
+
+msgid "二月"
+msgstr "February"
+
+msgid "五月"
+msgstr "May"
+
+msgid "人均充值"
+msgstr "Recharge amount per member"
+
+msgid "今天生日"
+msgstr "Birthday today"
+
+msgid "会员"
+msgstr "Member"
+
+msgid "会员与非会员消费对比"
+msgstr "Member and non-member spending"
+
+msgid "会员充值"
+msgstr "Member recharge"
+
+msgid "会员充值报表"
+msgstr "Member recharge report"
+
+msgid "会员充值排行 (TOP 10)"
+msgstr "Top 10 members by recharge amount"
+
+msgid "会员分析"
+msgstr "Member analysis"
+
+msgid "会员分析报表"
+msgstr "Member analysis report"
+
+msgid "会员姓名"
+msgstr "Member name"
+
+msgid "会员总数"
+msgstr "Total members"
+
+msgid "会员总览统计数据"
+msgstr "Membership overview"
+
+msgid "会员操作"
+msgstr "Members"
+
+msgid "会员数"
+msgstr "Members"
+
+msgid "会员活跃率"
+msgstr "Member activity rate"
+
+msgid "会员消费排行"
+msgstr "Top members by spending"
+
+msgid "会员等级"
+msgstr "Membership level"
+
+msgid "会员等级分布"
+msgstr "Membership level distribution"
+
+msgid "位会员"
+msgstr "members"
+
+msgid "余额"
+msgstr "Balance"
+
+msgid "保存修改"
+msgstr "Save changes"
+
+msgid "保存商品"
+msgstr "Save product"
+
+msgid "充值会员数"
+msgstr "Members recharging"
+
+msgid "充值总额"
+msgstr "Total recharges"
+
+msgid "充值明细"
+msgstr "Recharge details"
+
+msgid "充值次数"
+msgstr "Recharges"
+
+msgid "充值笔数"
+msgstr "Recharges"
+
+msgid "充值金额"
+msgstr "Recharge amount"
+
+msgid "八月"
+msgstr "August"
+
+msgid "六月"
+msgstr "June"
+
+msgid "共 %(count)s 位会员"
+msgstr "%(count)s members"
+
+msgid "关联对象"
+msgstr "Related object"
+
+msgid "关闭"
+msgstr "Close"
+
+msgid "其他"
+msgstr "Other"
+
+msgid "其他操作"
+msgstr "Other"
+
+msgid "分类"
+msgstr "Category"
+
+msgid "利润"
+msgstr "Profit"
+
+msgid "利润报表"
+msgstr "Profit report"
+
+msgid "利润数据明细"
+msgstr "Profit details"
+
+msgid "利润趋势图表"
+msgstr "Profit trend"
+
+msgid "制造商"
+msgstr "Manufacturer"
+
+msgid "十一月"
+msgstr "November"
+
+msgid "十二月"
+msgstr "December"
+
+msgid "十月"
+msgstr "October"
+
+msgid "占比"
+msgstr "Share"
+
+msgid "发送个性化的生日祝福短信或邮件，增强会员归属感和忠诚度。"
+msgstr "Send a personal birthday greeting by text or email."
+
+msgid "取消"
+msgstr "Cancel"
+
+msgid "周转天数"
+msgstr "Days in inventory"
+
+msgid "周转快"
+msgstr "High turnover"
+
+msgid "周转慢"
+msgstr "Low turnover"
+
+msgid "周转状态"
+msgstr "Turnover status"
+
+msgid "周转率"
+msgstr "Turnover rate"
+
+msgid "售价"
+msgstr "Price"
+
+msgid "商品"
+msgstr "Product"
+
+msgid "商品分类"
+msgstr "Category"
+
+msgid "商品名称"
+msgstr "Product name"
+
+msgid "商品图片"
+msgstr "Product image"
+
+msgid "商品描述"
+msgstr "Description"
+
+msgid "商品条码"
+msgstr "Barcode"
+
+msgid "商品编码"
+msgstr "Barcode"
+
+msgid "四月"
+msgstr "April"
+
+msgid "在会员生日当天或生日周提供特别折扣，鼓励会员在生日期间消费。"
+msgstr "Offer a special discount on the birthday or during the birthday week."
+
+msgid "均码"
+msgstr "One size"
+
+msgid "备注"
+msgstr "Notes"
+
+msgid "备注信息"
+msgstr "Notes"
+
+msgid "大号"
+msgstr "Large"
+
+msgid "姓名"
+msgstr "Name"
+
+msgid "实收金额"
+msgstr "Amount received"
+
+msgid "客户类型"
+msgstr "Customer type"
+
+msgid "导出Excel"
+msgstr "Export Excel"
+
+msgid "导出报表"
+msgstr "Export report"
+
+msgid "导出的Excel文件将包含："
+msgstr "The Excel file will include:"
+
+msgid "小号"
+msgstr "Small"
+
+msgid "尺码"
+msgstr "Size"
+
+msgid "平均充值"
+msgstr "Average recharge"
+
+msgid "平均充值金额"
+msgstr "Average recharge amount"
+
+msgid "平均客单价"
+msgstr "Average order value"
+
+msgid "平均库存"
+msgstr "Average stock"
+
+msgid "平均毛利率"
+msgstr "Average gross margin"
+
+msgid "库存周转报表"
+msgstr "Inventory turnover report"
+
+msgid "库存周转明细"
+msgstr "Inventory turnover details"
+
+msgid "库存周转率统计图"
+msgstr "Inventory turnover"
+
+msgid "库存操作"
+msgstr "Inventory"
+
+msgid "库存数量低于此值时会提醒"
+msgstr "Notify when stock falls below this value"
+
+msgid "库存盘点"
+msgstr "Stocktaking"
+
+msgid "开始日期"
+msgstr "Start date"
+
+msgid "当前库存"
+msgstr "Current stock"
+
+msgid "当前筛选范围暂无数据"
+msgstr "No data for the selected filters"
+
+msgid "微信"
+msgstr "WeChat Pay"
+
+msgid "总利润"
+msgstr "Total profit"
+
+msgid "总成本"
+msgstr "Total cost"
+
+msgid "总销售额"
+msgstr "Total revenue"
+
+msgid "您将导出以下时间范围的会员分析报表："
+msgstr "Export the member analysis report for this date range:"
+
+msgid "成本"
+msgstr "Cost"
+
+msgid "成本价"
+msgstr "Cost"
+
+msgid "所有分类"
+msgstr "All categories"
+
+msgid "手机号"
+msgstr "Phone"
+
+msgid "手机号码"
+msgstr "Phone"
+
+msgid "报表中心"
+msgstr "Reports"
+
+msgid "报表开始日期"
+msgstr "Report start date"
+
+msgid "报表筛选"
+msgstr "Report filters"
+
+msgid "报表结束日期"
+msgstr "Report end date"
+
+msgid "按分钟"
+msgstr "By minute"
+
+msgid "按周"
+msgstr "Weekly"
+
+msgid "按季度"
+msgstr "Quarterly"
+
+msgid "按小时"
+msgstr "Hourly"
+
+msgid "按年"
+msgstr "Yearly"
+
+msgid "按日"
+msgstr "Daily"
+
+msgid "按月"
+msgstr "Monthly"
+
+msgid "排名"
+msgstr "Rank"
+
+msgid "操作"
+msgstr "Actions"
+
+msgid "操作员"
+msgstr "Operator"
+
+msgid "操作员统计"
+msgstr "Activity by operator"
+
+msgid "操作日志列表"
+msgstr "Operation history"
+
+msgid "操作日志报表"
+msgstr "Operation history report"
+
+msgid "操作时间"
+msgstr "Time"
+
+msgid "操作次数"
+msgstr "Operations"
+
+msgid "操作类型"
+msgstr "Operation type"
+
+msgid "操作类型统计"
+msgstr "Activity by type"
+
+msgid "支付宝"
+msgstr "Alipay"
+
+msgid "支付方式分布"
+msgstr "Payment methods"
+
+msgid "支持EAN-13、UPC、ISBN等标准条码格式"
+msgstr "Supports EAN-13, UPC, ISBN and other standard barcodes"
+
+msgid "数量"
+msgstr "Quantity"
+
+msgid "数量必须大于0"
+msgstr "Quantity must be greater than zero"
+
+msgid "新增会员数"
+msgstr "New members"
+
+msgid "新增商品"
+msgstr "New product"
+
+msgid "无尺码"
+msgstr "No size"
+
+msgid "无颜色"
+msgstr "No color"
+
+msgid "日期"
+msgstr "Date"
+
+msgid "日期筛选"
+msgstr "Date filters"
+
+msgid "日期范围"
+msgstr "Date range"
+
+msgid "时间周期"
+msgstr "Period"
+
+msgid "是否启用"
+msgstr "Active"
+
+msgid "显示数量"
+msgstr "Number of products"
+
+msgid "暂无数据"
+msgstr "No data"
+
+msgid "条记录"
+msgstr "records"
+
+msgid "查看会员等级分布与消费行为分析"
+msgstr "Review membership levels and spending behavior"
+
+msgid "查看详情"
+msgstr "View details"
+
+msgid "查询"
+msgstr "Apply"
+
+msgid "正常"
+msgstr "Normal"
+
+msgid "每日充值趋势"
+msgstr "Daily recharge trend"
+
+msgid "毛利率"
+msgstr "Gross margin"
+
+msgid "没有会员生日"
+msgstr "No member birthdays"
+
+msgid "没有充值数据"
+msgstr "No recharge data"
+
+msgid "没有库存周转数据"
+msgstr "No inventory turnover data"
+
+msgid "没有操作日志数据"
+msgstr "No operation history"
+
+msgid "没有销售数据"
+msgstr "No sales data"
+
+msgid "活跃会员数"
+msgstr "Active members"
+
+msgid "消费会员排行 (TOP 10)"
+msgstr "Top 10 members by spending"
+
+msgid "消费次数"
+msgstr "Purchases"
+
+msgid "消费金额"
+msgstr "Spending"
+
+msgid "滞销"
+msgstr "Slow-moving"
+
+msgid "热销商品报表"
+msgstr "Bestselling products report"
+
+msgid "热销商品明细"
+msgstr "Product sales details"
+
+msgid "热销商品统计图"
+msgstr "Bestselling products"
+
+msgid "特大号"
+msgstr "Extra large"
+
+msgid "现金"
+msgstr "Cash"
+
+msgid "生日"
+msgstr "Birthday"
+
+msgid "生日会员"
+msgstr "Member birthdays"
+
+msgid "生日会员列表"
+msgstr "Member birthdays"
+
+msgid "生日会员报表"
+msgstr "Member birthdays report"
+
+msgid "生日折扣"
+msgstr "Birthday discount"
+
+msgid "生日礼包"
+msgstr "Birthday gift"
+
+msgid "生日祝福"
+msgstr "Birthday greeting"
+
+msgid "白色"
+msgstr "White"
+
+msgid "确认导出"
+msgstr "Confirm export"
+
+msgid "积分"
+msgstr "Points"
+
+msgid "紫色"
+msgstr "Purple"
+
+msgid "红色"
+msgstr "Red"
+
+msgid "结束日期"
+msgstr "End date"
+
+msgid "绿色"
+msgstr "Green"
+
+msgid "编辑会员"
+msgstr "Edit member"
+
+msgid "编辑商品"
+msgstr "Edit product"
+
+msgid "联系电话"
+msgstr "Phone"
+
+msgid "至"
+msgstr "to"
+
+msgid "营销建议"
+msgstr "Marketing suggestions"
+
+msgid "蓝色"
+msgstr "Blue"
+
+msgid "规格"
+msgstr "Specification"
+
+msgid "订单数"
+msgstr "Orders"
+
+msgid "设置报表参数"
+msgstr "Report filters"
+
+msgid "详情"
+msgstr "Details"
+
+msgid "请输入商品名称"
+msgstr "Enter product name"
+
+msgid "请输入商品条码"
+msgstr "Enter barcode"
+
+msgid "近期没有会员生日"
+msgstr "No upcoming birthdays"
+
+msgid "近期生日会员"
+msgstr "Upcoming birthdays"
+
+msgid "返回报表中心"
+msgstr "Back to reports"
+
+msgid "还有 %(days)s 天"
+msgstr "In %(days)s days"
+
+msgid "金额"
+msgstr "Amount"
+
+msgid "银行卡"
+msgstr "Bank card"
+
+msgid "销售操作"
+msgstr "Sales"
+
+msgid "销售数据明细"
+msgstr "Sales details"
+
+msgid "销售数量"
+msgstr "Units sold"
+
+msgid "销售趋势图表"
+msgstr "Sales trend"
+
+msgid "销售趋势报表"
+msgstr "Sales trend report"
+
+msgid "销售金额"
+msgstr "Sales amount"
+
+msgid "销售项数"
+msgstr "Line items"
+
+msgid "销售额"
+msgstr "Revenue"
+
+msgid "非会员"
+msgstr "Non-members"
+
+msgid "预警库存"
+msgstr "Low-stock threshold"
+
+msgid "预警数量"
+msgstr "Low-stock threshold"
+
+msgid "颜色"
+msgstr "Color"
+
+msgid "黄色"
+msgstr "Yellow"
+
+msgid "黑色"
+msgstr "Black"
+
+msgid "自动生成条码"
+msgstr "Generate barcode"
+
+msgid "请选择分类"
+msgstr "Choose category"
+
+msgid "库存低于此数量时将发出预警"
+msgstr "Warn when stock falls below this quantity"
+
+msgid "开始日期不能晚于结束日期"
+msgstr "Start date must not be after end date"
+
+msgid "最小金额不能大于最大金额"
+msgstr "Minimum amount must not exceed maximum amount"
+
+msgid "选择图片"
+msgstr "Choose image"
+
+msgid "未选择图片"
+msgstr "No image selected"
+
+msgid "灰色"
+msgstr "Grey"
+
+msgid "粉色"
+msgstr "Pink"
+
+msgid "橙色"
+msgstr "Orange"
+
+msgid "棕色"
+msgstr "Brown"
+
+msgid "请选择商品"
+msgstr "Choose product"

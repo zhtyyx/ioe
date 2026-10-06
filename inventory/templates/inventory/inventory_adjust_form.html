@@ -1,50 +1,6 @@
 {% extends 'inventory/base.html' %}
-
-{% block title %}库存调整 - {{ block.super }}{% endblock %}
-
+{% block title %}{% if request.LANGUAGE_CODE == 'en' %}Adjust inventory{% else %}库存调整{% endif %} - {{ block.super }}{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h4 class="card-title mb-0">库存调整</h4>
-            </div>
-            <div class="card-body">
-                <p class="text-muted">当前库存：{{ current_quantity }}</p>
-                <form method="post">
-                    {% csrf_token %}
-                    {% for field in form %}
-                    <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                        {{ field.errors }}
-                        {{ field }}
-                        {% if field.help_text %}
-                        <div class="form-text">{{ field.help_text }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    <fieldset class="mb-3">
-                        <legend class="form-label">调整方式</legend>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="adjustment_action" id="adjustment-set" value="set" required>
-                            <label class="form-check-label" for="adjustment-set">设置为指定数量</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="adjustment_action" id="adjustment-add" value="add">
-                            <label class="form-check-label" for="adjustment-add">增加指定数量</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="adjustment_action" id="adjustment-subtract" value="subtract">
-                            <label class="form-check-label" for="adjustment-subtract">减少指定数量</label>
-                        </div>
-                    </fieldset>
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'inventory_list' %}" class="btn btn-secondary">返回</a>
-                        <button type="submit" class="btn btn-primary">确认调整</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="page-heading"><div><h1 class="page-title visually-hidden">{% if request.LANGUAGE_CODE == 'en' %}Adjust inventory{% else %}库存调整{% endif %}</h1><p>{% if request.LANGUAGE_CODE == 'en' %}Choose how to adjust stock and record the reason.{% else %}选择调整方式，并在备注中记录调整原因。{% endif %}</p></div></div>
+<div class="inventory-editor"><section class="card editor-card"><div class="card__content">{% include 'inventory/includes/inventory_fields.html' with adjustment=True %}</div></section></div>
 {% endblock %}

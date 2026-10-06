@@ -1,38 +1,40 @@
 {% extends 'inventory/base.html' %}
+{% load i18n %}
 {% load static %}
 
-{% block title %}{{ month_name }}生日会员 - {{ block.super }}{% endblock %}
+{% block title %}{% translate month_name %}{% translate "生日会员" %} - {{ block.super }}{% endblock %}
 
 {% block content %}
+<div class="report-page">
 <div class="container-fluid">
     <!-- 面包屑导航 -->
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-white py-2">
-            <li class="breadcrumb-item"><a href="{% url 'index' %}">主页</a></li>
-            <li class="breadcrumb-item active" aria-current="page">生日会员报表</li>
+            <li class="breadcrumb-item"><a href="{% url 'index' %}">{% translate "主页" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{% translate "生日会员报表" %}</li>
         </ol>
     </nav>
     
     <!-- 页面标题 -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">{{ month_name }}生日会员</h1>
+        <h1 class="page-title visually-hidden h3 mb-0">{% translate month_name %}{% translate "生日会员" %}</h1>
         <div class="btn-group">
-            <button type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                {{ month_name }} <span class="caret"></span>
+            <button type="button" class="button button--primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                {% translate month_name %} <span class="caret"></span>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item {% if month == 1 %}active{% endif %}" href="?month=1">一月</a></li>
-                <li><a class="dropdown-item {% if month == 2 %}active{% endif %}" href="?month=2">二月</a></li>
-                <li><a class="dropdown-item {% if month == 3 %}active{% endif %}" href="?month=3">三月</a></li>
-                <li><a class="dropdown-item {% if month == 4 %}active{% endif %}" href="?month=4">四月</a></li>
-                <li><a class="dropdown-item {% if month == 5 %}active{% endif %}" href="?month=5">五月</a></li>
-                <li><a class="dropdown-item {% if month == 6 %}active{% endif %}" href="?month=6">六月</a></li>
-                <li><a class="dropdown-item {% if month == 7 %}active{% endif %}" href="?month=7">七月</a></li>
-                <li><a class="dropdown-item {% if month == 8 %}active{% endif %}" href="?month=8">八月</a></li>
-                <li><a class="dropdown-item {% if month == 9 %}active{% endif %}" href="?month=9">九月</a></li>
-                <li><a class="dropdown-item {% if month == 10 %}active{% endif %}" href="?month=10">十月</a></li>
-                <li><a class="dropdown-item {% if month == 11 %}active{% endif %}" href="?month=11">十一月</a></li>
-                <li><a class="dropdown-item {% if month == 12 %}active{% endif %}" href="?month=12">十二月</a></li>
+                <li><a class="dropdown-item {% if month == 1 %}active{% endif %}" href="?month=1">{% translate "一月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 2 %}active{% endif %}" href="?month=2">{% translate "二月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 3 %}active{% endif %}" href="?month=3">{% translate "三月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 4 %}active{% endif %}" href="?month=4">{% translate "四月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 5 %}active{% endif %}" href="?month=5">{% translate "五月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 6 %}active{% endif %}" href="?month=6">{% translate "六月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 7 %}active{% endif %}" href="?month=7">{% translate "七月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 8 %}active{% endif %}" href="?month=8">{% translate "八月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 9 %}active{% endif %}" href="?month=9">{% translate "九月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 10 %}active{% endif %}" href="?month=10">{% translate "十月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 11 %}active{% endif %}" href="?month=11">{% translate "十一月" %}</a></li>
+                <li><a class="dropdown-item {% if month == 12 %}active{% endif %}" href="?month=12">{% translate "十二月" %}</a></li>
             </ul>
         </div>
     </div>
@@ -40,25 +42,25 @@
     <div class="row">
         <!-- 左侧：会员列表 -->
         <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
+            <div class="card report-panel">
+                <div class="card-header bg-primary text-white card__header">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">{{ month_name }}生日会员列表</h5>
-                        <span class="badge bg-light text-dark">共 {{ total_members }} 位会员</span>
+                        <h5 class="card-title mb-0">{% translate month_name %}{% translate "生日会员列表" %}</h5>
+                        <span class="badge bg-light text-dark">{% blocktranslate with count=total_members %}共 {{ count }} 位会员{% endblocktranslate %}</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0 card__content">
                     {% if members %}
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead>
                                 <tr>
-                                    <th>姓名</th>
-                                    <th>生日</th>
-                                    <th>联系电话</th>
-                                    <th>会员等级</th>
-                                    <th>积分</th>
-                                    <th>操作</th>
+                                    <th>{% translate "姓名" %}</th>
+                                    <th>{% translate "生日" %}</th>
+                                    <th>{% translate "联系电话" %}</th>
+                                    <th>{% translate "会员等级" %}</th>
+                                    <th>{% translate "积分" %}</th>
+                                    <th>{% translate "操作" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -80,13 +82,13 @@
                                     <td>{{ member.points }}</td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'member_detail' pk=member.id %}" class="btn btn-outline-primary" title="查看详情">
+                                            <a href="{% url 'member_detail' pk=member.id %}" class="button button--secondary" title="{% translate "查看详情" %}">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{% url 'member_edit' member.id %}" class="btn btn-outline-secondary" title="编辑会员">
+                                            <a href="{% url 'member_edit' member.id %}" class="button button--secondary" title="{% translate "编辑会员" %}">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{% url 'member_recharge' member.id %}" class="btn btn-outline-success" title="会员充值">
+                                            <a href="{% url 'member_recharge' member.id %}" class="button button--secondary" title="{% translate "会员充值" %}">
                                                 <i class="fas fa-wallet"></i>
                                             </a>
                                         </div>
@@ -98,7 +100,7 @@
                     </div>
                     {% else %}
                     <div class="alert alert-info m-3 mb-0">
-                        <i class="fas fa-info-circle me-2"></i> {{ month_name }}没有会员生日
+                        <i class="fas fa-info-circle me-2"></i> {% translate month_name %}{% translate "没有会员生日" %}
                     </div>
                     {% endif %}
                 </div>
@@ -108,11 +110,11 @@
         <!-- 右侧：近期生日和统计 -->
         <div class="col-lg-4">
             <!-- 即将到来的生日 -->
-            <div class="card mb-4">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="card-title mb-0"><i class="fas fa-birthday-cake me-2"></i> 近期生日会员</h5>
+            <div class="card mb-4 report-panel">
+                <div class="card-header bg-warning text-dark card__header">
+                    <h5 class="card-title mb-0"><i class="fas fa-birthday-cake me-2"></i> {% translate "近期生日会员" %}</h5>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0 card__content">
                     {% if upcoming_birthdays %}
                     <div class="list-group list-group-flush">
                         {% for item in upcoming_birthdays %}
@@ -129,9 +131,9 @@
                                         {% elif item.days_until_birthday <= 3 %}text-warning fw-bold
                                         {% else %}text-muted{% endif %}">
                                         {% if item.days_until_birthday == 0 %}
-                                            今天生日
+                                            {% translate "今天生日" %}
                                         {% else %}
-                                            还有 {{ item.days_until_birthday }} 天
+                                            {% blocktranslate with days=item.days_until_birthday %}还有 {{ days }} 天{% endblocktranslate %}
                                         {% endif %}
                                     </div>
                                 </div>
@@ -141,27 +143,27 @@
                     </div>
                     {% else %}
                     <div class="alert alert-info m-3 mb-0">
-                        <i class="fas fa-info-circle me-2"></i> 近期没有会员生日
+                        <i class="fas fa-info-circle me-2"></i> {% translate "近期没有会员生日" %}
                     </div>
                     {% endif %}
                 </div>
             </div>
             
             <!-- 生日会员营销建议 -->
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0"><i class="fas fa-lightbulb me-2"></i> 营销建议</h5>
+            <div class="card report-panel">
+                <div class="card-header bg-info text-white card__header">
+                    <h5 class="card-title mb-0"><i class="fas fa-lightbulb me-2"></i> {% translate "营销建议" %}</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body card__content">
                     <div class="mb-3">
                         <div class="d-flex align-items-center mb-2">
                             <div class="icon-circle bg-primary text-white me-2">
                                 <i class="fas fa-gift"></i>
                             </div>
-                            <h6 class="mb-0">生日礼包</h6>
+                            <h6 class="mb-0">{% translate "生日礼包" %}</h6>
                         </div>
                         <p class="text-muted small mb-0">
-                            为生日会员提供专属生日礼包，包含优惠券、积分奖励等生日特权。
+                            {% translate "为生日会员提供专属生日礼包，包含优惠券、积分奖励等生日特权。" %}
                         </p>
                     </div>
                     
@@ -170,10 +172,10 @@
                             <div class="icon-circle bg-success text-white me-2">
                                 <i class="fas fa-percentage"></i>
                             </div>
-                            <h6 class="mb-0">生日折扣</h6>
+                            <h6 class="mb-0">{% translate "生日折扣" %}</h6>
                         </div>
                         <p class="text-muted small mb-0">
-                            在会员生日当天或生日周提供特别折扣，鼓励会员在生日期间消费。
+                            {% translate "在会员生日当天或生日周提供特别折扣，鼓励会员在生日期间消费。" %}
                         </p>
                     </div>
                     
@@ -182,10 +184,10 @@
                             <div class="icon-circle bg-warning text-white me-2">
                                 <i class="fas fa-envelope"></i>
                             </div>
-                            <h6 class="mb-0">生日祝福</h6>
+                            <h6 class="mb-0">{% translate "生日祝福" %}</h6>
                         </div>
                         <p class="text-muted small mb-0">
-                            发送个性化的生日祝福短信或邮件，增强会员归属感和忠诚度。
+                            {% translate "发送个性化的生日祝福短信或邮件，增强会员归属感和忠诚度。" %}
                         </p>
                     </div>
                 </div>
@@ -205,4 +207,5 @@
         font-size: 12px;
     }
 </style>
+</div>
 {% endblock %} 

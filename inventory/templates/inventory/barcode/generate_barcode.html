@@ -7,7 +7,7 @@
 <div class="container mt-4">
     <div class="card shadow">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">生成商品条码</h5>
+            <h5 class="page-title visually-hidden mb-0">生成商品条码</h5>
         </div>
         <div class="card-body">
             <form method="post" id="barcode-form">
@@ -121,10 +121,12 @@
 <script>
     $(document).ready(function() {
         // 增强商品选择器
-        $('#product_id').select2({
-            placeholder: '请选择商品',
-            allowClear: true
-        });
+        if ($.fn.select2) {
+            $('#product_id').select2({
+                placeholder: '请选择商品',
+                allowClear: true
+            });
+        }
         
         // 分类筛选
         $('#category-filter').change(function() {

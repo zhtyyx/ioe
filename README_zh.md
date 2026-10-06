@@ -10,19 +10,64 @@ IOE 是面向小型零售门店的 Django 应用，用于管理商品、库存�
   <img src="./asset/wxqun.png" width="30%" alt="微信二维码" />
 </div>
 
-![IOE 系统首页](asset/main_page.png)
+![IOE 销售趋势](asset/ioe_sales_trend_zh.png)
 
 ## 门店日常经营
 
 从商品管理、库存出入库到销售收银、会员管理和经营报表，在一个系统里处理门店日常业务。
 
-## 页面截图
+## 系统截图
 
-![库存列表](asset/库存列表.png)
+以下截图使用本地演示数据，展示报表与门店日常操作。
 
-![收银台](asset/收银台-添加商品.png)
+### 销售趋势
 
-![销售记录](asset/销售记录.png)
+<img src="./asset/ioe_sales_trend_zh.png" width="100%" alt="销售趋势" />
+
+### 库存周转
+
+<img src="./asset/ioe_inventory_turnover_zh.png" width="100%" alt="库存周转" />
+
+### 报表中心
+
+<img src="./asset/ioe_reports_zh.png" width="100%" alt="报表中心" />
+
+### 经营概览
+
+<img src="./asset/ioe_dashboard_zh.png" width="100%" alt="经营概览" />
+
+### 收银台
+
+<img src="./asset/ioe_checkout_zh.png" width="100%" alt="收银台" />
+
+<details>
+<summary>查看更多：商品、库存、会员与盘点</summary>
+
+### 商品管理
+
+<img src="./asset/ioe_products_zh.png" width="100%" alt="商品管理" />
+
+### 新增商品
+
+<img src="./asset/ioe_product_form_zh.png" width="100%" alt="新增商品" />
+
+### 库存管理
+
+<img src="./asset/ioe_inventory_zh.png" width="100%" alt="库存管理" />
+
+### 会员管理
+
+<img src="./asset/ioe_members_zh.png" width="100%" alt="会员管理" />
+
+### 会员等级
+
+<img src="./asset/ioe_member_levels_zh.png" width="100%" alt="会员等级" />
+
+### 库存盘点
+
+<img src="./asset/ioe_stocktaking_zh.png" width="100%" alt="库存盘点" />
+
+</details>
 
 ## 本地运行
 

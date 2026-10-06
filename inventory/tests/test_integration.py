@@ -57,7 +57,7 @@ class IntegrationTestCase(TestCase):
         # 创建会员等级
         self.member_level = MemberLevel.objects.create(
             name='普通会员',
-            discount=95,  # 95%
+            discount=Decimal('0.95'),
             points_threshold=0,
             color='#FF5733'
         )
@@ -75,58 +75,50 @@ class SaleProcessTest(IntegrationTestCase):
     """测试完整销售流程"""
     
     def test_complete_sale_process(self):
-        """测试从创建销售单到添加销售项的完整流程"""
-        # 1. 创建销售单
-        sale_data = {
+        response = self.client.post(reverse('sale_create'), {
             'payment_method': 'cash',
-            'member': self.member.id
-        }
-        
-        response = self.client.post(reverse('sale_create'), sale_data)
-        self.assertEqual(response.status_code, 302)  # 重定向状态码
-        
-        # 获取创建的销售单
-        sale = Sale.objects.filter(member=self.member).first()
-        self.assertIsNotNone(sale)
-        
-        # 2. 添加销售项
-        sale_item_data = {
-            'product': self.product.id,
-            'quantity': 5,
-            'price': self.product.price
-        }
-        
-        response = self.client.post(
-            reverse('sale_item_create', args=[sale.id]), 
-            sale_item_data
-        )
-        self.assertEqual(response.status_code, 302)  # 重定向状态码
-        
-        # 验证销售项创建
-        sale_item = SaleItem.objects.filter(sale=sale, product=self.product).first()
-        self.assertIsNotNone(sale_item)
-        self.assertEqual(sale_item.quantity, 5)
-        
-        # 验证库存减少
+            'member': self.member.pk,
+            'products[0][id]': self.product.pk,
+            'products[0][quantity]': '5',
+            'products[0][price]': '10.00',
+            'total_amount': '1.00',
+            'discount_amount': '0.00',
+            'final_amount': '1.00',
+        })
+
+        sale = Sale.objects.get(member=self.member)
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.pk]))
+        self.assertEqual(sale.operator, self.user)
+        self.assertEqual(sale.total_amount, Decimal('50.00'))
+        self.assertEqual(sale.discount_amount, Decimal('2.50'))
+        self.assertEqual(sale.final_amount, Decimal('47.50'))
+        item = SaleItem.objects.get(sale=sale)
+        self.assertEqual(item.product, self.product)
+        self.assertEqual(item.quantity, 5)
+        self.assertEqual(item.price, Decimal('10.00'))
+        self.assertEqual(item.subtotal, Decimal('50.00'))
+
         self.inventory.refresh_from_db()
-        self.assertEqual(self.inventory.quantity, 95)  # 100 - 5
-        
-        # 验证交易记录创建
-        transaction = InventoryTransaction.objects.filter(
-            product=self.product,
-            transaction_type='OUT',
-            quantity=5
-        ).first()
-        self.assertIsNotNone(transaction)
-        
-        # 验证销售单金额更新
-        sale.refresh_from_db()
-        expected_amount = Decimal('50.00')  # 5 * 10.00
-        self.assertEqual(sale.total_amount, expected_amount)
+        self.assertEqual(self.inventory.quantity, 95)
+        movement = InventoryTransaction.objects.get(product=self.product)
+        self.assertEqual(movement.transaction_type, 'OUT')
+        self.assertEqual(movement.quantity, 5)
+        self.assertEqual(movement.operator, self.user)
+        self.member.refresh_from_db()
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+        self.assertEqual(self.member.total_spend, Decimal('47.50'))
+        self.assertEqual(self.member.purchase_count, 1)
+        self.assertEqual(self.member.points, sale.points_earned)
+
 
 class InventoryCheckProcessTest(IntegrationTestCase):
     """测试完整库存盘点流程"""
     
+    def setUp(self):
+        super().setUp()
+        self.user.is_superuser = True
+        self.user.save(update_fields=['is_superuser'])
+
     def test_complete_inventory_check_process(self):
         """测试从创建盘点单到完成盘点的完整流程"""
         # 1. 创建盘点单
@@ -185,9 +177,18 @@ class InventoryCheckProcessTest(IntegrationTestCase):
         self.assertEqual(inventory_check.status, 'completed')
         
         # 5. 审核盘点并调整库存
-        approve_data = {
-            'adjust_inventory': True
-        }
+        approve_data = {'adjust_inventory': 'on'}
+        response = self.client.post(
+            reverse('inventory_check_approve', args=[inventory_check.pk]), approve_data,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('confirm', response.context['form'].errors)
+        inventory_check.refresh_from_db()
+        self.inventory.refresh_from_db()
+        self.assertEqual(inventory_check.status, 'completed')
+        self.assertEqual(self.inventory.quantity, 100)
+        self.assertFalse(InventoryTransaction.objects.exists())
+        approve_data['confirm'] = 'on'
         
         response = self.client.post(
             reverse('inventory_check_approve', args=[inventory_check.id]),
@@ -201,4 +202,9 @@ class InventoryCheckProcessTest(IntegrationTestCase):
         
         # 验证库存调整
         self.inventory.refresh_from_db()
-        self.assertEqual(self.inventory.quantity, 95)  # 调整为实际盘点数量
+        self.assertEqual(self.inventory.quantity, 95)
+        self.assertEqual(inventory_check.approved_by, self.user)
+        self.assertIsNotNone(inventory_check.approved_at)
+        movement = InventoryTransaction.objects.get(product=self.product)
+        self.assertEqual(movement.transaction_type, 'ADJUST')
+        self.assertEqual(movement.operator, self.user)

@@ -1,39 +1,14 @@
-{% extends "inventory/base.html" %}
+{% extends 'inventory/base.html' %}
 {% load crispy_forms_tags %}
-
-{% block title %}{{ form_title }}{% endblock %}
-
+{% block title %}{{ form_title }} - {{ block.super }}{% endblock %}
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="h4 mb-0">{{ form_title }}</h2>
-                </div>
-                <div class="card-body">
-                    <form method="post">
-                        {% csrf_token %}
-                        {{ form|crispy }}
-                        <div class="d-flex justify-content-between mt-4">
-                            <a href="{% url 'inventory_check_list' %}" class="btn btn-outline-secondary">返回</a>
-                            <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="card-footer">
-                    <div class="small text-muted">
-                        <p>
-                            <i class="bi bi-info-circle"></i>
-                            库存盘点会将系统中所有商品及其当前库存记录下来，便于与实际库存进行比对。
-                        </p>
-                        <p>
-                            如果只想盘点特定分类的商品，请选择相应的商品分类。
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+<div class="page-heading"><h1 class="page-title visually-hidden mb-0">{{ form_title }}</h1><a class="button button--secondary" href="{% url 'inventory_check_list' %}">返回列表</a></div>
+<section class="card"><div class="card-body"><form method="post">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-grid">
+        {% for field in form %}<div class="form-field {% if field.name == 'description' %}form-field-wide{% endif %}">{{ field|as_crispy_field }}</div>{% endfor %}
     </div>
-</div>
-{% endblock %} 
+    <div class="form-actions"><a class="button button--secondary" href="{% url 'inventory_check_list' %}">取消</a><button class="button button--primary" type="submit">{{ submit_text }}</button></div>
+</form></div><div class="card-footer small text-muted">盘点会记录商品当前库存；不选分类时盘点所有商品。</div></section>
+{% endblock %}

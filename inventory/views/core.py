@@ -18,7 +18,7 @@ from inventory.models import (
 def index(request):
     """系统首页/仪表盘视图"""
     # 获取系统概览统计
-    today = timezone.now().date()
+    today = timezone.localdate()
     yesterday = today - timedelta(days=1)
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)

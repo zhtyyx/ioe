@@ -5,15 +5,18 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
+        <div class="card page-header-card">
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h2 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Inventory{% else %}库存管理{% endif %}</h2>
+                        <h2 class="page-title visually-hidden card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Inventory{% else %}库存管理{% endif %}</h2>
                         <p class="text-muted mb-md-0">{% if request.LANGUAGE_CODE == 'en' %}Manage product stock levels and alerts{% else %}管理所有商品库存信息{% endif %}</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="{% url 'inventory_create' %}" class="btn btn-primary">
+                        <a href="{% url 'inventory_transaction_list' %}" class="btn btn-outline-secondary"><i class="bi bi-clock-history me-1" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}History{% else %}库存流水{% endif %}</a>
+                        <a href="{% url 'inventory_adjust' %}" class="btn btn-outline-secondary"><i class="bi bi-sliders2 me-1" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Adjust{% else %}调整{% endif %}</a>
+                        <a href="{% url 'inventory_out' %}" class="btn btn-outline-secondary"><i class="bi bi-box-arrow-up me-1" aria-hidden="true"></i>{% if request.LANGUAGE_CODE == 'en' %}Stock out{% else %}出库{% endif %}</a>
+                        <a href="{% url 'inventory_in' %}" class="btn btn-primary">
                             <i class="bi bi-plus-circle me-1"></i> {% if request.LANGUAGE_CODE == 'en' %}Stock In{% else %}入库{% endif %}
                         </a>
                     </div>
@@ -38,7 +41,7 @@
                         </div>
                         <div class="col-md-8">
                             <div class="d-flex flex-wrap gap-2">
-                                <select name="category" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                                <select name="category" aria-label="分类筛选" class="form-select" style="width: auto;" onchange="this.form.submit()">
                                     <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Categories{% else %}所有分类{% endif %}</option>
                                     {% for category in categories %}
                                     <option value="{{ category.id }}" {% if selected_category == category.id|stringformat:"i" %}selected{% endif %}>
@@ -47,21 +50,21 @@
                                     {% endfor %}
                                 </select>
                                 
-                                <select name="color" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                                <select name="color" aria-label="颜色筛选" class="form-select" style="width: auto;" onchange="this.form.submit()">
                                     <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Colors{% else %}所有颜色{% endif %}</option>
                                     {% for color_code, color_name in colors %}
-                                    <option value="{{ color_code }}" {% if selected_color == color_code %}selected{% endif %}>
+                                    {% if color_code %}<option value="{{ color_code }}" {% if selected_color == color_code %}selected{% endif %}>
                                         {{ color_name }}
-                                    </option>
+                                    </option>{% endif %}
                                     {% endfor %}
                                 </select>
                                 
-                                <select name="size" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                                <select name="size" aria-label="尺码筛选" class="form-select" style="width: auto;" onchange="this.form.submit()">
                                     <option value="">{% if request.LANGUAGE_CODE == 'en' %}All Sizes{% else %}所有尺码{% endif %}</option>
                                     {% for size_code, size_name in sizes %}
-                                    <option value="{{ size_code }}" {% if selected_size == size_code %}selected{% endif %}>
+                                    {% if size_code %}<option value="{{ size_code }}" {% if selected_size == size_code %}selected{% endif %}>
                                         {{ size_name }}
-                                    </option>
+                                    </option>{% endif %}
                                     {% endfor %}
                                 </select>
                                 

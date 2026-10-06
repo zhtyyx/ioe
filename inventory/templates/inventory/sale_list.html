@@ -5,11 +5,11 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
+        <div class="card page-header-card">
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h2 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Sales Records{% else %}销售记录{% endif %}</h2>
+                        <h2 class="page-title visually-hidden card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Sales Records{% else %}销售记录{% endif %}</h2>
                         <p class="text-muted mb-md-0">{% if request.LANGUAGE_CODE == 'en' %}Manage all sales transactions{% else %}管理所有销售交易信息{% endif %}</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
@@ -33,7 +33,7 @@
                             <div class="input-group">
                                 <span class="input-group-text bg-primary text-white"><i class="bi bi-search"></i></span>
                                 <input type="text" class="form-control border-primary" id="searchInput" placeholder="{% if request.LANGUAGE_CODE == 'en' %}Search order number or customer...{% else %}搜索订单编号或客户...{% endif %}">
-                                <button class="btn btn-outline-primary d-none d-md-inline-block" type="button" id="clearSearch" title="清除搜索"><i class="bi bi-x-lg"></i></button>
+                                <button class="btn btn-outline-primary d-none" type="button" id="clearSearch" title="清除搜索"><i class="bi bi-x-lg"></i></button>
                             </div>
                             <div class="input-group">
                                 <span class="input-group-text bg-primary text-white"><i class="bi bi-calendar3"></i></span>

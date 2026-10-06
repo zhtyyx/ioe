@@ -1,22 +1,24 @@
 {% extends "inventory/base.html" %}
+{% load i18n %}
 {% load inventory_tags %}
 
-{% block title %}会员分析 - 报表中心{% endblock %}
+{% block title %}{% translate "会员分析" %} - {% translate "报表中心" %}{% endblock %}
 
 {% block content %}
+<div class="report-page">
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1 class="h2">会员分析报表</h1>
-            <p class="text-muted">查看会员等级分布与消费行为分析</p>
+            <h1 class="page-title visually-hidden h2">{% translate "会员分析报表" %}</h1>
+            <p class="text-muted">{% translate "查看会员等级分布与消费行为分析" %}</p>
         </div>
         <div class="col-md-4 text-md-end">
             <div class="btn-group">
-                <a href="{% url 'reports_index' %}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left me-1"></i> 返回报表中心
+                <a href="{% url 'reports_index' %}" class="button button--secondary">
+                    <i class="bi bi-arrow-left me-1"></i> {% translate "返回报表中心" %}
                 </a>
-                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exportModal">
-                    <i class="bi bi-file-excel me-1"></i> 导出Excel
+                <button type="button" class="button button--primary" data-bs-toggle="modal" data-bs-target="#exportModal">
+                    <i class="bi bi-file-excel me-1"></i> {% translate "导出Excel" %}
                 </button>
             </div>
         </div>
@@ -24,24 +26,24 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">日期筛选</h5>
+            <div class="card report-panel">
+                <div class="card-header card__header">
+                    <h5 class="card-title mb-0">{% translate "日期筛选" %}</h5>
                 </div>
-                <div class="card-body">
-                    <form method="post" class="row g-3">
+                <div class="card-body card__content">
+                    <form method="post" data-report-filter class="row g-3">
                         {% csrf_token %}
                         <div class="col-md-4">
-                            <label class="form-label">开始日期</label>
+                            <label class="form-label">{% translate "开始日期" %}</label>
                             {{ form.start_date }}
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">结束日期</label>
+                            <label class="form-label">{% translate "结束日期" %}</label>
                             {{ form.end_date }}
                         </div>
                         <div class="col-md-4 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search me-1"></i> 查询
+                            <button type="submit" class="button button--primary w-100">
+                                <i class="bi bi-search me-1"></i> {% translate "查询" %}
                             </button>
                         </div>
                     </form>
@@ -53,60 +55,60 @@
     <!-- 会员概要统计 -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body py-3">
+            <div class="card bg-primary text-white report-panel">
+                <div class="card-body py-3 card__content">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <i class="bi bi-people-fill" style="font-size: 2.5rem;"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h5 class="mb-0">{{ member_data.total_members }}</h5>
-                            <div class="small">会员总数</div>
+                            <div class="small">{% translate "会员总数" %}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body py-3">
+            <div class="card bg-success text-white report-panel">
+                <div class="card-body py-3 card__content">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <i class="bi bi-person-plus-fill" style="font-size: 2.5rem;"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h5 class="mb-0">{{ member_data.new_members }}</h5>
-                            <div class="small">新增会员数</div>
+                            <div class="small">{% translate "新增会员数" %}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body py-3">
+            <div class="card bg-info text-white report-panel">
+                <div class="card-body py-3 card__content">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <i class="bi bi-activity" style="font-size: 2.5rem;"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h5 class="mb-0">{{ member_data.active_members }}</h5>
-                            <div class="small">活跃会员数</div>
+                            <div class="small">{% translate "活跃会员数" %}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-warning text-dark">
-                <div class="card-body py-3">
+            <div class="card bg-warning text-dark report-panel">
+                <div class="card-body py-3 card__content">
                     <div class="d-flex align-items-center">
                         <div class="flex-shrink-0">
                             <i class="bi bi-percent" style="font-size: 2.5rem;"></i>
                         </div>
                         <div class="flex-grow-1 ms-3">
                             <h5 class="mb-0">{{ member_data.activity_rate|floatformat:1 }}%</h5>
-                            <div class="small">会员活跃率</div>
+                            <div class="small">{% translate "会员活跃率" %}</div>
                         </div>
                     </div>
                 </div>
@@ -117,18 +119,18 @@
     <div class="row mb-4">
         <!-- 会员等级分布 -->
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">会员等级分布</h5>
+            <div class="card h-100 report-panel">
+                <div class="card-header card__header">
+                    <h5 class="card-title mb-0">{% translate "会员等级分布" %}</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body card__content">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>会员等级</th>
-                                    <th class="text-end">会员数</th>
-                                    <th class="text-end">占比</th>
+                                    <th>{% translate "会员等级" %}</th>
+                                    <th class="text-end">{% translate "会员数" %}</th>
+                                    <th class="text-end">{% translate "占比" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -140,7 +142,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="3" class="text-center">暂无数据</td>
+                                    <td colspan="3" class="text-center">{% translate "暂无数据" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -152,30 +154,30 @@
 
         <!-- 会员与非会员消费对比 -->
         <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">会员与非会员消费对比</h5>
+            <div class="card h-100 report-panel">
+                <div class="card-header card__header">
+                    <h5 class="card-title mb-0">{% translate "会员与非会员消费对比" %}</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body card__content">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>客户类型</th>
-                                    <th class="text-end">消费金额</th>
-                                    <th class="text-end">订单数</th>
-                                    <th class="text-end">平均客单价</th>
+                                    <th>{% translate "客户类型" %}</th>
+                                    <th class="text-end">{% translate "消费金额" %}</th>
+                                    <th class="text-end">{% translate "订单数" %}</th>
+                                    <th class="text-end">{% translate "平均客单价" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>会员</td>
+                                    <td>{% translate "会员" %}</td>
                                     <td class="text-end">¥{{ member_data.member_sales.total_amount|default:"0.00" }}</td>
                                     <td class="text-end">{{ member_data.member_sales.total_count|default:"0" }}</td>
                                     <td class="text-end">¥{{ member_data.member_avg_order|floatformat:2 }}</td>
                                 </tr>
                                 <tr>
-                                    <td>非会员</td>
+                                    <td>{% translate "非会员" %}</td>
                                     <td class="text-end">¥{{ member_data.non_member_sales.total_amount|default:"0.00" }}</td>
                                     <td class="text-end">{{ member_data.non_member_sales.total_count|default:"0" }}</td>
                                     <td class="text-end">¥{{ member_data.non_member_avg_order|floatformat:2 }}</td>
@@ -191,22 +193,22 @@
     <!-- 消费会员排行 -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">消费会员排行 (TOP 10)</h5>
+            <div class="card report-panel">
+                <div class="card-header card__header">
+                    <h5 class="card-title mb-0">{% translate "消费会员排行 (TOP 10)" %}</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body card__content">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead class="table-light">
                                 <tr>
-                                    <th>排名</th>
-                                    <th>会员姓名</th>
-                                    <th>会员等级</th>
-                                    <th>手机号</th>
-                                    <th class="text-end">消费金额</th>
-                                    <th class="text-end">消费次数</th>
-                                    <th class="text-end">平均客单价</th>
+                                    <th>{% translate "排名" %}</th>
+                                    <th>{% translate "会员姓名" %}</th>
+                                    <th>{% translate "会员等级" %}</th>
+                                    <th>{% translate "手机号" %}</th>
+                                    <th class="text-end">{% translate "消费金额" %}</th>
+                                    <th class="text-end">{% translate "消费次数" %}</th>
+                                    <th class="text-end">{% translate "平均客单价" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -224,7 +226,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="7" class="text-center py-3">暂无数据</td>
+                                    <td colspan="7" class="text-center py-3">{% translate "暂无数据" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -240,8 +242,8 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exportModalLabel">导出报表</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="exportModalLabel">{% translate "导出报表" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% translate '关闭' %}"></button>
                 </div>
                 <form method="post">
                     {% csrf_token %}
@@ -250,27 +252,28 @@
                     <input type="hidden" name="end_date" value="{{ end_date|date:'Y-m-d' }}">
                     
                     <div class="modal-body">
-                        <p>您将导出以下时间范围的会员分析报表：</p>
+                        <p>{% translate "您将导出以下时间范围的会员分析报表：" %}</p>
                         <div class="alert alert-info">
-                            {{ start_date|date:"Y年m月d日" }} 至 {{ end_date|date:"Y年m月d日" }}
+                            {{ start_date|date:"Y-m-d" }} {% translate "至" %} {{ end_date|date:"Y-m-d" }}
                         </div>
-                        <p>导出的Excel文件将包含：</p>
+                        <p>{% translate "导出的Excel文件将包含：" %}</p>
                         <ul>
-                            <li>会员总览统计数据</li>
-                            <li>会员等级分布</li>
-                            <li>会员消费排行</li>
+                            <li>{% translate "会员总览统计数据" %}</li>
+                            <li>{% translate "会员等级分布" %}</li>
+                            <li>{% translate "会员消费排行" %}</li>
                         </ul>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-file-excel me-1"></i> 确认导出
+                        <button type="button" class="button button--secondary" data-bs-dismiss="modal">{% translate "取消" %}</button>
+                        <button type="submit" class="button button--primary">
+                            <i class="bi bi-file-excel me-1"></i> {% translate "确认导出" %}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+</div>
 </div>
 {% endblock %}
 

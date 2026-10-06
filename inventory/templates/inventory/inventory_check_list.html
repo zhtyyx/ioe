@@ -7,7 +7,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h1 class="h2">{% if request.LANGUAGE_CODE == 'en' %}Stocktaking{% else %}库存盘点{% endif %}</h1>
+                <h1 class="page-title visually-hidden h2">{% if request.LANGUAGE_CODE == 'en' %}Stocktaking{% else %}库存盘点{% endif %}</h1>
                 <a href="{% url 'inventory_check_create' %}" class="btn btn-primary">
                     <i class="bi bi-plus-circle"></i> {% if request.LANGUAGE_CODE == 'en' %}Create Count{% else %}创建盘点{% endif %}
                 </a>

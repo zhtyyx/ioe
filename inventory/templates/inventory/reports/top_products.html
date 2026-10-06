@@ -1,24 +1,27 @@
 {% extends "inventory/base.html" %}
+{% load i18n %}
+{% load static %}
 {% load crispy_forms_tags %}
 
-{% block title %}热销商品报表{% endblock %}
+{% block title %}{% translate "热销商品报表" %}{% endblock %}
 
-{% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block head %}
+<script src="{% static 'inventory/vendor/chart.umd.js' %}"></script>
 {% endblock %}
 
 {% block content %}
+<div class="report-page">
 <div class="container">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1 class="h2">热销商品报表</h1>
+            <h1 class="page-title visually-hidden h2">{% translate "热销商品报表" %}</h1>
             <p class="text-muted">
-                日期范围: {{ start_date|date:"Y-m-d" }} 至 {{ end_date|date:"Y-m-d" }}
+                {% translate "日期范围" %}: {{ start_date|date:"Y-m-d" }} {% translate "至" %} {{ end_date|date:"Y-m-d" }}
             </p>
         </div>
         <div class="col-md-4 text-md-end">
-            <a href="{% url 'reports_index' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> 返回报表中心
+            <a href="{% url 'reports_index' %}" class="button button--secondary">
+                <i class="bi bi-arrow-left"></i> {% translate "返回报表中心" %}
             </a>
         </div>
     </div>
@@ -26,12 +29,12 @@
     <!-- 搜索表单 -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="h5 mb-0">设置报表参数</h3>
+            <div class="card report-panel">
+                <div class="card-header card__header">
+                    <h3 class="h5 mb-0">{% translate "设置报表参数" %}</h3>
                 </div>
-                <div class="card-body">
-                    <form method="post">
+                <div class="card-body card__content">
+                    <form method="post" data-report-filter>
                         {% csrf_token %}
                         <div class="row">
                             <div class="col-md-4">
@@ -44,7 +47,7 @@
                                 {{ form.limit|as_crispy_field }}
                             </div>
                             <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">查询</button>
+                                <button type="submit" class="button button--primary w-100">{% translate "查询" %}</button>
                             </div>
                         </div>
                     </form>
@@ -56,12 +59,12 @@
     <!-- 图表 -->
     <div class="row mb-4">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="h5 mb-0">热销商品统计图</h3>
+            <div class="card report-panel">
+                <div class="card-header card__header">
+                    <h3 class="h5 mb-0">{% translate "热销商品统计图" %}</h3>
                 </div>
-                <div class="card-body">
-                    <canvas id="topProductsChart" height="300"></canvas>
+                <div class="card-body card__content">
+                    <div class="report-chart">{% if top_products %}<canvas id="topProductsChart" height="300"></canvas>{% else %}<div class="report-empty" role="status"><i class="bi bi-bar-chart" aria-hidden="true"></i><span>{% translate "当前筛选范围暂无数据" %}</span></div>{% endif %}</div>
                 </div>
             </div>
         </div>
@@ -70,22 +73,22 @@
     <!-- 数据表格 -->
     <div class="row">
         <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="h5 mb-0">热销商品明细</h3>
+            <div class="card report-panel">
+                <div class="card-header card__header">
+                    <h3 class="h5 mb-0">{% translate "热销商品明细" %}</h3>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body p-0 card__content">
                     <div class="table-responsive">
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>排名</th>
-                                    <th>商品名称</th>
-                                    <th>商品编码</th>
-                                    <th class="text-end">销售数量</th>
-                                    <th class="text-end">销售额</th>
-                                    <th class="text-end">利润</th>
-                                    <th class="text-end">毛利率</th>
+                                    <th>{% translate "排名" %}</th>
+                                    <th>{% translate "商品名称" %}</th>
+                                    <th>{% translate "商品编码" %}</th>
+                                    <th class="text-end">{% translate "销售数量" %}</th>
+                                    <th class="text-end">{% translate "销售额" %}</th>
+                                    <th class="text-end">{% translate "利润" %}</th>
+                                    <th class="text-end">{% translate "毛利率" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -101,7 +104,7 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="7" class="text-center py-4">没有销售数据</td>
+                                    <td colspan="7" class="text-center py-4">{% translate "没有销售数据" %}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -144,7 +147,7 @@
                 labels: labels,
                 datasets: [
                     {
-                        label: '销售数量',
+                        label: '{% translate "销售数量" %}',
                         data: quantityData,
                         backgroundColor: 'rgba(54, 162, 235, 0.5)',
                         borderColor: 'rgba(54, 162, 235, 1)',
@@ -152,7 +155,7 @@
                         yAxisID: 'y1'
                     },
                     {
-                        label: '销售额',
+                        label: '{% translate "销售额" %}',
                         data: salesData,
                         backgroundColor: 'rgba(75, 192, 192, 0.5)',
                         borderColor: 'rgba(75, 192, 192, 1)',
@@ -164,6 +167,7 @@
             options: {
                 indexAxis: 'y',
                 responsive: true,
+                maintainAspectRatio: false,
                 interaction: {
                     mode: 'index',
                     intersect: false
@@ -175,7 +179,7 @@
                         position: 'right',
                         title: {
                             display: true,
-                            text: '销售额 (¥)'
+                            text: '{% translate "销售额" %} (¥)'
                         },
                         grid: {
                             drawOnChartArea: false
@@ -187,7 +191,7 @@
                         position: 'left',
                         title: {
                             display: true,
-                            text: '销售数量'
+                            text: '{% translate "销售数量" %}'
                         }
                     }
                 }
@@ -196,4 +200,5 @@
     });
 </script>
 {% endif %}
+</div>
 {% endblock %} 

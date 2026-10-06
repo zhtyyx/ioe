@@ -105,7 +105,7 @@ class ProductViewTest(ViewTestCase):
         # 访问创建商品页面
         response = self.client.get(reverse('product_create'))
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'inventory/product_form.html')
+        self.assertTemplateUsed(response, 'inventory/product/product_form.html')
         
         # 提交创建商品表单
         product_data = {
@@ -268,20 +268,34 @@ class SaleViewTest(ViewTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'inventory/sale_form.html')
         
-        # 提交创建销售表单
-        sale_data = {
+        response = self.client.post(reverse('sale_create'), {
             'payment_method': 'cash',
-            'member': self.member.id
-        }
-        
-        response = self.client.post(reverse('sale_create'), sale_data)
-        
-        # 验证创建销售单
-        self.assertTrue(Sale.objects.filter(member=self.member).exists())
-        sale = Sale.objects.filter(member=self.member).first()
-        
-        # 验证重定向到销售项创建页面
-        self.assertRedirects(response, reverse('sale_item_create', args=[sale.id]))
+            'member': self.member.pk,
+            'products[0][id]': self.product.pk,
+            'products[0][quantity]': '2',
+            'products[0][price]': '10.00',
+        })
+        sale = Sale.objects.get(member=self.member)
+        self.assertRedirects(response, reverse('sale_detail', args=[sale.pk]))
+        self.assertEqual(sale.final_amount, Decimal('19.00'))
+        self.assertEqual(SaleItem.objects.get(sale=sale).quantity, 2)
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 98)
+
+    def test_empty_checkout_does_not_create_sale_or_change_stock(self):
+        self.client.force_login(self.user)
+        response = self.client.post(reverse('sale_create'), {
+            'payment_method': 'cash', 'member': self.member.pk,
+        })
+        self.assertRedirects(response, reverse('sale_create'))
+        self.assertFalse(Sale.objects.exists())
+        self.assertFalse(SaleItem.objects.exists())
+        self.assertFalse(InventoryTransaction.objects.exists())
+        self.inventory.refresh_from_db()
+        self.member.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 100)
+        self.assertEqual(self.member.balance, Decimal('100.00'))
+        self.assertEqual(self.member.purchase_count, 0)
 
 
 class BackupViewSecurityTest(TestCase):

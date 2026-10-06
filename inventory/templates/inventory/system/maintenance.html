@@ -1,0 +1,16 @@
+{% extends 'inventory/base.html' %}
+{% block title %}系统维护 - {{ block.super }}{% endblock %}
+{% block content %}
+<div class="page-heading"><h1 class="page-title visually-hidden mb-0">系统维护</h1><a class="button button--secondary" href="{% url 'system_settings' %}">返回设置</a></div>
+<div class="member-stat-grid">
+    <section class="card"><div class="card-body"><h2 class="card-title">磁盘使用</h2><strong class="display-5">{{ disk_usage_percent|floatformat:1 }}%</strong></div></section>
+    <section class="card"><div class="card-body"><h2 class="card-title">内存使用</h2><strong class="display-5">{{ memory_usage_percent|floatformat:1 }}%</strong></div></section>
+    <section class="card"><div class="card-body"><h2 class="card-title">日志大小</h2><strong class="display-5">{{ log_size_mb }} <small>MB</small></strong></div></section>
+    <section class="card"><div class="card-body"><h2 class="card-title">有效会话</h2><strong class="display-5">{{ active_sessions }}</strong></div></section>
+</div>
+<section class="card"><div class="card-body">
+    <form method="post" class="maintenance-action">{% csrf_token %}<input type="hidden" name="operation" value="clear_sessions"><div><strong>清理过期会话</strong><div class="form-text">当前有 {{ expired_sessions }} 个过期会话。</div></div><button class="button button--secondary" type="submit">清理过期会话</button></form>
+    <form method="post" class="maintenance-action" onsubmit="return confirm('确认精简日志？仅保留最近 10000 行。')">{% csrf_token %}<input type="hidden" name="operation" value="clear_logs"><div><strong>精简日志文件</strong><div class="form-text">保留最近 10000 行。</div></div><button class="button button--danger-soft" type="submit">精简日志</button></form>
+    <form method="post" class="maintenance-action">{% csrf_token %}<input type="hidden" name="operation" value="optimize_db"><div><strong>优化数据库</strong><div class="form-text">整理数据库存储空间。</div></div><button class="button button--secondary" type="submit">优化数据库</button></form>
+</div></section>
+{% endblock %}

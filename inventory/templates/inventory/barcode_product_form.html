@@ -4,29 +4,11 @@
 {% block title %}扫码添加商品 - {{ block.super }}{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h2 class="card-title mb-0">扫码添加商品</h2>
-                        <p class="text-muted">通过条码快速添加商品信息</p>
-                    </div>
-                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-arrow-left me-1"></i> 返回列表
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
+<div class="barcode-entry-layout">
     <!-- 左侧：条码扫描和结果 -->
-    <div class="col-lg-5 col-md-12">
+    <div class="barcode-column">
         <!-- 条码扫描和查询结果区域 -->
-        <div class="card h-100 mb-4 mb-lg-0">
+        <div class="card barcode-panel">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0"><i class="bi bi-upc-scan me-2"></i>扫描条码与商品信息</h5>
             </div>
@@ -35,7 +17,7 @@
                 <form method="get" action="{% url 'barcode_product_create' %}" class="mb-3">
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-upc"></i></span>
-                        <input type="text" name="barcode" class="form-control form-control-lg" placeholder="输入或扫描条码" value="{{ barcode }}" required autofocus>
+                        <input type="text" name="barcode" class="form-control" placeholder="输入或扫描条码" value="{{ barcode }}" required autofocus>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-search me-1"></i> 查询
                         </button>
@@ -46,7 +28,7 @@
                 <hr class="my-3">
                 
                 <!-- 条码查询结果 -->
-                <div class="barcode-result overflow-auto" style="max-height: 500px;">
+                <div class="barcode-result">
                 {% if barcode_data %}
                     <div class="text-center mb-4">
                         {% if barcode_data.image_url %}
@@ -134,12 +116,13 @@
     </div>
     
     <!-- 右侧：商品表单 -->
-    <div class="col-lg-7 col-md-12">
-        <div class="card h-100 mb-4 mb-lg-0">
+    <div class="barcode-column">
+        <div class="card barcode-panel">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0"><i class="bi bi-pencil-square me-2"></i>商品录入</h5>
+                <a href="{% url 'product_list' %}" class="button button--secondary button--sm"><i class="bi bi-arrow-left" aria-hidden="true"></i>返回列表</a>
             </div>
-            <div class="card-body overflow-auto" style="max-height: 700px;">
+            <div class="card-body barcode-entry-body">
                 <form method="post" enctype="multipart/form-data" id="productForm">
                     {% csrf_token %}
                     <div class="row">
@@ -284,7 +267,7 @@
                         {% if form.description.errors %}
                             <div class="alert alert-danger">{{ form.description.errors }}</div>
                         {% endif %}
-                        <textarea name="description" id="id_description" class="form-control" rows="3">{{ form.description.value|default:'' }}{% if not form.description.value and barcode_data %}{{ barcode_data.description|default:'' }}{% endif %}</textarea>
+                        <textarea name="description" id="id_description" class="form-control" rows="2">{{ form.description.value|default:'' }}{% if not form.description.value and barcode_data %}{{ barcode_data.description|default:'' }}{% endif %}</textarea>
                     </div>
                     
                     <div class="mb-4">

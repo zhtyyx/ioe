@@ -1,0 +1,10 @@
+{% extends 'inventory/base.html' %}
+{% block title %}会员消费明细 - {{ block.super }}{% endblock %}
+{% block content %}
+<div class="page-heading"><h1 class="page-title visually-hidden mb-0">{{ member.name }} · 消费明细</h1><a class="button button--secondary" href="{% url 'member_purchases' %}">返回消费记录</a></div>
+<section class="card"><div class="card-body">
+    <form method="get" class="row g-2 align-items-end mb-3"><input type="hidden" name="member_id" value="{{ member.pk }}"><div class="col-md-4"><label class="form-label" for="purchase-start">开始日期</label><input class="form-control" type="date" id="purchase-start" name="start_date" value="{{ start_date|default:'' }}"></div><div class="col-md-4"><label class="form-label" for="purchase-end">结束日期</label><input class="form-control" type="date" id="purchase-end" name="end_date" value="{{ end_date|default:'' }}"></div><div class="col-md-4"><button class="button button--primary" type="submit">查询</button></div></form>
+    <p>所选期间累计消费：<strong>¥{{ total_amount|floatformat:2 }}</strong></p>
+    <div class="table-responsive"><table class="table"><thead><tr><th>订单</th><th>时间</th><th>支付方式</th><th>状态</th><th>订单金额</th></tr></thead><tbody>{% for sale in sales %}<tr><td><a href="{% url 'sale_detail' sale.pk %}">#{{ sale.pk }}</a></td><td>{{ sale.created_at|date:'Y-m-d H:i' }}</td><td>{{ sale.get_payment_method_display }}</td><td>{{ sale.get_status_display }}</td><td>¥{{ sale.total_amount|floatformat:2 }}</td></tr>{% empty %}<tr><td colspan="5" class="text-muted text-center">暂无符合条件的消费记录</td></tr>{% endfor %}</tbody></table></div>
+</div></section>
+{% endblock %}

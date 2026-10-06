@@ -1,0 +1,19 @@
+Vendored frontend dependencies (downloaded from their published npm packages).
+HeroUI styles 3.2.6: https://www.npmjs.com/package/@heroui/styles
+  Official framework-agnostic prebuilt CSS; license in heroui/LICENSE.
+Bootstrap 5.2.3: https://github.com/twbs/bootstrap, MIT.
+Bootstrap Icons 1.11.3: https://github.com/twbs/icons, MIT.
+SweetAlert2 11.7.32: https://github.com/sweetalert2/sweetalert2, MIT.
+Chart.js 4.4.8: https://github.com/chartjs/Chart.js, MIT.
+
+HeroUI is loaded before Bootstrap. app.css bridges the existing Django templates
+and Bootstrap behavior to HeroUI theme tokens. Component styles live in ../styles/
+and load after app.css in base.html. New controls use HeroUI BEM classes.
+No React runtime or frontend build step is required.
+
+jQuery 3.7.1: https://github.com/jquery/jquery, MIT (jquery-LICENSE).
+
+controls.js progressively enhances native selects and search inputs with HeroUI
+Select/ListBox/SearchField markup. Native fields retain their names and form data;
+keyboard, reset, validation and dynamic option behavior are implemented locally.
+components.js applies Button styles to static and dynamically inserted actions.

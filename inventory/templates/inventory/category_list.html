@@ -5,11 +5,11 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card">
+        <div class="card page-header-card">
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
                     <div>
-                        <h2 class="card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Category List{% else %}分类列表{% endif %}</h2>
+                        <h2 class="page-title visually-hidden card-title mb-0">{% if request.LANGUAGE_CODE == 'en' %}Category List{% else %}分类列表{% endif %}</h2>
                         <p class="text-muted mb-md-0">{% if request.LANGUAGE_CODE == 'en' %}Manage product categories{% else %}管理所有商品分类信息{% endif %}</p>
                     </div>
                     <div class="d-flex flex-wrap gap-2">

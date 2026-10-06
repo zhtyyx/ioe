@@ -1,0 +1,14 @@
+<form method="post" class="hero-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+    {% if adjustment %}
+    <div class="mb-4"><label class="form-label" for="adjustment-action">{% if request.LANGUAGE_CODE == 'en' %}Adjustment method{% else %}调整方式{% endif %}</label><select class="form-select" id="adjustment-action" name="adjustment_action" required>
+        <option value="">{% if request.LANGUAGE_CODE == 'en' %}Choose a method{% else %}请选择调整方式{% endif %}</option>
+        <option value="add" {% if request.POST.adjustment_action == 'add' %}selected{% endif %}>{% if request.LANGUAGE_CODE == 'en' %}Increase by quantity{% else %}增加指定数量{% endif %}</option>
+        <option value="subtract" {% if request.POST.adjustment_action == 'subtract' %}selected{% endif %}>{% if request.LANGUAGE_CODE == 'en' %}Decrease by quantity{% else %}减少指定数量{% endif %}</option>
+        <option value="set" {% if request.POST.adjustment_action == 'set' %}selected{% endif %}>{% if request.LANGUAGE_CODE == 'en' %}Set stock to quantity{% else %}设置为指定库存数量{% endif %}</option>
+    </select>{% for error in form.adjustment_action.errors %}<div class="field-error" role="alert">{{ error }}</div>{% endfor %}</div>
+    {% endif %}
+    <div class="editor-grid">{% for field in form %}{% if field.name != 'adjustment_action' %}{% include 'inventory/includes/ui_field.html' %}{% endif %}{% endfor %}</div>
+    <div class="editor-actions"><a class="button button--secondary" href="{% url 'inventory_list' %}">{% if request.LANGUAGE_CODE == 'en' %}Cancel{% else %}取消{% endif %}</a><button class="button button--primary" type="submit">{% if request.LANGUAGE_CODE == 'en' %}Confirm{% else %}确认{% endif %}{% if request.LANGUAGE_CODE != 'en' %}{% if adjustment %}调整{% elif transaction_type == 'OUT' %}出库{% else %}入库{% endif %}{% endif %}</button></div>
+</form>

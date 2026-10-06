@@ -5,9 +5,9 @@
 
 {% block content %}
 <div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">会员管理</h1>
-        <div>
+    <div class="member-page-heading">
+        <h1 class="page-title visually-hidden h3 mb-0">会员管理</h1>
+        <div class="member-toolbar">
             <a href="{% url 'member_level_list' %}" class="btn btn-info">
                 <i class="bi bi-list-stars"></i> 会员等级
             </a>
@@ -23,47 +23,15 @@
         </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-primary">总会员数</h5>
-                    <h2 class="display-5">{{ total_members }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-success">活跃会员</h5>
-                    <h2 class="display-5">{{ active_members }}</h2>
-                    <p class="text-muted">{{ active_members|floatformat:0 }}% 的会员状态活跃</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-info">当前筛选</h5>
-                    <h2 class="display-5">{{ page_obj.paginator.count }}</h2>
-                    <p class="text-muted">当前条件下的会员数量</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-warning">会员等级</h5>
-                    <h2 class="display-5">{{ levels.count }}</h2>
-                    <p class="text-muted">已定义的会员等级数量</p>
-                </div>
-            </div>
-        </div>
+    <div class="member-stat-grid">
+        <div class="card"><div class="card-body"><h5 class="card-title">总会员数</h5><strong class="display-5">{{ total_members }}</strong></div></div>
+        <div class="card"><div class="card-body"><h5 class="card-title">活跃会员</h5><strong class="display-5">{{ active_members }}</strong></div></div>
+        <div class="card"><div class="card-body"><h5 class="card-title">当前筛选</h5><strong class="display-5">{{ page_obj.paginator.count }}</strong></div></div>
+        <div class="card"><div class="card-body"><h5 class="card-title">会员等级</h5><strong class="display-5">{{ levels.count }}</strong></div></div>
     </div>
 
     <!-- 筛选表单 -->
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-3">
         <div class="card-header bg-primary text-white">
             <h5 class="card-title mb-0">会员筛选</h5>
         </div>
