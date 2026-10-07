@@ -1,79 +1,95 @@
+<div align="center">
+
 # IOE Inventory Management System
 
-[简体中文](README_zh.md) · [Docker guide](README.docker_en.md) · [Issues](https://github.com/zhtyyx/ioe/issues)
+**Keep stock, sales, and member records together—from receiving goods to checkout.**
 
-IOE is a Django application for small retail stores to manage products, stock, sales, members, and reports. It runs with SQLite by default and can be started locally without a separate database service.
+[简体中文](README_zh.md) · [Quick start](#quick-start) · [Interface preview](#interface-preview) · [Contact](#contact)
 
-<!-- Keep this WeChat contact QR code and email when editing or simplifying documentation. -->
-<div align="center">
-  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 Scan to add me on WeChat</b><br/><br/>
-  <img src="./asset/wxqun.png" width="30%" alt="WeChat QR Code" />
 </div>
 
-![IOE sales trends](asset/ioe_sales_trend_en.png)
+IOE is an open-source management system for small retail stores. Maintain a product catalog, record stock movements, scan items at checkout, manage member balances and points, and review sales and inventory reports. Built with Django and SQLite by default, it can run locally or on your own server and can be adapted to your store's workflows.
 
-## Store operations
+### Start with your store's numbers
 
-Manage products, track stock in and out, handle checkout, maintain member accounts, and review sales reports in one place.
+Review revenue, profit, and order counts by date, with daily details alongside the chart. All screenshots below use local demo data.
 
-## Screenshots
+![Sales trends: revenue, profit, order counts, and daily details](asset/ioe_sales_trend_en.png)
 
-Screenshots using local demo data, showing reports and daily store workflows.
+## What you can do
 
-### Sales trends
+| Workflow | Features |
+| --- | --- |
+| Products and barcodes | Maintain categories, prices, costs, specifications, and images; look up products by barcode. |
+| Stock and stocktaking | Record receipts, withdrawals, and adjustments; review low-stock alerts and movements; reconcile physical counts. |
+| Checkout | Scan or search for products, adjust quantities, apply member discounts, and record payment methods and sale items. |
+| Member accounts | Manage membership levels, recharges, balances, points, purchase history, and birthday reminders. |
+| Reports and administration | Review sales trends and inventory turnover; manage user permissions, operation logs, and backups. |
 
-<img src="./asset/ioe_sales_trend_en.png" width="100%" alt="Sales trends" />
+These workflows share the same product, inventory, and member records. Received stock is available at checkout; sales produce order and stock movement records that can be reviewed later. The interface offers Chinese and English language switching and light and dark themes.
 
-### Inventory turnover
+## Interface preview
 
-<img src="./asset/ioe_inventory_turnover_en.png" width="100%" alt="Inventory turnover" />
+### Inventory turnover: see how stock is moving
 
-### Report center
+Compare stock levels, units sold, and days in inventory to inform replenishment decisions and identify slow-moving products.
 
-<img src="./asset/ioe_reports_en.png" width="100%" alt="Report center" />
+![Inventory turnover chart and product details](asset/ioe_inventory_turnover_en.png)
 
-### Business overview
+### Checkout: items, payment, and totals in one view
 
-<img src="./asset/ioe_dashboard_en.png" width="100%" alt="Business overview" />
+Review the cart, find a member, and choose a payment method on the same page. Add products by barcode or name.
 
-### Checkout
-
-<img src="./asset/ioe_checkout_en.png" width="100%" alt="Checkout" />
+![Checkout with cart, member lookup, and payment controls](asset/ioe_checkout_en.png)
 
 <details>
-<summary>More screenshots: products, inventory, members, and stocktaking</summary>
+<summary><strong>Business overview and report navigation</strong></summary>
 
-### Product catalog
+The overview brings together today's sales, product and member counts, stock alerts, and recent sales trends.
 
-<img src="./asset/ioe_products_en.png" width="100%" alt="Product catalog" />
+![Business overview](asset/ioe_dashboard_en.png)
 
-### Product editor
+The report center provides access to sales, product, inventory, and member analysis.
 
-<img src="./asset/ioe_product_form_en.png" width="100%" alt="Product editor" />
-
-### Inventory
-
-<img src="./asset/ioe_inventory_en.png" width="100%" alt="Inventory" />
-
-### Members
-
-<img src="./asset/ioe_members_en.png" width="100%" alt="Members" />
-
-### Membership levels
-
-<img src="./asset/ioe_member_levels_en.png" width="100%" alt="Membership levels" />
-
-### Stocktaking
-
-<img src="./asset/ioe_stocktaking_en.png" width="100%" alt="Stocktaking" />
+![Report center](asset/ioe_reports_en.png)
 
 </details>
 
-## Run locally
+<details>
+<summary><strong>Product catalog and inventory</strong></summary>
 
-Use Python 3.10 or newer. The Docker image uses Python 3.10.
+Search and filter products, then edit prices, specifications, images, and stock warning thresholds.
 
-1. Clone the repository and create a virtual environment:
+![Product catalog](asset/ioe_products_en.png)
+
+![Product editor](asset/ioe_product_form_en.png)
+
+The inventory list shows quantities and warning states, with actions for stock receipts, withdrawals, and adjustments.
+
+![Inventory management](asset/ioe_inventory_en.png)
+
+</details>
+
+<details>
+<summary><strong>Members and stocktaking</strong></summary>
+
+Review member profiles, balances, and points, and configure discounts by membership level.
+
+![Member list](asset/ioe_members_en.png)
+
+![Membership levels](asset/ioe_member_levels_en.png)
+
+Track stocktaking tasks through counting, completion, and approval, and reconcile recorded stock with physical counts.
+
+![Stocktaking tasks](asset/ioe_stocktaking_en.png)
+
+</details>
+
+## Quick start
+
+Use Python 3.10 or newer. The commands below are for macOS / Linux. SQLite is the default, so no separate database server is needed.
+
+1. Clone the project and create a virtual environment:
 
    ```bash
    git clone https://github.com/zhtyyx/ioe.git
@@ -82,57 +98,60 @@ Use Python 3.10 or newer. The Docker image uses Python 3.10.
    source .venv/bin/activate
    ```
 
-   These commands use a POSIX shell. On Windows, activate the environment with `.venv\Scripts\activate` and create the `db` directory before migration.
-
-2. Install dependencies and initialize SQLite:
+2. Install dependencies, initialize the database, and create a login account:
 
    ```bash
    python -m pip install -r requirements.txt
-   mkdir -p db
+   python -c "from pathlib import Path; Path('db').mkdir(exist_ok=True)"
    python manage.py migrate
    python manage.py createsuperuser
    ```
 
-3. Start the development server:
+3. Start the local server:
 
    ```bash
    python manage.py runserver
    ```
 
-Open <http://127.0.0.1:8000/> and sign in with the account created above. The database file is `db/db.sqlite3`. Uploaded files are stored in `media/`.
+Open <http://127.0.0.1:8000/> and sign in with the account you just created. A new installation starts with an empty database; the demo data shown here is not imported automatically.
 
-`runserver` is for local development. For container setup, environment variables, and deployment limitations, follow the [Docker guide](README.docker_en.md).
+On Windows, use `python` in place of `python3` and activate the virtual environment with `.venv\Scripts\activate`.
 
-## Run tests
+The database is stored in `db/db.sqlite3`, and uploaded files are stored in `media/`. Use `runserver` for local development. For containers, persistent storage, and deployment considerations, see the [Docker guide](README.docker_en.md).
+
+## Development and tests
+
+Run the full test suite:
 
 ```bash
-python manage.py test inventory.tests
+python manage.py test --settings=inventory.test_settings
 ```
 
-The current suite has four pre-existing failures in older integration/view tests. See their assertions before treating a full-suite failure as a regression.
+This configuration uses a separate temporary database and file directories. Tests cover checkout, member balances, stock movements, concurrent withdrawals, and backup restoration.
 
-## Project layout
+Application code lives in `inventory/`: `models/` defines data structures, `views/` and `services/` handle business logic, `templates/` and `static/` provide the interface, and `tests/` contains the test suite. Documentation screenshots live in `asset/`.
 
-```text
-inventory/          Django settings, models, views, templates, and tests
-asset/              README screenshots
-Dockerfile           Container image
-docker-compose.yml  Local Compose configuration
-docker-compose.prod.yml  Production example
-requirements.txt     Python dependencies
-manage.py            Django management commands
-```
+Use [Issues](https://github.com/zhtyyx/ioe/issues) to report bugs or propose features. Pull requests should describe the trigger, expected behavior, and validation. Include tests for business changes and screenshots for interface changes. Discuss the use case and scope before starting a large feature.
 
-## Contributing
+## Contact
 
-Open an [issue](https://github.com/zhtyyx/ioe/issues) for a bug or feature request. Keep pull requests focused, include tests for stock, sales, balance, and backup changes, and attach screenshots for visible UI changes.
-
-IOE is released under the [MIT License](LICENSE).
-
-## Support
-
-If this project is useful to you, you can support continued development:
+- Email: [zhtyyx@gmail.com](mailto:zhtyyx@gmail.com)
+- Bug reports: [GitHub Issues](https://github.com/zhtyyx/ioe/issues)
+- WeChat: scan the QR code below to connect.
 
 <div align="center">
-  <img src="./asset/buyme.jpg" width="30%" alt="Support QR code" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" alt="WeChat QR code" />
+  <img src="./asset/wxqun.png" width="220" alt="Scan to connect on WeChat" />
 </div>
+
+## Support the project
+
+If IOE is useful to you, consider sharing feedback, contributing an improvement, or supporting continued maintenance.
+
+<div align="center">
+  <img src="./asset/buyme.jpg" width="220" alt="Support the project" />
+  <img src="./asset/wechat.jpg" width="220" alt="Support via WeChat" />
+</div>
+
+## License
+
+IOE is available under the [MIT License](LICENSE). You may use, modify, and distribute it under the license terms.
