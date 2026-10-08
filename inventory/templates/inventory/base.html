@@ -1,5 +1,5 @@
 {% load static %}
-{% with ui_asset_version="20261007-1" %}
+{% with ui_asset_version="20261008-2" %}
 <!DOCTYPE html>
 <html lang="{{ request.LANGUAGE_CODE|default:'zh-hans' }}">
 <head>
@@ -26,9 +26,7 @@
     {% if request.user.is_authenticated %}
     <aside class="app-sidebar" id="app-sidebar" aria-label="{% if request.LANGUAGE_CODE == 'en' %}Main navigation{% else %}主导航{% endif %}">
         <a class="ioe-brand" href="{% url 'index' %}" aria-label="IOE {% if request.LANGUAGE_CODE == 'en' %}Home{% else %}首页{% endif %}">
-            <img class="ioe-logo" src="{% static 'inventory/images/logo.svg' %}?v={{ ui_asset_version }}" width="30" height="30" alt="">
-            <span class="ioe-wordmark">IOE</span>
-            <span class="ioe-brand-label">{% if request.LANGUAGE_CODE == 'en' %}Store{% else %}门店管理{% endif %}</span>
+            <img class="ioe-logo" src="{% static 'inventory/images/logo.svg' %}?v={{ ui_asset_version }}" width="120" height="36" alt="IOE">
         </a>
         <nav class="sidebar-nav">
             <span class="nav-section">{% if request.LANGUAGE_CODE == 'en' %}WORKSPACE{% else %}工作空间{% endif %}</span>
@@ -58,7 +56,7 @@
                 {% if request.user.is_authenticated %}
                 <button class="button button--tertiary button--icon-only mobile-menu-toggle" type="button" aria-controls="app-sidebar" aria-expanded="false" aria-label="{% if request.LANGUAGE_CODE == 'en' %}Open navigation{% else %}展开导航{% endif %}"><i class="bi bi-list" aria-hidden="true"></i></button>
                 <div class="breadcrumbs"><span>{% if request.LANGUAGE_CODE == 'en' %}Workspace{% else %}工作空间{% endif %}</span><i class="bi bi-chevron-right" aria-hidden="true"></i><strong id="current-page-label">ioe</strong></div>
-                {% else %}<a class="ioe-brand" href="{% url 'index' %}"><img class="ioe-logo" src="{% static 'inventory/images/logo.svg' %}?v={{ ui_asset_version }}" width="30" height="30" alt=""><span class="ioe-wordmark">IOE</span></a>{% endif %}
+                {% else %}<a class="ioe-brand" href="{% url 'index' %}"><img class="ioe-logo" src="{% static 'inventory/images/logo.svg' %}?v={{ ui_asset_version }}" width="120" height="36" alt="IOE"></a>{% endif %}
             </div>
             <div class="topbar-actions">
                 {% if request.user.is_authenticated %}
@@ -84,7 +82,9 @@
             {% if messages %}<div class="app-messages">{% for message in messages %}<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% if request.LANGUAGE_CODE == 'en' %}Dismiss{% else %}关闭提示{% endif %}"></button></div>{% endfor %}</div>{% endif %}
             {% block content %}{% endblock %}
         </main>
-
+        <footer class="app-footer">
+            <span>{% if request.LANGUAGE_CODE == 'en' %}Thanks to the <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">Linux DO community</a>{% else %}致谢 <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">Linux DO 社区</a>{% endif %}</span>
+        </footer>
     </div>
     <script src="{% static 'inventory/vendor/jquery.min.js' %}"></script>
     <script src="{% static 'inventory/vendor/bootstrap.bundle.min.js' %}"></script>

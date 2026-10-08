@@ -2007,26 +2007,10 @@ h6 {
 }
 
 .ioe-logo {
-    width: 30px;
-    height: 30px;
+    width: 120px;
+    height: 36px;
     display: block;
-    flex: 0 0 30px;
-}
-
-.ioe-wordmark {
-    font-size: 18px;
-    font-weight: 650;
-    letter-spacing: .2px;
-    line-height: 24px;
-}
-
-.ioe-brand-label {
-    font-size: 10px;
-    color: var(--muted);
-    border-left: 1px solid var(--separator);
-    padding-left: 9px;
-    margin-left: 1px;
-    white-space: nowrap;
+    flex: 0 0 120px;
 }
 
 .nav-section {
