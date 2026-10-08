@@ -1,49 +1,76 @@
-# Docker deployment guide
+# Deploy with a Docker image
 
-[简体中文](README.docker_zh.md) · [Back to project guide](README.md)
+[简体中文](README.docker_zh.md) · [Project guide](README.md) · [Build status](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml)
 
-The repository provides `docker-compose.yml` and `docker-compose.prod.yml`. Both run the same Django container with SQLite. The `prod` file mainly changes the default `DEBUG` value to `False`; it is an example, not a complete production deployment.
+Use `ghcr.io/zhtyyx/ioe:latest` without cloning the source or building on your server. Images support Linux AMD64 and ARM64. Install Docker and **Docker Compose 2.23.1 or newer**.
 
-## Prepare
+## 1. Download the deployment configuration
 
-Install Docker and the Docker Compose plugin (`docker compose`). From the repository root:
+Start in a new deployment directory:
 
 ```bash
-git clone https://github.com/zhtyyx/ioe.git
+mkdir -p ioe
 cd ioe
-cp .env.template .env
-python3 -c 'import secrets; print(secrets.token_urlsafe(50))'
+curl -fsSL https://raw.githubusercontent.com/zhtyyx/ioe/main/docker-compose.prod.yml -o compose.yaml
+curl -fsSL https://raw.githubusercontent.com/zhtyyx/ioe/main/.env.template -o .env
+openssl rand -hex 32
 ```
 
-Put the generated random value in `.env` as `SECRET_KEY`. Replace the template placeholder and keep `.env` out of version control. Set `ALLOWED_HOSTS` to the hostnames or addresses you will use, separated by commas. Set `DEBUG=True` for local debugging if needed; keep it `False` for a public deployment.
+Set `SECRET_KEY` in `.env` to the generated value. Set `ALLOWED_HOSTS` to your server IP or domain names, separated by commas without schemes or ports. Keep `localhost,127.0.0.1` if you also need local access. Keep `.env` private and do not overwrite it during updates.
 
-Compose currently passes only `DEBUG`, `SECRET_KEY`, and `ALLOWED_HOSTS` to Django. The database remains SQLite. Other entries in `.env` do not automatically configure a different database or email backend.
+Example:
 
-## Start
+```dotenv
+SECRET_KEY=replace-with-the-generated-random-value
+ALLOWED_HOSTS=localhost,127.0.0.1,your-server-ip
+IOE_PORT=8000
+```
 
-For local use:
+## 2. Pull and start
 
 ```bash
-docker compose up -d --build
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py collectstatic --noinput
+docker compose pull
+docker compose up -d --wait
 docker compose exec web python manage.py createsuperuser
 ```
 
-Open <http://localhost:8000/> and sign in. Run `createsuperuser` only when setting up a new environment. Run `migrate` again after code updates or when attaching a fresh data volume. The Dockerfile runs migrations and collects static files while building the image, but the running container uses mounted volumes for the database and static files; the runtime commands above are still needed.
+Open `http://your-server-ip:8000/` and sign in. A new deployment starts with an empty database. The container runs database migrations and collects static files at startup. Create the administrator account once, using the command above.
 
-To use the production example, replace `docker compose` in the commands above with `docker compose -f docker-compose.prod.yml`. Before starting, set `DEBUG=False`, a suitable `ALLOWED_HOSTS`, and a random `SECRET_KEY` in `.env`. This configuration still exposes port 8000 directly and bind-mounts the checkout. It does not include an HTTPS reverse proxy or other production hardening.
+The deployment runs two services: `web` hosts Django / Gunicorn, while `nginx` serves the application, static assets, and uploaded images. This configuration fixes `DEBUG=False` and does not bind-mount source code. Configure a domain and HTTPS at the entry point before exposing the service publicly.
 
-## Data and operations
+To change the port, set `IOE_PORT=8080` in `.env`. Set `IOE_BIND_ADDRESS=127.0.0.1` if only a reverse proxy on the same host should reach the service.
 
-| Location | Contents |
+## 3. Update
+
+Back up the database and uploaded files first:
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate --wait
+docker compose logs --tail=100 web
+```
+
+Updates reuse the data volumes and run any new database migrations. Keep the deployment directory and Compose project name unchanged so the same volumes are used. `--force-recreate` refreshes both the application and proxy containers.
+
+### Image tags
+
+| Tag | Meaning |
 | --- | --- |
-| `db_volume` | SQLite database at `/app/db` in the container |
-| `media_volume` | Uploaded images at `/app/media` |
-| `static_volume` | Collected static files at `/app/staticfiles` |
-| `logs/` in the checkout | Application logs, bind-mounted to the host |
+| `latest` | The most recent tested and published build from `main` |
+| `sha-<full commit SHA>` | A build tied to a specific source commit |
+| `1.2.3` / `1.2` | Created when a version tag such as `v1.2.3` is pushed; only published tags are available |
 
-Useful commands:
+Set `IOE_IMAGE=ghcr.io/zhtyyx/ioe:sha-<full commit SHA>` in `.env` to pin a version. You can also pin an image digest with `@sha256:...`. An older image may not support an upgraded database; a rollback may require the matching database backup.
+
+## Persistent data
+
+| Named volume | Container path and contents |
+| --- | --- |
+| `db_volume` | `/app/db`: SQLite database |
+| `media_volume` | `/app/media`: uploaded images |
+| `backups_volume` | `/app/backups`: backups created within IOE |
+| `logs_volume` | `/app/logs`: application logs |
+| `static_volume` | `/app/staticfiles`: static assets collected at startup |
 
 ```bash
 docker compose logs -f web
@@ -51,6 +78,41 @@ docker compose exec web python manage.py check
 docker compose down
 ```
 
-`docker compose down` retains the named volumes. Avoid `down -v` when data must be kept. Back up both the database and media volumes. Add `-f docker-compose.prod.yml` to these commands when using the production example.
+`down` retains named volumes. `down -v` deletes them and their data; do not use it to update the application.
 
-The Dockerfile configures Tsinghua mirrors for apt and pip during image builds. These mirrors only affect dependency downloads inside the build.
+When moving an existing source deployment to the image, back it up and confirm its Compose project and volume names first. This configuration retains the logical names `db_volume`, `media_volume`, and `static_volume`. Existing host directories such as `logs/` and `backups/` are not automatically copied into the new volumes. Test migration on a copy before using the live database.
+
+## GitHub Actions publishing
+
+[Publish container image](.github/workflows/publish-image.yml) runs on pushes to `main`, pushes of `v*` tags, and manual dispatch:
+
+1. Build a test image and run the Django tests.
+2. Verify fresh startup, login, static assets, uploads, and persistence after container recreation.
+3. Publish AMD64 / ARM64 images to GHCR using the repository's `GITHUB_TOKEN`.
+
+Pull requests only build and test; they do not log in to GHCR or publish. No Docker Hub account or personal access token is needed for the workflow.
+
+**First publication:** new GHCR packages are private by default. The maintainer must set the package to Public in [IOE package settings](https://github.com/users/zhtyyx/packages/container/ioe/settings) before anonymous pulls work. Confirm a successful Actions run before using an image. For `denied`, check visibility; for `manifest unknown`, check that the tag has been published. [GitHub documentation](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+
+## Build from source for development
+
+When editing source code, build an image locally and use the same deployment configuration:
+
+```bash
+git clone https://github.com/zhtyyx/ioe.git
+cd ioe
+cp .env.template .env
+# Set SECRET_KEY and ALLOWED_HOSTS as described above, then run:
+docker build -t ioe:local .
+IOE_IMAGE=ioe:local docker compose -f docker-compose.prod.yml up -d --wait
+docker compose -f docker-compose.prod.yml exec web python manage.py createsuperuser
+```
+
+This packages your changes in the image without bind-mounting the checkout. To test the image deployment locally:
+
+```bash
+docker build -t ioe:local .
+sh scripts/test-container.sh ioe:local
+```
+
+The smoke script uses a unique temporary project and volumes, and cleans up only the containers and volumes it created.

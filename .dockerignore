@@ -1,48 +1,31 @@
-# Git
 .git
+.github
 .gitignore
-
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Django
-*.log
-local_settings.py
-
-# SQLite database files
-# db.sqlite3
-# db.sqlite3-journal
-
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# OS
+.env
+.env.*
+*.env
+.venv
+venv
+env
+ENV
+**/__pycache__
+**/*.py[cod]
+**/*.sqlite3*
+**/*.db
+**/*.log
+**/local_settings.py
+db
+media
+staticfiles
+logs
+backups
+temp
+asset
+node_modules
+.coverage
+htmlcov
+.pytest_cache
+.idea
+.vscode
 .DS_Store
-Thumbs.db
+*.md

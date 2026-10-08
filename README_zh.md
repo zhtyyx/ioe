@@ -103,6 +103,14 @@ IOE 面向小型零售门店，基于 Django 构建，默认使用 SQLite。你�
 
 ## 🚀 快速开始
 
+### 直接部署镜像
+
+无需克隆代码或本地构建，使用 Docker Compose 拉取 `ghcr.io/zhtyyx/ioe:latest` 即可部署。配置、首次登录和更新步骤见 [镜像部署指南](README.docker_zh.md)。
+
+[![镜像构建](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml/badge.svg)](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml)
+
+### 从源码运行
+
 使用 Python 3.10 或更高版本。以下命令适用于 macOS / Linux；默认数据库为 SQLite，无需另外启动数据库服务。
 
 1. 克隆项目并创建虚拟环境：

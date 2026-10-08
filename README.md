@@ -103,6 +103,14 @@ Review revenue, costs, profit, and order counts by date, with daily details belo
 
 ## 🚀 Quick start
 
+### Deploy a prebuilt image
+
+Skip cloning and building: use `ghcr.io/zhtyyx/ioe:latest` with Docker Compose. See the [image deployment guide](README.docker_en.md) for the configuration, first login, and updates.
+
+[![Container build](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml/badge.svg)](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml)
+
+### Run from source
+
 Use Python 3.10 or newer. The commands below are for macOS / Linux. SQLite is the default, so no separate database server is needed.
 
 1. Clone the project and create a virtual environment:
