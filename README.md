@@ -11,6 +11,7 @@ Products, stock, checkout, and member accounts in one place.
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="License: MIT" /></a>
   <a href="requirements.txt"><img src="https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white" alt="Python 3.10 or newer" /></a>
   <a href="requirements.txt"><img src="https://img.shields.io/badge/Django-4.2%2B-092e20?style=flat-square&amp;logo=django&amp;logoColor=white" alt="Django 4.2 or newer" /></a>
+  <a href="https://github.com/users/zhtyyx/packages/container/package/ioe"><img src="https://img.shields.io/badge/GHCR-Container_image-2496ed?style=flat-square&amp;logo=docker&amp;logoColor=white" alt="GHCR container image" /></a>
 </p>
 
 [简体中文](README_zh.md) · [Features](#features) · [Screenshots](#preview) · [Quick start](#quick-start) · [Star history](#star-history)
@@ -105,7 +106,20 @@ Review revenue, costs, profit, and order counts by date, with daily details belo
 
 ### Deploy a prebuilt image
 
-Skip cloning and building: use `ghcr.io/zhtyyx/ioe:latest` with Docker Compose. See the [image deployment guide](README.docker_en.md) for the configuration, first login, and updates.
+Deploy without downloading the source or building on your server. The public [GHCR image](https://github.com/users/zhtyyx/packages/container/package/ioe) supports **Linux AMD64 / ARM64** and can be pulled without signing in to GitHub:
+
+```bash
+docker pull ghcr.io/zhtyyx/ioe:latest
+```
+
+For a first deployment, follow the [image deployment guide](README.docker_en.md) to download the Compose configuration and `.env` template, set your secret key and allowed hosts, start the services, and create an administrator. The database, uploads, and backups use separate persistent volumes and survive container recreation.
+
+[GitHub Actions](.github/workflows/publish-image.yml) runs tests, verifies deployment, and publishes `latest` after pushes to `main`. Pushing a `v*` version tag publishes a versioned image. To update an existing configured deployment, back up your data and run:
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate --wait
+```
 
 [![Container build](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml/badge.svg)](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml)
 

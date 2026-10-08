@@ -11,6 +11,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="License: MIT" /></a>
   <a href="requirements.txt"><img src="https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white" alt="Python 3.10 or newer" /></a>
   <a href="requirements.txt"><img src="https://img.shields.io/badge/Django-4.2%2B-092e20?style=flat-square&amp;logo=django&amp;logoColor=white" alt="Django 4.2 or newer" /></a>
+  <a href="https://github.com/users/zhtyyx/packages/container/package/ioe"><img src="https://img.shields.io/badge/GHCR-镜像部署-2496ed?style=flat-square&amp;logo=docker&amp;logoColor=white" alt="GHCR 容器镜像" /></a>
 </p>
 
 [English](README.md) · [功能](#features) · [界面预览](#preview) · [快速开始](#quick-start) · [Star 趋势](#star-history)
@@ -105,7 +106,20 @@ IOE 面向小型零售门店，基于 Django 构建，默认使用 SQLite。你�
 
 ### 直接部署镜像
 
-无需克隆代码或本地构建，使用 Docker Compose 拉取 `ghcr.io/zhtyyx/ioe:latest` 即可部署。配置、首次登录和更新步骤见 [镜像部署指南](README.docker_zh.md)。
+无需下载源码或在服务器上构建镜像。[GHCR 镜像](https://github.com/users/zhtyyx/packages/container/package/ioe)公开提供，支持 **Linux AMD64 / ARM64**，无需登录 GitHub 即可拉取：
+
+```bash
+docker pull ghcr.io/zhtyyx/ioe:latest
+```
+
+首次部署请按 [镜像部署指南](README.docker_zh.md) 下载 Compose 配置和 `.env` 模板，填写密钥及访问地址，再启动服务并创建管理员。数据库、上传文件和备份保存在独立数据卷中，重建容器后仍会保留。
+
+[GitHub Actions](.github/workflows/publish-image.yml) 会在推送到 `main` 后自动运行测试、验证部署并发布 `latest`；推送 `v*` 版本标签时发布对应版本镜像。已完成配置的部署可这样更新（更新前先备份数据）：
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate --wait
+```
 
 [![镜像构建](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml/badge.svg)](https://github.com/zhtyyx/ioe/actions/workflows/publish-image.yml)
 
