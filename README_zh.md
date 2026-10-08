@@ -152,6 +152,10 @@ python manage.py test --settings=inventory.test_settings
   <img src="./asset/wechat.jpg" width="220" alt="微信支持二维码" />
 </div>
 
+## 致谢
+
+感谢 [Linux DO 社区](https://linux.do/)。
+
 ## 许可证
 
 IOE 采用 [MIT License](LICENSE)，可按许可证条款使用、修改和分发。

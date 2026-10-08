@@ -152,6 +152,10 @@ If IOE is useful to you, consider sharing feedback, contributing an improvement,
   <img src="./asset/wechat.jpg" width="220" alt="Support via WeChat" />
 </div>
 
+## Acknowledgements
+
+Thanks to the [Linux DO community](https://linux.do/).
+
 ## License
 
 IOE is available under the [MIT License](LICENSE). You may use, modify, and distribute it under the license terms.

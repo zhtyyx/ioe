@@ -82,9 +82,7 @@
             {% if messages %}<div class="app-messages">{% for message in messages %}<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{% if request.LANGUAGE_CODE == 'en' %}Dismiss{% else %}关闭提示{% endif %}"></button></div>{% endfor %}</div>{% endif %}
             {% block content %}{% endblock %}
         </main>
-        <footer class="app-footer">
-            <span>{% if request.LANGUAGE_CODE == 'en' %}Thanks to the <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">Linux DO community</a>{% else %}致谢 <a href="https://linux.do/" target="_blank" rel="noopener noreferrer">Linux DO 社区</a>{% endif %}</span>
-        </footer>
+
     </div>
     <script src="{% static 'inventory/vendor/jquery.min.js' %}"></script>
     <script src="{% static 'inventory/vendor/bootstrap.bundle.min.js' %}"></script>
