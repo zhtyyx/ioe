@@ -34,6 +34,12 @@ services:
     configs:
       - source: nginx_config
         target: /etc/nginx/conf.d/default.conf
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/static/inventory/images/logo.svg"]
+      interval: 5s
+      timeout: 5s
+      start_period: 15s
+      retries: 6
 
 configs:
   nginx_config:
