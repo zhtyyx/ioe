@@ -1,91 +1,107 @@
 <div align="center">
+  <img src="inventory/static/inventory/images/logo.svg" width="240" height="72" alt="IOE" />
 
-# IOE Inventory Management System
+# IOE · Inventory & Checkout
 
-**Keep stock, sales, and member records together—from receiving goods to checkout.**
+Products, stock, checkout, and member accounts in one place.
 
-[简体中文](README_zh.md) · [Quick start](#quick-start) · [Interface preview](#interface-preview) · [Contact](#contact)
+<p>
+  <a href="https://github.com/zhtyyx/ioe/stargazers"><img src="https://img.shields.io/github/stars/zhtyyx/ioe?style=flat-square&amp;logo=github&amp;color=2563eb" alt="GitHub stars" /></a>
+  <a href="https://github.com/zhtyyx/ioe/forks"><img src="https://img.shields.io/github/forks/zhtyyx/ioe?style=flat-square&amp;logo=github&amp;color=2563eb" alt="GitHub forks" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-16a34a?style=flat-square" alt="License: MIT" /></a>
+  <a href="requirements.txt"><img src="https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white" alt="Python 3.10 or newer" /></a>
+  <a href="requirements.txt"><img src="https://img.shields.io/badge/Django-4.2%2B-092e20?style=flat-square&amp;logo=django&amp;logoColor=white" alt="Django 4.2 or newer" /></a>
+</p>
+
+[简体中文](README_zh.md) · [Features](#features) · [Screenshots](#preview) · [Quick start](#quick-start) · [Star history](#star-history)
 
 </div>
 
-IOE is an open-source management system for small retail stores. Maintain a product catalog, record stock movements, scan items at checkout, manage member balances and points, and review sales and inventory reports. Built with Django and SQLite by default, it can run locally or on your own server and can be adapted to your store's workflows.
+<table align="center">
+  <tr>
+    <td width="65%">
+      <strong>✉️ Contact the author</strong><br />
+      Share feedback, report an issue, or discuss customisation.<br /><br />
+      <a href="mailto:zhtyyx@gmail.com">zhtyyx@gmail.com</a><br />
+      <a href="https://github.com/zhtyyx/ioe/issues">Report an issue</a>
+    </td>
+    <td width="35%" align="center">
+      <a href="asset/wxqun.png"><img src="asset/wxqun.png" width="128" alt="Scan to connect on WeChat" /></a><br />
+      <sub>Scan to connect on WeChat</sub>
+    </td>
+  </tr>
+</table>
 
-### Start with your store's numbers
+IOE is a self-hosted application for small retail stores, built with Django and SQLite by default. Run it on your own computer or server to manage daily stock movements and checkout. The current open-source version operates as a single store; inventory and orders are not separated by branch.
 
-Review revenue, profit, and order counts by date, with daily details alongside the chart. All screenshots below use local demo data.
+Screenshots were refreshed on 2026-10-08 with the current logo and local demo data. Sample product and member names remain in Chinese in the English interface.
 
-![Sales trends: revenue, profit, order counts, and daily details](asset/ioe_sales_trend_en.png)
+![Business overview with sales, stock alerts, and member information](asset/ioe_dashboard_en.png)
 
-## What you can do
+<a id="features"></a>
 
-| Workflow | Features |
+## 🧩 Everyday workflows
+
+| Area | What you can do |
 | --- | --- |
-| Products and barcodes | Maintain categories, prices, costs, specifications, and images; look up products by barcode. |
-| Stock and stocktaking | Record receipts, withdrawals, and adjustments; review low-stock alerts and movements; reconcile physical counts. |
-| Checkout | Scan or search for products, adjust quantities, apply member discounts, and record payment methods and sale items. |
-| Member accounts | Manage membership levels, recharges, balances, points, purchase history, and birthday reminders. |
-| Reports and administration | Review sales trends and inventory turnover; manage user permissions, operation logs, and backups. |
+| 📦 Products & stock | Maintain categories, barcodes, prices, variants, and images; record receipts, withdrawals, adjustments, and low-stock alerts. |
+| 🛒 Checkout | Scan or search for products, adjust quantities and prices, apply member discounts, and record payment methods and sale items. |
+| 👥 Members | Manage membership levels, recharges, balances, and points; review purchases and birthday reminders. |
+| 📊 Reports & stocktaking | Review sales trends, stock turnover, and member analysis; create stocktakes and reconcile counted quantities. |
+| ⚙️ Administration | Manage permissions, operation logs, and backups; switch between Chinese and English or light and dark themes. |
 
-These workflows share the same product, inventory, and member records. Received stock is available at checkout; sales produce order and stock movement records that can be reviewed later. The interface offers Chinese and English language switching and light and dark themes.
+<a id="preview"></a>
 
-## Interface preview
+## 🖥️ Interface preview
 
-### Inventory turnover: see how stock is moving
+### Checkout
 
-Compare stock levels, units sold, and days in inventory to inform replenishment decisions and identify slow-moving products.
+Search for products to build the cart. Member lookup, payment methods, and the amount due sit alongside the item list for review before checkout.
 
-![Inventory turnover chart and product details](asset/ioe_inventory_turnover_en.png)
+![Checkout with an item list and payment controls](asset/ioe_checkout_en.png)
 
-### Checkout: items, payment, and totals in one view
+### Sales trends
 
-Review the cart, find a member, and choose a payment method on the same page. Add products by barcode or name.
+Review revenue, costs, profit, and order counts by date, with daily details below the chart.
 
-![Checkout with cart, member lookup, and payment controls](asset/ioe_checkout_en.png)
+![Sales trend chart and daily details](asset/ioe_sales_trend_en.png)
 
 <details>
-<summary><strong>Business overview and report navigation</strong></summary>
+<summary><strong>Products & inventory</strong></summary>
 
-The overview brings together today's sales, product and member counts, stock alerts, and recent sales trends.
+| Product catalogue | Product editor |
+| --- | --- |
+| [![Product catalogue](asset/ioe_products_en.png)](asset/ioe_products_en.png) | [![Product editor](asset/ioe_product_form_en.png)](asset/ioe_product_form_en.png) |
 
-![Business overview](asset/ioe_dashboard_en.png)
-
-The report center provides access to sales, product, inventory, and member analysis.
-
-![Report center](asset/ioe_reports_en.png)
+| Inventory | Stocktaking |
+| --- | --- |
+| [![Inventory](asset/ioe_inventory_en.png)](asset/ioe_inventory_en.png) | [![Stocktaking](asset/ioe_stocktaking_en.png)](asset/ioe_stocktaking_en.png) |
 
 </details>
 
 <details>
-<summary><strong>Product catalog and inventory</strong></summary>
+<summary><strong>Members & reports</strong></summary>
 
-Search and filter products, then edit prices, specifications, images, and stock warning thresholds.
+| Members | Membership levels |
+| --- | --- |
+| [![Members](asset/ioe_members_en.png)](asset/ioe_members_en.png) | [![Membership levels](asset/ioe_member_levels_en.png)](asset/ioe_member_levels_en.png) |
 
-![Product catalog](asset/ioe_products_en.png)
-
-![Product editor](asset/ioe_product_form_en.png)
-
-The inventory list shows quantities and warning states, with actions for stock receipts, withdrawals, and adjustments.
-
-![Inventory management](asset/ioe_inventory_en.png)
+| Report centre | Inventory turnover |
+| --- | --- |
+| [![Report centre](asset/ioe_reports_en.png)](asset/ioe_reports_en.png) | [![Inventory turnover](asset/ioe_inventory_turnover_en.png)](asset/ioe_inventory_turnover_en.png) |
 
 </details>
 
 <details>
-<summary><strong>Members and stocktaking</strong></summary>
+<summary><strong>Dark theme</strong></summary>
 
-Review member profiles, balances, and points, and configure discounts by membership level.
-
-![Member list](asset/ioe_members_en.png)
-
-![Membership levels](asset/ioe_member_levels_en.png)
-
-Track stocktaking tasks through counting, completion, and approval, and reconcile recorded stock with physical counts.
-
-![Stocktaking tasks](asset/ioe_stocktaking_en.png)
+![Business overview in dark mode](asset/ioe_dashboard_dark_en.png)
 
 </details>
 
-## Quick start
+<a id="quick-start"></a>
+
+## 🚀 Quick start
 
 Use Python 3.10 or newer. The commands below are for macOS / Linux. SQLite is the default, so no separate database server is needed.
 
@@ -98,7 +114,7 @@ Use Python 3.10 or newer. The commands below are for macOS / Linux. SQLite is th
    source .venv/bin/activate
    ```
 
-2. Install dependencies, initialize the database, and create a login account:
+2. Install dependencies, initialise the database, and create a login account:
 
    ```bash
    python -m pip install -r requirements.txt
@@ -119,7 +135,7 @@ On Windows, use `python` in place of `python3` and activate the virtual environm
 
 The database is stored in `db/db.sqlite3`, and uploaded files are stored in `media/`. Use `runserver` for local development. For containers, persistent storage, and deployment considerations, see the [Docker guide](README.docker_en.md).
 
-## Development and tests
+## 🛠️ Development & contributions
 
 Run the full test suite:
 
@@ -131,31 +147,40 @@ This configuration uses a separate temporary database and file directories. Test
 
 Application code lives in `inventory/`: `models/` defines data structures, `views/` and `services/` handle business logic, `templates/` and `static/` provide the interface, and `tests/` contains the test suite. Documentation screenshots live in `asset/`.
 
-Use [Issues](https://github.com/zhtyyx/ioe/issues) to report bugs or propose features. Pull requests should describe the trigger, expected behavior, and validation. Include tests for business changes and screenshots for interface changes. Discuss the use case and scope before starting a large feature.
+Use [Issues](https://github.com/zhtyyx/ioe/issues) to report bugs or propose features. Pull requests should describe the trigger, expected behaviour, and validation. Include tests for business changes and screenshots for interface changes. Discuss the use case and scope before starting a large feature.
 
-## Contact
+<a id="star-history"></a>
 
-- Email: [zhtyyx@gmail.com](mailto:zhtyyx@gmail.com)
-- Bug reports: [GitHub Issues](https://github.com/zhtyyx/ioe/issues)
-- WeChat: scan the QR code below to connect.
+## ⭐ Star history
+
+If IOE is useful to you, consider starring the repository, reporting an issue, or contributing a change.
+
+<a href="https://www.star-history.com/#zhtyyx/ioe&amp;Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&amp;type=Date&amp;theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=zhtyyx/ioe&amp;type=Date" />
+    <img src="https://api.star-history.com/svg?repos=zhtyyx/ioe&amp;type=Date" alt="GitHub Star history for zhtyyx/ioe" width="100%" />
+  </picture>
+</a>
+
+Chart provided by [Star History](https://www.star-history.com/#zhtyyx/ioe&Date). Click to explore the interactive timeline.
+
+<details>
+<summary><strong>☕ Support maintenance</strong></summary>
+
+You can also support ongoing maintenance using the options below.
 
 <div align="center">
-  <img src="./asset/wxqun.png" width="220" alt="Scan to connect on WeChat" />
+  <img src="asset/buyme.jpg" width="200" alt="Support the project" />
+  <img src="asset/wechat.jpg" width="200" alt="Support via WeChat" />
 </div>
 
-## Support the project
+</details>
 
-If IOE is useful to you, consider sharing feedback, contributing an improvement, or supporting continued maintenance.
-
-<div align="center">
-  <img src="./asset/buyme.jpg" width="220" alt="Support the project" />
-  <img src="./asset/wechat.jpg" width="220" alt="Support via WeChat" />
-</div>
-
-## Acknowledgements
+## 🤝 Acknowledgements
 
 Thanks to the [Linux DO community](https://linux.do/).
 
-## License
+## 📄 License
 
-IOE is available under the [MIT License](LICENSE). You may use, modify, and distribute it under the license terms.
+IOE is available under the [MIT License](LICENSE). You may use, modify, and distribute it under the licence terms.

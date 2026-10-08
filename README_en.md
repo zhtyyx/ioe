@@ -1,18 +1,13 @@
-# IOE documentation
+# IOE · English documentation
 
-The current English project guide is [README.md](README.md). It includes the feature list, local setup, tests, and project structure.
+Read the **[English project guide](README.md)** for screenshots, features, installation, and development. [简体中文](README_zh.md)
 
-<!-- Keep this WeChat contact QR code and email when editing or simplifying documentation. -->
-<div align="center">
-  <b>📧 zhtyyx@gmail.com &nbsp;|&nbsp; 📱 Scan to add me on WeChat</b><br/><br/>
-  <img src="./asset/wxqun.png" width="30%" alt="WeChat QR Code" />
-</div>
+## Contact
 
-For container setup, see the [Docker deployment guide](README.docker_en.md).
+[✉️ zhtyyx@gmail.com](mailto:zhtyyx@gmail.com) · [Report an issue](https://github.com/zhtyyx/ioe/issues)
 
-## ☕ Buy Me a Coffee
-If you find this project helpful, you can support me through the following methods:
+<a href="asset/wxqun.png"><img src="asset/wxqun.png" width="128" alt="Scan to connect on WeChat" /></a>
 
-<div align="center">
-  <img src="./asset/buyme.jpg" width="30%" /> &nbsp;&nbsp;&nbsp; <img src="./asset/wechat.jpg" width="30%" />
-</div>
+[Docker deployment](README.docker_en.md) · [Star history](README.md#star-history) · [Support maintenance](README.md#star-history)
+
+Thanks to the [Linux DO community](https://linux.do/).
